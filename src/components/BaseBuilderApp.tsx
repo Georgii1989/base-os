@@ -93,7 +93,7 @@ export function BaseBuilderApp() {
 
   return (
     <section className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/15 bg-black/45 p-5 text-white shadow-[0_0_50px_rgba(76,29,149,0.45)] backdrop-blur-xl">
-      <h1 className="text-3xl font-black text-fuchsia-200 md:text-5xl">Base Builder Tip Jar</h1>
+      <h1 className="text-3xl font-black text-fuchsia-200 md:text-5xl">Georgiy Base Tip Jar</h1>
       <p className="mt-2 text-cyan-100/90">
         Standard Web App: wagmi + viem + SIWE + onchain tip flow.
       </p>

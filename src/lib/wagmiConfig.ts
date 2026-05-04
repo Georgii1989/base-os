@@ -7,7 +7,7 @@ export const wagmiConfig = createConfig({
   connectors: [
     injected(),
     baseAccount({
-      appName: "Base Builder Tip Jar",
+      appName: "Georgiy Base Tip Jar",
     }),
   ],
   storage: createStorage({ storage: cookieStorage }),

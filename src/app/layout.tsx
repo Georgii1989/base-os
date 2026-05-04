@@ -3,8 +3,8 @@ import "./globals.css";
 import { Web3Providers } from "@/components/Web3Providers";
 
 export const metadata: Metadata = {
-  title: "Base Builder Tip Jar",
-  description: "A standard web app on Base with wallet auth and onchain tips.",
+  title: "Georgiy Base Tip Jar",
+  description: "A standard Base web app with SIWE auth and onchain tipping.",
   other: {
     "base:app_id": "69f884af879b4ae3fa1c7162",
   },

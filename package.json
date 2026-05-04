@@ -1,12 +1,14 @@
 {
-  "name": "crazy-vika-game",
+  "name": "georgiy-base-tip-jar",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "contract:compile": "hardhat compile",
+    "contract:deploy:base": "hardhat run scripts/deploy-tipjar.js --network base"
   },
   "dependencies": {
     "@base-org/account": "^2.5.5",
@@ -19,12 +21,15 @@
     "wagmi": "^3.6.9"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "hardhat": "^2.28.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

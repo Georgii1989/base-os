@@ -1,9 +1,10 @@
-# Base Builder Tip Jar
+# Georgiy Base Tip Jar
 
 Standard web app for Base App migration:
 - wallet connection with `wagmi`,
 - SIWE sign-in flow (`viem/siwe`),
-- onchain tip transaction to a configurable recipient.
+- onchain tip transaction to a configurable recipient,
+- Solidity `TipJar` smart contract + Hardhat deploy flow.
 
 ## Stack
 
@@ -11,6 +12,7 @@ Standard web app for Base App migration:
 - wagmi + viem
 - @base-org/account connector
 - React Query
+- Solidity + Hardhat
 
 ## Local setup
 
@@ -43,6 +45,39 @@ npm run dev
 ```bash
 npm run lint
 npm run build
+```
+
+## Smart contract: TipJar
+
+1) Create contract env file from template:
+
+```bash
+cp contracts.env.example .env
+```
+
+2) Fill values:
+
+- `DEPLOYER_PRIVATE_KEY` - deploy wallet private key (with ETH on Base for gas)
+- `TIPJAR_OWNER_ADDRESS` - your public owner wallet
+- `BASE_RPC_URL` - Base RPC endpoint
+- `BASESCAN_API_KEY` - for contract verification
+
+3) Compile contract:
+
+```bash
+npm run contract:compile
+```
+
+4) Deploy to Base mainnet:
+
+```bash
+npm run contract:deploy:base
+```
+
+5) Optional verification:
+
+```bash
+npx hardhat verify --network base <DEPLOYED_CONTRACT_ADDRESS> <TIPJAR_OWNER_ADDRESS>
 ```
 
 ## Notes

@@ -19,6 +19,9 @@
 
 # production
 /build
+/artifacts
+/cache
+/ignition/deployments
 
 # misc
 .DS_Store
