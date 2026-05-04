@@ -76,6 +76,8 @@ If `npm run contract:compile:hardhat` fails with `HH502` (cannot download Solidi
 npm run contract:deploy:base
 ```
 
+This runs `node scripts/deploy-tipjar.js` (loads `contracts.local.env`, uses `ethers` directly). If you see intermittent `ECONNRESET` on a public RPC, the script retries; for production deploys prefer a dedicated RPC (Alchemy/Infura) via `BASE_RPC_URL`.
+
 5) Optional verification:
 
 ```bash

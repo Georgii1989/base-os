@@ -9,7 +9,7 @@
     "lint": "eslint",
     "contract:compile": "node scripts/compile-tipjar.cjs",
     "contract:compile:hardhat": "hardhat compile",
-    "contract:deploy:base": "hardhat run --no-compile scripts/deploy-tipjar.js --network base"
+    "contract:deploy:base": "node scripts/deploy-tipjar.js"
   },
   "dependencies": {
     "@base-org/account": "^2.5.5",

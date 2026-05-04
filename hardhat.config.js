@@ -47,6 +47,7 @@ module.exports = {
       url: BASE_RPC_URL,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
       chainId: 8453,
+      timeout: 120_000,
     },
   },
   etherscan: {
