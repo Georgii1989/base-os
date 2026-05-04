@@ -36,6 +36,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# local contract deploy secrets (never commit)
+contracts.local.env
+
 # vercel
 .vercel
 

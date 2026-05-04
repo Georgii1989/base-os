@@ -1,10 +1,35 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 require("@nomicfoundation/hardhat-toolbox");
-require("dotenv").config();
+const fs = require("node:fs");
+const path = require("node:path");
 
-const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "";
+// Keep contract deploy secrets OUT of `.env` because Next.js auto-loads `.env*` during builds.
+const contractsEnvPath = path.join(__dirname, "contracts.local.env");
+if (fs.existsSync(contractsEnvPath)) {
+  require("dotenv").config({ path: contractsEnvPath });
+} else {
+  require("dotenv").config();
+}
+
+const PRIVATE_KEY_RAW = process.env.DEPLOYER_PRIVATE_KEY || "";
 const BASE_RPC_URL = process.env.BASE_RPC_URL || "https://mainnet.base.org";
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || "";
+
+function normalizePrivateKey(value) {
+  const trimmed = String(value).trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("0x") ? trimmed : `0x${trimmed}`;
+}
+
+function isValidPrivateKey(value) {
+  const pk = normalizePrivateKey(value);
+  if (!/^0x[0-9a-fA-F]{64}$/.test(pk)) return false;
+  return true;
+}
+
+const PRIVATE_KEY = isValidPrivateKey(PRIVATE_KEY_RAW)
+  ? normalizePrivateKey(PRIVATE_KEY_RAW)
+  : "";
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {

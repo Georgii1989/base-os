@@ -52,10 +52,10 @@ npm run build
 1) Create contract env file from template:
 
 ```bash
-cp contracts.env.example .env
+cp contracts.env.example contracts.local.env
 ```
 
-2) Fill values:
+2) Fill values in `contracts.local.env` (do not put these secrets in `.env` — Next.js loads `.env*` during builds):
 
 - `DEPLOYER_PRIVATE_KEY` - deploy wallet private key (with ETH on Base for gas)
 - `TIPJAR_OWNER_ADDRESS` - your public owner wallet
@@ -67,6 +67,8 @@ cp contracts.env.example .env
 ```bash
 npm run contract:compile
 ```
+
+If `npm run contract:compile:hardhat` fails with `HH502` (cannot download Solidity compiler metadata), use `npm run contract:compile` — it compiles via the local `solc` npm package and writes `artifacts/contracts/TipJar.sol/TipJar.json`.
 
 4) Deploy to Base mainnet:
 

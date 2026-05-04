@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "contract:compile": "hardhat compile",
-    "contract:deploy:base": "hardhat run scripts/deploy-tipjar.js --network base"
+    "contract:compile": "node scripts/compile-tipjar.cjs",
+    "contract:compile:hardhat": "hardhat compile",
+    "contract:deploy:base": "hardhat run --no-compile scripts/deploy-tipjar.js --network base"
   },
   "dependencies": {
     "@base-org/account": "^2.5.5",
@@ -30,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "hardhat": "^2.28.6",
+    "solc": "^0.8.24",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
