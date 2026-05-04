@@ -1,4 +1,9 @@
 {
+  "accountAssociation": {
+    "header": "eyJmaWQiOjY1OTk1NywidHlwZSI6ImF1dGgiLCJrZXkiOiIweGMwOGNCN2FDZDNlNTZCNmFjNGJFOGE4OWYxMTgyNGMyNzBkYjQxMWEifQ",
+    "payload": "eyJkb21haW4iOiJjcmF6eS12aWthLWdhbWUudmVyY2VsLmFwcCJ9",
+    "signature": "6xrxckzgIVMTkpMxBr+6UICvRmuR/XfutbIJplibdVhlympJqG6YKdZiiamOs/euaWVcni3D16cboov01goUuBw="
+  },
   "miniapp": {
     "version": "1",
     "name": "Crazy Vika - Save Georgiy",
