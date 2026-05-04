@@ -2,16 +2,16 @@
   "miniapp": {
     "version": "1",
     "name": "Crazy Vika - Save Georgiy",
-    "iconUrl": "https://crazy-vika-game-npr52quix-georgiys-projects-fe3daf9b.vercel.app/logo.svg",
-    "homeUrl": "https://crazy-vika-game-npr52quix-georgiys-projects-fe3daf9b.vercel.app",
-    "imageUrl": "https://crazy-vika-game-npr52quix-georgiys-projects-fe3daf9b.vercel.app/logo.svg",
+    "iconUrl": "https://crazy-vika-game.vercel.app/logo.svg",
+    "homeUrl": "https://crazy-vika-game.vercel.app",
+    "imageUrl": "https://crazy-vika-game.vercel.app/logo.svg",
     "buttonTitle": "Play Now",
-    "splashImageUrl": "https://crazy-vika-game-npr52quix-georgiys-projects-fe3daf9b.vercel.app/logo.svg",
+    "splashImageUrl": "https://crazy-vika-game.vercel.app/logo.svg",
     "splashBackgroundColor": "#09051A",
     "tags": ["game", "platformer", "base"],
     "primaryCategory": "entertainment",
     "ogTitle": "Crazy Vika - Save Georgiy",
-    "ogImageUrl": "https://crazy-vika-game-npr52quix-georgiys-projects-fe3daf9b.vercel.app/logo.svg",
+    "ogImageUrl": "https://crazy-vika-game.vercel.app/logo.svg",
     "screenshotUrls": []
   }
 }
