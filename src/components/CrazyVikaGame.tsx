@@ -16,7 +16,7 @@ type Level = {
 const LEVELS: Level[] = [
   { id: 1, name: 'Castle Yard', start: { x: 38, y: 484 }, castle: { x: 318, y: 84 }, platforms: [{ x: 180, y: 548, w: 360 }, { x: 82, y: 474, w: 110 }, { x: 190, y: 406, w: 112 }, { x: 300, y: 336, w: 102 }, { x: 256, y: 250, w: 108 }, { x: 315, y: 170, w: 88 }], spikes: [{ x: 228, y: 528 }, { x: 330, y: 528 }] },
   { id: 2, name: 'Moon Bridge', start: { x: 38, y: 484 }, castle: { x: 318, y: 84 }, platforms: [{ x: 180, y: 548, w: 360 }, { x: 290, y: 472, w: 105 }, { x: 112, y: 405, w: 106 }, { x: 278, y: 335, w: 104 }, { x: 98, y: 266, w: 96 }, { x: 238, y: 196, w: 96 }, { x: 318, y: 138, w: 82 }], spikes: [{ x: 155, y: 528 }, { x: 195, y: 528 }, { x: 238, y: 528 }] },
-  { id: 3, name: 'Crazy Tower', start: { x: 38, y: 484 }, castle: { x: 316, y: 84 }, platforms: [{ x: 180, y: 548, w: 360 }, { x: 86, y: 472, w: 96 }, { x: 182, y: 402, w: 102 }, { x: 292, y: 332, w: 94 }, { x: 206, y: 264, w: 92 }, { x: 112, y: 198, w: 90 }, { x: 316, y: 138, w: 84 }], spikes: [{ x: 140, y: 528 }, { x: 176, y: 528 }, { x: 214, y: 528 }, { x: 250, y: 528 }] },
+  { id: 3, name: 'Crazy Tower', start: { x: 38, y: 484 }, castle: { x: 316, y: 84 }, platforms: [{ x: 180, y: 548, w: 360 }, { x: 82, y: 478, w: 96 }, { x: 172, y: 418, w: 102 }, { x: 264, y: 358, w: 92 }, { x: 182, y: 296, w: 92 }, { x: 104, y: 236, w: 90 }, { x: 202, y: 182, w: 88 }, { x: 304, y: 136, w: 82 }], spikes: [{ x: 198, y: 528 }, { x: 234, y: 528 }] },
 ];
 
 export function CrazyVikaGame() {
@@ -44,10 +44,24 @@ export function CrazyVikaGame() {
         constructor() { super('main'); }
         preload() {
           const g = this.add.graphics();
-          g.fillStyle(0xff4fa0).fillRoundedRect(0, 0, 44, 56, 12).generateTexture('vika', 44, 56).clear();
+          // Vika: white-haired girl sprite
+          g.fillStyle(0xffffff).fillCircle(22, 12, 10);
+          g.fillStyle(0xf5d0fe).fillCircle(22, 18, 8);
+          g.fillStyle(0xff4fa0).fillRoundedRect(10, 24, 24, 28, 8);
+          g.fillStyle(0xfff1f2).fillRect(10, 48, 8, 8).fillRect(26, 48, 8, 8);
+          g.generateTexture('vika', 44, 56);
+          g.clear();
           g.fillStyle(0x5eead4).fillRect(0, 0, 120, 16).generateTexture('platform', 120, 16).clear();
           g.fillStyle(0x22d3ee).fillTriangle(0, 34, 16, 0, 32, 34).generateTexture('spike', 32, 34).clear();
           g.fillStyle(0xfde047).fillRect(0, 0, 66, 100).generateTexture('castle', 66, 100).destroy();
+          const p = this.add.graphics();
+          // Georgiy: boy sprite
+          p.fillStyle(0x111827).fillCircle(18, 9, 8);
+          p.fillStyle(0xfde68a).fillCircle(18, 15, 7);
+          p.fillStyle(0x38bdf8).fillRoundedRect(8, 22, 20, 20, 6);
+          p.fillStyle(0xe2e8f0).fillRect(9, 40, 6, 8).fillRect(21, 40, 6, 8);
+          p.generateTexture('georgiy', 36, 50);
+          p.destroy();
         }
         create() {
           this.cameras.main.setBackgroundColor('#0b0820');
@@ -80,8 +94,8 @@ export function CrazyVikaGame() {
           const castle = this.physics.add.staticSprite(level.castle.x, level.castle.y, 'castle');
           const glow = this.add.circle(level.castle.x, level.castle.y + 6, 42, 0xfde047, 0.17);
           this.tweens.add({ targets: [castle, glow], y: '-=6', yoyo: true, repeat: -1, duration: 900 });
-          this.add.rectangle(level.castle.x, level.castle.y - 50, 62, 30, 0x111827, 0.95);
-          this.add.text(level.castle.x, level.castle.y - 50, 'Georgiy', { color: '#fde047', fontSize: '12px', fontStyle: 'bold' }).setOrigin(0.5);
+          this.add.image(level.castle.x, level.castle.y - 52, 'georgiy');
+          this.add.text(level.castle.x, level.castle.y - 24, 'Georgiy', { color: '#fde047', fontSize: '11px', fontStyle: 'bold' }).setOrigin(0.5);
           this.physics.add.overlap(this.vika, castle, () => {
             setStatus(levelIndex < LEVELS.length - 1 ? 'level_won' : 'game_won');
           });
