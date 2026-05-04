@@ -9,12 +9,22 @@ import {
   useConnect,
   useDisconnect,
   usePublicClient,
-  useSendTransaction,
   useSignMessage,
   useWaitForTransactionReceipt,
+  useWriteContract,
 } from "wagmi";
 
 const DEFAULT_RECIPIENT = "0x1111111111111111111111111111111111111111";
+const DEFAULT_TIPJAR = "0x47ad142c4f04431164737cACD601796932b7357A";
+const TIPJAR_ABI = [
+  {
+    type: "function",
+    name: "tip",
+    stateMutability: "payable",
+    inputs: [{ name: "message", type: "string", internalType: "string" }],
+    outputs: [],
+  },
+] as const;
 
 export function BaseBuilderApp() {
   const { address, chainId, isConnected } = useAccount();
@@ -23,15 +33,17 @@ export function BaseBuilderApp() {
   const { data: balance } = useBalance({ address });
   const publicClient = usePublicClient();
   const { signMessageAsync } = useSignMessage();
-  const { data: txHash, sendTransaction, isPending: isSending } = useSendTransaction();
+  const { data: txHash, isPending: isSending, writeContract } = useWriteContract();
   const { isSuccess: txConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
 
   const [siweOk, setSiweOk] = useState(false);
   const [siweError, setSiweError] = useState<string | null>(null);
   const [tipEth, setTipEth] = useState("0.0005");
+  const [tipMessage, setTipMessage] = useState("Support Base Tip app");
   const [tipStatus, setTipStatus] = useState<string | null>(null);
 
   const recipient = process.env.NEXT_PUBLIC_TIP_RECIPIENT || DEFAULT_RECIPIENT;
+  const tipJarAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
 
   const shortAddress = useMemo(() => {
     if (!address) return "not connected";
@@ -81,11 +93,14 @@ export function BaseBuilderApp() {
         return;
       }
 
-      sendTransaction({
-        to: recipient as `0x${string}`,
+      writeContract({
+        address: tipJarAddress as `0x${string}`,
+        abi: TIPJAR_ABI,
+        functionName: "tip",
+        args: [tipMessage],
         value,
       });
-      setTipStatus("Транзакция отправляется в сеть Base...");
+      setTipStatus("Транзакция в TipJar отправляется в сеть Base...");
     } catch {
       setTipStatus("Некорректная сумма tip.");
     }
@@ -93,7 +108,7 @@ export function BaseBuilderApp() {
 
   return (
     <section className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/15 bg-black/45 p-5 text-white shadow-[0_0_50px_rgba(76,29,149,0.45)] backdrop-blur-xl">
-      <h1 className="text-3xl font-black text-fuchsia-200 md:text-5xl">Georgiy Base Tip Jar</h1>
+      <h1 className="text-3xl font-black text-fuchsia-200 md:text-5xl">Base Tip</h1>
       <p className="mt-2 text-cyan-100/90">
         Standard Web App: wagmi + viem + SIWE + onchain tip flow.
       </p>
@@ -144,6 +159,7 @@ export function BaseBuilderApp() {
       <div className="mt-4 grid gap-3 rounded-2xl border border-emerald-300/30 bg-slate-950/50 p-4">
         <h2 className="text-xl font-black text-emerald-200">Send onchain tip</h2>
         <p className="text-sm text-emerald-100/90">Recipient: {recipient}</p>
+        <p className="text-sm text-emerald-100/90">TipJar: {tipJarAddress}</p>
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="number"
@@ -152,6 +168,14 @@ export function BaseBuilderApp() {
             value={tipEth}
             onChange={(e) => setTipEth(e.target.value)}
             className="w-36 rounded-lg border border-white/25 bg-black/40 px-3 py-2 text-white outline-none"
+          />
+          <input
+            type="text"
+            maxLength={120}
+            value={tipMessage}
+            onChange={(e) => setTipMessage(e.target.value)}
+            placeholder="Tip message"
+            className="min-w-52 flex-1 rounded-lg border border-white/25 bg-black/40 px-3 py-2 text-white outline-none"
           />
           <button
             onClick={handleTip}

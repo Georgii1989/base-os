@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 require("@nomicfoundation/hardhat-toolbox");
+const { subtask } = require("hardhat/config");
+const { TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD } = require("hardhat/builtin-tasks/task-names");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -31,6 +33,20 @@ const PRIVATE_KEY = isValidPrivateKey(PRIVATE_KEY_RAW)
   ? normalizePrivateKey(PRIVATE_KEY_RAW)
   : "";
 
+// Force Hardhat to use locally installed solc-js and avoid online compiler downloads.
+subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD, async ({ solcVersion }) => {
+  if (solcVersion !== "0.8.24") {
+    throw new Error(`Unsupported solc version requested: ${solcVersion}`);
+  }
+
+  return {
+    compilerPath: require.resolve("solc/soljson.js"),
+    isSolcJs: true,
+    version: solcVersion,
+    longVersion: "0.8.24+commit.e11b9ed9",
+  };
+});
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
@@ -51,9 +67,8 @@ module.exports = {
     },
   },
   etherscan: {
-    apiKey: {
-      base: BASESCAN_API_KEY,
-    },
+    // Etherscan V2 uses a single API key across supported chains, including Base.
+    apiKey: BASESCAN_API_KEY,
   },
   sourcify: {
     enabled: true,

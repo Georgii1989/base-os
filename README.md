@@ -1,4 +1,4 @@
-# Georgiy Base Tip Jar
+# Base Tip
 
 Standard web app for Base App migration:
 - wallet connection with `wagmi`,
@@ -32,6 +32,8 @@ cp .env.example .env.local
 
 ```env
 NEXT_PUBLIC_TIP_RECIPIENT=0xYourWalletAddressOnBase
+NEXT_PUBLIC_TIPJAR_ADDRESS=0x47ad142c4f04431164737cACD601796932b7357A
+NEXT_PUBLIC_BASE_BUILDER_CODE=YOUR-BUILDER-CODE
 ```
 
 4) Run app:
@@ -88,3 +90,4 @@ npx hardhat verify --network base <DEPLOYED_CONTRACT_ADDRESS> <TIPJAR_OWNER_ADDR
 
 - This project is migrated away from Farcaster mini-app SDK flow.
 - For Base App readiness, keep metadata and builder settings updated in Base.dev.
+- Builder Code is applied in code via wagmi `dataSuffix` inside `src/lib/wagmiConfig.ts` and read from `NEXT_PUBLIC_BASE_BUILDER_CODE`.

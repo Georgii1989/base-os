@@ -63,7 +63,6 @@ async function deployWithRetries(factory, constructorArgs, overrides) {
       }
 
       const backoffMs = 1500 * attempt;
-      // eslint-disable-next-line no-console
       console.log(`Deploy attempt ${attempt} failed (${msg}). Retrying in ${backoffMs}ms...`);
       await sleep(backoffMs);
     }
@@ -98,16 +97,13 @@ async function main() {
   try {
     const u = new URL(rpcUrl);
     // Intentionally do not log full URL (may contain API keys in the path)
-    // eslint-disable-next-line no-console
     console.log(`Using RPC host: ${u.host}`);
   } catch {
-    // eslint-disable-next-line no-console
     console.log("Using RPC: (unparsed URL)");
   }
 
   // Smoke test RPC before deploying (helps diagnose intermittent TLS resets)
   const head = await provider.getBlockNumber();
-  // eslint-disable-next-line no-console
   console.log(`RPC ok. Latest block: ${head}`);
 
   const artifactPath = path.join(
