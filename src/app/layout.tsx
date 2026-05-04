@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Ready } from "@/components/Ready";
 
 export const metadata: Metadata = {
   title: 'Crazy Vika - Save Georgiy',
@@ -30,7 +31,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Ready />
+        {children}
+      </body>
     </html>
   );
 }
