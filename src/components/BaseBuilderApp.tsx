@@ -97,9 +97,9 @@ export function BaseBuilderApp() {
 
     autoSwitchTriedRef.current = true;
     switchChainAsync({ chainId: base.id })
-      .then(() => setNetworkStatus("Сеть автоматически переключена на Base."))
+      .then(() => setNetworkStatus("Network automatically switched to Base."))
       .catch(() =>
-        setNetworkStatus("Автопереключение не сработало. Нажми Switch to Base и подтверди в кошельке.")
+        setNetworkStatus("Auto-switch failed. Click Switch to Base and approve in your wallet.")
       );
   }, [isConnected, isOnBase, isSwitchingChain, switchChainAsync]);
 
@@ -163,7 +163,7 @@ export function BaseBuilderApp() {
         setActivityError(null);
       } catch {
         if (!cancelled) {
-          setActivityError("Не удалось загрузить live activity. Проверь RPC и попробуй позже.");
+          setActivityError("Unable to load live activity. Check RPC and try again.");
         }
       }
     }
@@ -184,11 +184,11 @@ export function BaseBuilderApp() {
     setSiweOk(false);
 
     if (!isConnected || !address || !chainId || !publicClient) {
-      setSiweError("Подключи кошелек перед SIWE.");
+      setSiweError("Connect your wallet before SIWE.");
       return;
     }
     if (!isOnBase) {
-      setSiweError("Сначала переключи сеть кошелька на Base.");
+      setSiweError("Switch your wallet network to Base first.");
       return;
     }
 
@@ -207,13 +207,13 @@ export function BaseBuilderApp() {
       const valid = await publicClient.verifySiweMessage({ message, signature });
 
       if (!valid) {
-        setSiweError("SIWE подпись не прошла проверку.");
+        setSiweError("SIWE signature verification failed.");
         return;
       }
 
       setSiweOk(true);
     } catch {
-      setSiweError("Не удалось выполнить SIWE, попробуй еще раз.");
+      setSiweError("SIWE failed. Please try again.");
     }
   }
 
@@ -221,12 +221,12 @@ export function BaseBuilderApp() {
     setTipStatus(null);
     try {
       if (!isOnBase) {
-        setTipStatus("Сначала переключи сеть на Base.");
+        setTipStatus("Switch network to Base first.");
         return;
       }
       const value = parseEther(tipEth || "0");
       if (value <= BigInt(0)) {
-        setTipStatus("Сумма tip должна быть больше 0.");
+        setTipStatus("Tip amount must be greater than 0.");
         return;
       }
       const normalizedMessage = tipMessage.trim() || "Support Base Tip app";
@@ -244,9 +244,9 @@ export function BaseBuilderApp() {
         args: [normalizedMessage],
         value,
       });
-      setTipStatus("Транзакция в TipJar отправляется в сеть Base...");
+      setTipStatus("TipJar transaction is being sent on Base...");
     } catch {
-      setTipStatus("Некорректная сумма tip.");
+      setTipStatus("Invalid tip amount.");
     }
   }
 
@@ -254,9 +254,9 @@ export function BaseBuilderApp() {
     setNetworkStatus(null);
     try {
       await switchChainAsync({ chainId: base.id });
-      setNetworkStatus("Сеть переключена на Base.");
+      setNetworkStatus("Network switched to Base.");
     } catch {
-      setNetworkStatus("Не удалось переключить сеть. Подтверди смену сети в кошельке.");
+      setNetworkStatus("Unable to switch network. Approve the network change in your wallet.");
     }
   }
 
@@ -277,10 +277,10 @@ export function BaseBuilderApp() {
       }
       if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shareText);
-        setTipStatus("Receipt скопирован в буфер обмена.");
+        setTipStatus("Receipt copied to clipboard.");
       }
     } catch {
-      setTipStatus("Не удалось поделиться receipt. Попробуй еще раз.");
+      setTipStatus("Unable to share receipt. Please try again.");
     }
   }
 
@@ -291,15 +291,15 @@ export function BaseBuilderApp() {
       <h1 className="text-3xl font-black text-fuchsia-200 md:text-5xl">Base Tip</h1>
 
       <div className="mt-5 grid gap-3 rounded-2xl border border-cyan-300/30 bg-slate-950/50 p-4">
-        <p className="text-sm text-cyan-100">Кошелек: <span className="font-bold">{shortAddress}</span></p>
+        <p className="text-sm text-cyan-100">Wallet: <span className="font-bold">{shortAddress}</span></p>
         <p className="text-sm text-cyan-100">
-          Сеть:{" "}
+          Network:{" "}
           <span className="font-bold">
             {chainId ? `${chainId}${isOnBase ? " (Base)" : " (wrong network)"}` : "—"}
           </span>
         </p>
         <p className="text-sm text-cyan-100">
-          Баланс:{" "}
+          Balance:{" "}
           <span className="font-bold">
             {balance ? `${Number(formatEther(balance.value)).toFixed(4)} ETH` : "—"}
           </span>
@@ -459,10 +459,10 @@ export function BaseBuilderApp() {
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-sky-300/30 bg-slate-950/50 p-4">
         <h2 className="text-xl font-black text-sky-200">Live tip activity</h2>
-        <p className="text-sm text-sky-100/90">Последние onchain tip события из TipJar.</p>
+        <p className="text-sm text-sky-100/90">Latest onchain tip events from TipJar.</p>
         {activityError ? <p className="text-sm text-rose-300">{activityError}</p> : null}
         {tipActivity.length === 0 ? (
-          <p className="text-sm text-sky-100/90">Пока нет событий или они еще не подтянулись.</p>
+          <p className="text-sm text-sky-100/90">No events yet, or they are still loading.</p>
         ) : (
           <div className="grid gap-2">
             {tipActivity.map((item) => (
@@ -488,7 +488,7 @@ export function BaseBuilderApp() {
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-amber-300/30 bg-slate-950/50 p-4">
         <h2 className="text-xl font-black text-amber-200">Collector badge</h2>
-        <p className="text-sm text-amber-100/90">Разблокируй бейдж после первого подтвержденного onchain tip.</p>
+        <p className="text-sm text-amber-100/90">Unlock this badge after your first confirmed onchain tip.</p>
         <div
           className={`rounded-xl border p-3 ${
             badgeUnlocked

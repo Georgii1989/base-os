@@ -61,7 +61,7 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
         setError(null);
       } catch {
         if (!cancelled) {
-          setError("Не удалось загрузить профиль tips.");
+          setError("Unable to load profile tips.");
         }
       } finally {
         if (!cancelled) {
@@ -117,7 +117,7 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
         {isLoading ? <p className="text-sm text-sky-100/90">Loading onchain tips...</p> : null}
         {error ? <p className="text-sm text-rose-300">{error}</p> : null}
         {!isLoading && !error && tips.length === 0 ? (
-          <p className="text-sm text-sky-100/90">Пока нет tip-событий для этого адреса.</p>
+          <p className="text-sm text-sky-100/90">No tip events found for this address yet.</p>
         ) : null}
         {!isLoading && !error && tips.length > 0 ? (
           <div className="grid gap-2">
