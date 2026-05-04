@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createSiweMessage, generateSiweNonce } from "viem/siwe";
 import { formatEther, parseEther } from "viem";
+import { base } from "wagmi/chains";
 import {
   useAccount,
   useBalance,
@@ -10,6 +11,7 @@ import {
   useDisconnect,
   usePublicClient,
   useSignMessage,
+  useSwitchChain,
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
@@ -30,6 +32,7 @@ export function BaseBuilderApp() {
   const { address, chainId, isConnected } = useAccount();
   const { connect, connectors, isPending: isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
+  const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
   const { data: balance } = useBalance({ address });
   const publicClient = usePublicClient();
   const { signMessageAsync } = useSignMessage();
@@ -41,14 +44,32 @@ export function BaseBuilderApp() {
   const [tipEth, setTipEth] = useState("0.0005");
   const [tipMessage, setTipMessage] = useState("Support Base Tip app");
   const [tipStatus, setTipStatus] = useState<string | null>(null);
+  const [networkStatus, setNetworkStatus] = useState<string | null>(null);
+  const autoSwitchTriedRef = useRef(false);
 
   const recipient = process.env.NEXT_PUBLIC_TIP_RECIPIENT || DEFAULT_RECIPIENT;
   const tipJarAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
+  const isOnBase = chainId === base.id;
 
   const shortAddress = useMemo(() => {
     if (!address) return "not connected";
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   }, [address]);
+
+  useEffect(() => {
+    if (!isConnected) {
+      autoSwitchTriedRef.current = false;
+      return;
+    }
+    if (isOnBase || autoSwitchTriedRef.current || isSwitchingChain) return;
+
+    autoSwitchTriedRef.current = true;
+    switchChainAsync({ chainId: base.id })
+      .then(() => setNetworkStatus("Сеть автоматически переключена на Base."))
+      .catch(() =>
+        setNetworkStatus("Автопереключение не сработало. Нажми Switch to Base и подтверди в кошельке.")
+      );
+  }, [isConnected, isOnBase, isSwitchingChain, switchChainAsync]);
 
   async function handleSiwe() {
     setSiweError(null);
@@ -56,6 +77,10 @@ export function BaseBuilderApp() {
 
     if (!isConnected || !address || !chainId || !publicClient) {
       setSiweError("Подключи кошелек перед SIWE.");
+      return;
+    }
+    if (!isOnBase) {
+      setSiweError("Сначала переключи сеть кошелька на Base.");
       return;
     }
 
@@ -87,6 +112,10 @@ export function BaseBuilderApp() {
   function handleTip() {
     setTipStatus(null);
     try {
+      if (!isOnBase) {
+        setTipStatus("Сначала переключи сеть на Base.");
+        return;
+      }
       const value = parseEther(tipEth || "0");
       if (value <= BigInt(0)) {
         setTipStatus("Сумма tip должна быть больше 0.");
@@ -95,6 +124,7 @@ export function BaseBuilderApp() {
 
       writeContract({
         address: tipJarAddress as `0x${string}`,
+        chainId: base.id,
         abi: TIPJAR_ABI,
         functionName: "tip",
         args: [tipMessage],
@@ -103,6 +133,16 @@ export function BaseBuilderApp() {
       setTipStatus("Транзакция в TipJar отправляется в сеть Base...");
     } catch {
       setTipStatus("Некорректная сумма tip.");
+    }
+  }
+
+  async function handleSwitchToBase() {
+    setNetworkStatus(null);
+    try {
+      await switchChainAsync({ chainId: base.id });
+      setNetworkStatus("Сеть переключена на Base.");
+    } catch {
+      setNetworkStatus("Не удалось переключить сеть. Подтверди смену сети в кошельке.");
     }
   }
 
@@ -115,6 +155,12 @@ export function BaseBuilderApp() {
 
       <div className="mt-5 grid gap-3 rounded-2xl border border-cyan-300/30 bg-slate-950/50 p-4">
         <p className="text-sm text-cyan-100">Кошелек: <span className="font-bold">{shortAddress}</span></p>
+        <p className="text-sm text-cyan-100">
+          Сеть:{" "}
+          <span className="font-bold">
+            {chainId ? `${chainId}${isOnBase ? " (Base)" : " (wrong network)"}` : "—"}
+          </span>
+        </p>
         <p className="text-sm text-cyan-100">
           Баланс:{" "}
           <span className="font-bold">
@@ -135,13 +181,25 @@ export function BaseBuilderApp() {
             ))}
           </div>
         ) : (
-          <button
-            onClick={() => disconnect()}
-            className="w-fit rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-sm font-bold"
-          >
-            Disconnect
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {!isOnBase ? (
+              <button
+                onClick={handleSwitchToBase}
+                disabled={isSwitchingChain}
+                className="rounded-xl bg-cyan-500/85 px-4 py-2 text-sm font-black disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSwitchingChain ? "Switching..." : "Switch to Base"}
+              </button>
+            ) : null}
+            <button
+              onClick={() => disconnect()}
+              className="w-fit rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-sm font-bold"
+            >
+              Disconnect
+            </button>
+          </div>
         )}
+        {networkStatus ? <p className="text-sm text-cyan-200">{networkStatus}</p> : null}
       </div>
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-fuchsia-300/30 bg-slate-950/50 p-4">
@@ -179,7 +237,7 @@ export function BaseBuilderApp() {
           />
           <button
             onClick={handleTip}
-            disabled={!isConnected || isSending}
+            disabled={!isConnected || isSending || !isOnBase}
             className="rounded-xl bg-emerald-500/85 px-4 py-2 text-sm font-black disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSending ? "Sending..." : "Send tip"}
