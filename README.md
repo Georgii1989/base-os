@@ -3,7 +3,7 @@
 Standard web app for Base App migration:
 - wallet connection with `wagmi`,
 - SIWE sign-in flow (`viem/siwe`),
-- onchain tip transaction to a configurable recipient,
+- onchain tip transaction via the `TipJar` contract,
 - Solidity `TipJar` smart contract + Hardhat deploy flow.
 
 ## Stack
@@ -28,10 +28,9 @@ npm install
 cp .env.example .env.local
 ```
 
-3) Set your tip recipient:
+3) Adjust env if needed (defaults match the deployed TipJar + builder code):
 
 ```env
-NEXT_PUBLIC_TIP_RECIPIENT=0xYourWalletAddressOnBase
 NEXT_PUBLIC_TIPJAR_ADDRESS=0x47ad142c4f04431164737cACD601796932b7357A
 NEXT_PUBLIC_BASE_BUILDER_CODE=YOUR-BUILDER-CODE
 NEXT_PUBLIC_APP_URL=https://base-tips.vercel.app

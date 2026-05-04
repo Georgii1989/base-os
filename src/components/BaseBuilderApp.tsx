@@ -16,7 +16,6 @@ import {
   useWriteContract,
 } from "wagmi";
 
-const DEFAULT_RECIPIENT = "0x1111111111111111111111111111111111111111";
 const DEFAULT_TIPJAR = "0x47ad142c4f04431164737cACD601796932b7357A";
 const TIPJAR_ABI = [
   {
@@ -47,7 +46,6 @@ export function BaseBuilderApp() {
   const [networkStatus, setNetworkStatus] = useState<string | null>(null);
   const autoSwitchTriedRef = useRef(false);
 
-  const recipient = process.env.NEXT_PUBLIC_TIP_RECIPIENT || DEFAULT_RECIPIENT;
   const tipJarAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
   const isOnBase = chainId === base.id;
 
@@ -149,9 +147,6 @@ export function BaseBuilderApp() {
   return (
     <section className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/15 bg-black/45 p-5 text-white shadow-[0_0_50px_rgba(76,29,149,0.45)] backdrop-blur-xl">
       <h1 className="text-3xl font-black text-fuchsia-200 md:text-5xl">Base Tip</h1>
-      <p className="mt-2 text-cyan-100/90">
-        Standard Web App: wagmi + viem + SIWE + onchain tip flow.
-      </p>
 
       <div className="mt-5 grid gap-3 rounded-2xl border border-cyan-300/30 bg-slate-950/50 p-4">
         <p className="text-sm text-cyan-100">Кошелек: <span className="font-bold">{shortAddress}</span></p>
@@ -216,7 +211,6 @@ export function BaseBuilderApp() {
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-emerald-300/30 bg-slate-950/50 p-4">
         <h2 className="text-xl font-black text-emerald-200">Send onchain tip</h2>
-        <p className="text-sm text-emerald-100/90">Recipient: {recipient}</p>
         <p className="text-sm text-emerald-100/90">TipJar: {tipJarAddress}</p>
         <div className="flex flex-wrap items-center gap-2">
           <input
