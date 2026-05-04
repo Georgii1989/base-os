@@ -1,22 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: 'Crazy Vika - Save Georgiy',
   description: 'A Base mini app platformer where Crazy Vika tries to reach Georgiy in the castle.',
   other: {
-    'base:app_id': 'replace-with-your-base-app-id',
+    'base:app_id': '69f884af879b4ae3fa1c7162',
     'fc:miniapp': JSON.stringify({
       version: 'next',
       imageUrl: 'https://crazy-vika-game-npr52quix-georgiys-projects-fe3daf9b.vercel.app/logo.svg',
@@ -40,10 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
