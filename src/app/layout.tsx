@@ -5,6 +5,7 @@ import { Web3Providers } from "@/components/Web3Providers";
 export const metadata: Metadata = {
   title: "Base Tip",
   description: "A standard Base web app with SIWE auth and onchain tipping.",
+  metadataBase: new URL("https://base-tips.vercel.app"),
   other: {
     "base:app_id": "69f884af879b4ae3fa1c7162",
   },
