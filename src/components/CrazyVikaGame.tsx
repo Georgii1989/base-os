@@ -7,14 +7,15 @@ type GameStatus = 'idle' | 'playing' | 'won' | 'lost';
 export function CrazyVikaGame() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const gameRef = useRef<import('phaser').Game | null>(null);
+  const controlsRef = useRef({ left: false, right: false, jump: false });
   const [status, setStatus] = useState<GameStatus>('idle');
   const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
     if (status !== 'playing' || !containerRef.current || gameRef.current) return;
 
-    const WIDTH = 960;
-    const HEIGHT = 540;
+    const WIDTH = 360;
+    const HEIGHT = 640;
     let cancelled = false;
 
     (async () => {
@@ -38,8 +39,8 @@ export function CrazyVikaGame() {
           gfx.clear();
 
           gfx.fillStyle(0x5eead4, 1);
-          gfx.fillRect(0, 0, 300, 22);
-          gfx.generateTexture('platform', 300, 22);
+          gfx.fillRect(0, 0, 130, 18);
+          gfx.generateTexture('platform', 130, 18);
           gfx.clear();
 
           gfx.fillStyle(0x22d3ee, 1);
@@ -59,48 +60,47 @@ export function CrazyVikaGame() {
           this.add
             .text(20, 16, 'Crazy Vika - Save Georgiy', {
               color: '#e9d5ff',
-              fontSize: '24px',
+              fontSize: '20px',
               fontStyle: 'bold',
             })
             .setScrollFactor(0);
           this.add
-            .text(20, 48, '← → move | ↑ jump | Reach the castle', {
+            .text(20, 44, 'Use buttons below. Reach Georgiy!', {
               color: '#93c5fd',
-              fontSize: '15px',
+              fontSize: '14px',
             })
             .setScrollFactor(0);
 
           const platforms = this.physics.add.staticGroup();
-          platforms.create(480, 535, 'platform').refreshBody();
-          platforms.create(220, 420, 'platform');
-          platforms.create(560, 350, 'platform');
-          platforms.create(800, 280, 'platform');
-          platforms.create(650, 470, 'platform');
-          platforms.create(360, 270, 'platform');
+          platforms.create(180, 630, 'platform').setScale(3.0, 1).refreshBody();
+          platforms.create(118, 520, 'platform');
+          platforms.create(298, 470, 'platform');
+          platforms.create(180, 392, 'platform');
+          platforms.create(64, 308, 'platform');
+          platforms.create(255, 240, 'platform');
 
-          this.vika = this.physics.add.sprite(80, 480, 'vika');
+          this.vika = this.physics.add.sprite(36, 566, 'vika');
           this.vika.setCollideWorldBounds(true);
           this.vika.setBounce(0.1);
           this.vika.setDragX(800);
-          this.vika.setMaxVelocity(260, 500);
+          this.vika.setMaxVelocity(220, 500);
 
           this.physics.add.collider(this.vika, platforms);
 
           const spikes = this.physics.add.staticGroup();
-          spikes.create(300, 518, 'spike');
-          spikes.create(468, 518, 'spike');
-          spikes.create(745, 253, 'spike');
+          spikes.create(332, 612, 'spike');
+          spikes.create(222, 612, 'spike');
 
           this.physics.add.overlap(this.vika, spikes, () => {
             setStatus('lost');
           });
 
-          const castle = this.physics.add.staticSprite(905, 200, 'castle');
-          this.add.rectangle(905, 118, 64, 38, 0x111827, 0.95);
+          const castle = this.physics.add.staticSprite(320, 146, 'castle');
+          this.add.rectangle(320, 72, 64, 34, 0x111827, 0.95);
           this.add
-            .text(905, 118, 'Georgiy', {
+            .text(320, 72, 'Georgiy', {
               color: '#fde047',
-              fontSize: '15px',
+              fontSize: '13px',
               fontStyle: 'bold',
             })
             .setOrigin(0.5);
@@ -117,17 +117,22 @@ export function CrazyVikaGame() {
           const speed = 220;
           const body = this.vika.body as Phaser.Physics.Arcade.Body | null;
           if (!body) return;
+          const control = controlsRef.current;
+          const leftPressed = this.cursors.left?.isDown || control.left;
+          const rightPressed = this.cursors.right?.isDown || control.right;
+          const jumpPressed = this.cursors.up?.isDown || control.jump;
 
-          if (this.cursors.left?.isDown) {
+          if (leftPressed) {
             this.vika.setVelocityX(-speed);
-          } else if (this.cursors.right?.isDown) {
+          } else if (rightPressed) {
             this.vika.setVelocityX(speed);
           } else {
             this.vika.setVelocityX(0);
           }
 
-          if (this.cursors.up?.isDown && body.blocked.down) {
+          if (jumpPressed && body.blocked.down) {
             this.vika.setVelocityY(-430);
+            controlsRef.current.jump = false;
           }
 
           if (this.vika.y > HEIGHT + 20) {
@@ -192,7 +197,47 @@ export function CrazyVikaGame() {
           <p className="text-xs uppercase tracking-[0.25em] text-cyan-200/75">Attempts: {attempts}</p>
         </div>
       ) : (
-        <div ref={containerRef} className="overflow-hidden rounded-2xl border border-cyan-300/40" />
+        <div className="relative">
+          <div ref={containerRef} className="overflow-hidden rounded-2xl border border-cyan-300/40" />
+          <div className="mt-3 flex items-center justify-center gap-3">
+            <button
+              onPointerDown={() => {
+                controlsRef.current.left = true;
+              }}
+              onPointerUp={() => {
+                controlsRef.current.left = false;
+              }}
+              onPointerLeave={() => {
+                controlsRef.current.left = false;
+              }}
+              className="rounded-lg border border-cyan-300/40 bg-cyan-400/20 px-4 py-2 text-sm font-bold text-cyan-100 active:scale-95"
+            >
+              Left
+            </button>
+            <button
+              onPointerDown={() => {
+                controlsRef.current.jump = true;
+              }}
+              className="rounded-lg border border-fuchsia-300/40 bg-fuchsia-400/20 px-4 py-2 text-sm font-bold text-fuchsia-100 active:scale-95"
+            >
+              Jump
+            </button>
+            <button
+              onPointerDown={() => {
+                controlsRef.current.right = true;
+              }}
+              onPointerUp={() => {
+                controlsRef.current.right = false;
+              }}
+              onPointerLeave={() => {
+                controlsRef.current.right = false;
+              }}
+              className="rounded-lg border border-cyan-300/40 bg-cyan-400/20 px-4 py-2 text-sm font-bold text-cyan-100 active:scale-95"
+            >
+              Right
+            </button>
+          </div>
+        </div>
       )}
     </section>
   );
