@@ -489,15 +489,15 @@ export function BaseBuilderApp() {
         <button
           type="button"
           onClick={() => setActivityExpanded((prev) => !prev)}
-          className="flex items-center justify-between gap-3 text-left"
+          className="flex w-full items-center justify-between gap-3 rounded-xl border border-sky-200/30 bg-sky-500/10 px-3 py-2 text-left"
         >
           <div>
             <h2 className="text-xl font-black text-sky-200">Live tip activity</h2>
-            <p className="text-sm text-sky-100/90">Latest onchain tip events from TipJar.</p>
+            <p className="text-sm text-sky-100/90">
+              Latest onchain tip events from TipJar. {activityExpanded ? "Click to collapse." : "Click to expand."}
+            </p>
           </div>
-          <span className="rounded-lg border border-sky-200/30 bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-200">
-            {activityExpanded ? "▲ Collapse" : "▼ Expand"}
-          </span>
+          <span className="text-lg font-black text-sky-200">{activityExpanded ? "▲" : "▼"}</span>
         </button>
 
         {activityExpanded ? (

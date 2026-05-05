@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseAbiItem, zeroAddress } from "viem";
-import { usePublicClient } from "wagmi";
+import { useAccount, usePublicClient } from "wagmi";
 
 type HolderRecord = {
   address: `0x${string}`;
@@ -13,8 +13,10 @@ type HolderRecord = {
 
 /** Max blocks per `getLogs` request — keeps public RPCs happier on long ranges. */
 const CHUNK_SIZE = BigInt(2500);
+const OWNER_ADDRESS = "0x8655520b4b19187038ac9a4f560da0979cc1e95c";
 
 export function SoulboundHoldersList() {
+  const { address } = useAccount();
   const publicClient = usePublicClient();
   const sbtAddress = process.env.NEXT_PUBLIC_SBT_ADDRESS as `0x${string}` | undefined;
   const deployBlockEnv = process.env.NEXT_PUBLIC_SBT_FROM_BLOCK;
@@ -142,6 +144,8 @@ export function SoulboundHoldersList() {
     });
   }, [holders]);
 
+  const isOwner = address ? address.toLowerCase() === OWNER_ADDRESS : false;
+
   function downloadCsv() {
     const header = "address,mint_tx_hash,block_number";
     const lines = sortedHolders.map(
@@ -198,13 +202,18 @@ export function SoulboundHoldersList() {
           <button
             type="button"
             onClick={downloadCsv}
-            disabled={sortedHolders.length === 0}
+            disabled={!isOwner || sortedHolders.length === 0}
             className="rounded-lg border border-fuchsia-200/40 bg-fuchsia-500/20 px-3 py-1.5 text-xs font-bold text-fuchsia-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Download CSV
           </button>
         </div>
       </div>
+      {!isOwner ? (
+        <p className="text-xs text-amber-200/95">
+          CSV export is restricted to the contract owner wallet.
+        </p>
+      ) : null}
 
       {historyHint ? <p className="text-sm text-amber-200/95">{historyHint}</p> : null}
       {error ? <p className="text-sm text-rose-300">{error}</p> : null}
