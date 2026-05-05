@@ -67,19 +67,21 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
           profileFromBlockEnv && /^[0-9]+$/.test(profileFromBlockEnv)
             ? BigInt(profileFromBlockEnv)
             : null;
-        const fromBlock =
+        const fromBlockRaw =
           configuredFromBlock ??
           (latestBlock > DEFAULT_PROFILE_LOOKBACK
             ? latestBlock - DEFAULT_PROFILE_LOOKBACK
             : BigInt(0));
+        const fromBlock = fromBlockRaw > latestBlock ? BigInt(0) : fromBlockRaw;
 
         const logsBySource = await Promise.allSettled(
           sourceContracts.map((contract) => fetchLogsChunked(contract, fromBlock, latestBlock))
         );
-        const logs = logsBySource
-          .filter((result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof fetchLogsChunked>>> =>
+        const fulfilledResults = logsBySource.filter(
+          (result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof fetchLogsChunked>>> =>
             result.status === "fulfilled"
-          )
+        );
+        const logs = fulfilledResults
           .flatMap((result) => result.value);
 
         const hasFailures = logsBySource.some((result) => result.status === "rejected");
@@ -102,11 +104,13 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
           .sort((a, b) => (a.blockNumber === b.blockNumber ? 0 : a.blockNumber > b.blockNumber ? -1 : 1));
 
         setTips(mapped.slice(0, 20));
-        setError(hasFailures ? "Some sources failed to load, showing partial history." : null);
+        setError(fulfilledResults.length === 0 ? "Unable to load profile tips." : null);
         setHistoryHint(
-          configuredFromBlock
-            ? null
-            : "Showing tips from the last ~100k blocks. Set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK for full history."
+          hasFailures
+            ? "Some sources are temporarily unavailable, showing available history."
+            : configuredFromBlock
+              ? null
+              : "Showing tips from the last ~100k blocks. Set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK for full history."
         );
       } catch {
         if (!cancelled) {
