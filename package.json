@@ -9,7 +9,8 @@
     "lint": "eslint",
     "contract:compile": "node scripts/compile-tipjar.cjs",
     "contract:compile:hardhat": "hardhat compile",
-    "contract:deploy:base": "node scripts/deploy-tipjar.js"
+    "contract:deploy:base": "node scripts/deploy-tipjar.js",
+    "contract:deploy:soulbound": "node scripts/deploy-soulbound-system.js"
   },
   "dependencies": {
     "@base-org/account": "^2.5.5",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.2",
+    "@openzeppelin/contracts": "^5.0.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

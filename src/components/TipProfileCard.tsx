@@ -14,31 +14,66 @@ type TipEntry = {
 };
 
 const DEFAULT_TIPJAR = "0x47ad142c4f04431164737cACD601796932b7357A";
+const DEFAULT_PROFILE_LOOKBACK = BigInt(100_000);
+const LOGS_CHUNK_SIZE = BigInt(2_500);
 
 export function TipProfileCard({ address }: { address: `0x${string}` }) {
   const publicClient = usePublicClient();
   const [tips, setTips] = useState<TipEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [historyHint, setHistoryHint] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const tipJarAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
+  const tipSourceAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
+  const profileFromBlockEnv = process.env.NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK;
+  const sourceContracts = useMemo(() => {
+    const normalized = new Set<string>([
+      tipSourceAddress.toLowerCase(),
+      DEFAULT_TIPJAR.toLowerCase(),
+    ]);
+    return Array.from(normalized) as `0x${string}`[];
+  }, [tipSourceAddress]);
 
   useEffect(() => {
     if (!publicClient) return;
     let cancelled = false;
     const tipEvent = parseAbiItem("event TipReceived(address indexed from, uint256 amount, string message)");
 
+    async function fetchLogsChunked(contractAddress: `0x${string}`, fromBlock: bigint, toBlock: bigint) {
+      const allLogs = [];
+      let start = fromBlock;
+      while (start <= toBlock) {
+        const end =
+          start + LOGS_CHUNK_SIZE - BigInt(1) > toBlock
+            ? toBlock
+            : start + LOGS_CHUNK_SIZE - BigInt(1);
+        const chunk = await publicClient.getLogs({
+          address: contractAddress,
+          event: tipEvent,
+          args: { from: address },
+          fromBlock: start,
+          toBlock: end,
+        });
+        allLogs.push(...chunk);
+        start = end + BigInt(1);
+      }
+      return allLogs;
+    }
+
     async function loadProfileTips() {
       setIsLoading(true);
       try {
         const latestBlock = await publicClient.getBlockNumber();
-        const fromBlock = latestBlock > BigInt(8000) ? latestBlock - BigInt(8000) : BigInt(0);
-        const logs = await publicClient.getLogs({
-          address: tipJarAddress as `0x${string}`,
-          event: tipEvent,
-          args: { from: address },
-          fromBlock,
-          toBlock: latestBlock,
-        });
+        const configuredFromBlock = profileFromBlockEnv ? BigInt(profileFromBlockEnv) : null;
+        const fromBlock =
+          configuredFromBlock ??
+          (latestBlock > DEFAULT_PROFILE_LOOKBACK
+            ? latestBlock - DEFAULT_PROFILE_LOOKBACK
+            : BigInt(0));
+
+        const logsBySource = await Promise.all(
+          sourceContracts.map((contract) => fetchLogsChunked(contract, fromBlock, latestBlock))
+        );
+        const logs = logsBySource.flat();
 
         if (cancelled) return;
 
@@ -59,6 +94,11 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
 
         setTips(mapped.slice(0, 20));
         setError(null);
+        setHistoryHint(
+          configuredFromBlock
+            ? null
+            : "Showing tips from the last ~100k blocks. Set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK for full history."
+        );
       } catch {
         if (!cancelled) {
           setError("Unable to load profile tips.");
@@ -74,7 +114,7 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
     return () => {
       cancelled = true;
     };
-  }, [publicClient, address, tipJarAddress]);
+  }, [publicClient, address, profileFromBlockEnv, sourceContracts]);
 
   const totalEth = useMemo(
     () => tips.reduce((sum, item) => sum + Number(item.amountEth), 0).toFixed(6),
@@ -116,6 +156,7 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
         <h2 className="text-lg font-black text-sky-200">Recent tips</h2>
         {isLoading ? <p className="text-sm text-sky-100/90">Loading onchain tips...</p> : null}
         {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+        {historyHint ? <p className="text-sm text-amber-200/95">{historyHint}</p> : null}
         {!isLoading && !error && tips.length === 0 ? (
           <p className="text-sm text-sky-100/90">No tip events found for this address yet.</p>
         ) : null}

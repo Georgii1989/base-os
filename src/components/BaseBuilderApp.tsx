@@ -16,6 +16,7 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
+import { SoulboundHoldersList } from "@/components/SoulboundHoldersList";
 
 const DEFAULT_TIPJAR = "0x47ad142c4f04431164737cACD601796932b7357A";
 const TIPJAR_ABI = [
@@ -79,6 +80,7 @@ export function BaseBuilderApp() {
   const lastScannedBlockRef = useRef<bigint | null>(null);
 
   const tipJarAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
+  const sbtAddress = process.env.NEXT_PUBLIC_SBT_ADDRESS;
   const isOnBase = chainId === base.id;
   const tipPresets = ["0.0005", "0.0010", "0.0050"];
   const messagePresets = ["gm base", "LFG", "great build", "ship it", "based app"];
@@ -305,12 +307,24 @@ export function BaseBuilderApp() {
           </span>
         </p>
         {address ? (
-          <Link
-            href={`/${address}`}
-            className="w-fit rounded-lg border border-cyan-300/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-200"
-          >
-            Open my profile
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/${address}`}
+              className="w-fit rounded-lg border border-cyan-300/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-200"
+            >
+              Open my profile
+            </Link>
+            {sbtAddress ? (
+              <a
+                href={`https://basescan.org/token/${sbtAddress}?a=${address}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-fit rounded-lg border border-violet-300/35 bg-violet-500/10 px-3 py-1.5 text-xs font-bold text-violet-200"
+              >
+                View my badge
+              </a>
+            ) : null}
+          </div>
         ) : null}
 
         {!isConnected ? (
@@ -499,6 +513,10 @@ export function BaseBuilderApp() {
           {badgeUnlocked ? "🏅 Base Supporter unlocked" : "🔒 Base Supporter locked"}
         </div>
       </div>
+
+      <SoulboundHoldersList
+        key={`${process.env.NEXT_PUBLIC_SBT_ADDRESS ?? ""}-${process.env.NEXT_PUBLIC_SBT_FROM_BLOCK ?? ""}`}
+      />
     </section>
   );
 }
