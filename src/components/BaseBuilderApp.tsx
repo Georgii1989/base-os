@@ -81,6 +81,7 @@ export function BaseBuilderApp() {
   } | null>(null);
   const [tipActivity, setTipActivity] = useState<TipActivityItem[]>([]);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [activityExpanded, setActivityExpanded] = useState(false);
   const [networkStatus, setNetworkStatus] = useState<string | null>(null);
   const autoSwitchTriedRef = useRef(false);
   const lastScannedBlockRef = useRef<bigint | null>(null);
@@ -474,32 +475,48 @@ export function BaseBuilderApp() {
       </div>
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-sky-300/30 bg-slate-950/50 p-4">
-        <h2 className="text-xl font-black text-sky-200">Live tip activity</h2>
-        <p className="text-sm text-sky-100/90">Latest onchain tip events from TipJar.</p>
-        {activityError ? <p className="text-sm text-rose-300">{activityError}</p> : null}
-        {tipActivity.length === 0 ? (
-          <p className="text-sm text-sky-100/90">No events yet, or they are still loading.</p>
-        ) : (
-          <div className="grid gap-2">
-            {tipActivity.map((item) => (
-              <div key={item.id} className="rounded-xl border border-sky-200/20 bg-sky-950/25 p-3 text-sm">
-                <p className="text-sky-100">
-                  <span className="font-bold text-sky-200">{item.amount} ETH</span> from{" "}
-                  <span className="font-bold">{item.from.slice(0, 6)}...{item.from.slice(-4)}</span>
-                </p>
-                <p className="text-sky-100/90">{item.message}</p>
-                <a
-                  href={`https://basescan.org/tx/${item.txHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-bold text-cyan-300 underline"
-                >
-                  {item.txHash.slice(0, 10)}...{item.txHash.slice(-8)}
-                </a>
-              </div>
-            ))}
+        <button
+          type="button"
+          onClick={() => setActivityExpanded((prev) => !prev)}
+          className="flex w-full items-center justify-between gap-3 rounded-xl border border-sky-200/30 bg-sky-500/10 px-3 py-2 text-left"
+        >
+          <div>
+            <h2 className="text-xl font-black text-sky-200">Live tip activity</h2>
+            <p className="text-sm text-sky-100/90">
+              Latest onchain tip events from TipJar. {activityExpanded ? "Click to collapse." : "Click to expand."}
+            </p>
           </div>
-        )}
+          <span className="text-lg font-black text-sky-200">{activityExpanded ? "▲" : "▼"}</span>
+        </button>
+
+        {activityExpanded ? (
+          <>
+            {activityError ? <p className="text-sm text-rose-300">{activityError}</p> : null}
+            {tipActivity.length === 0 ? (
+              <p className="text-sm text-sky-100/90">No events yet, or they are still loading.</p>
+            ) : (
+              <div className="grid gap-2">
+                {tipActivity.map((item) => (
+                  <div key={item.id} className="rounded-xl border border-sky-200/20 bg-sky-950/25 p-3 text-sm">
+                    <p className="text-sky-100">
+                      <span className="font-bold text-sky-200">{item.amount} ETH</span> from{" "}
+                      <span className="font-bold">{item.from.slice(0, 6)}...{item.from.slice(-4)}</span>
+                    </p>
+                    <p className="text-sky-100/90">{item.message}</p>
+                    <a
+                      href={`https://basescan.org/tx/${item.txHash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-bold text-cyan-300 underline"
+                    >
+                      {item.txHash.slice(0, 10)}...{item.txHash.slice(-8)}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : null}
       </div>
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-amber-300/30 bg-slate-950/50 p-4">
