@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseAbiItem, zeroAddress } from "viem";
 import { usePublicClient } from "wagmi";
@@ -220,13 +219,8 @@ export function SoulboundHoldersList() {
           <ul className="divide-y divide-violet-200/10">
             {sortedHolders.map((h) => (
               <li key={h.address} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <Link
-                    href={`/${h.address}`}
-                    className="font-mono text-xs font-bold text-cyan-300 underline decoration-cyan-500/40 hover:text-cyan-200"
-                  >
-                    {h.address}
-                  </Link>
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="font-mono text-xs font-bold text-cyan-300">{h.address}</span>
                   <span className="text-xs text-violet-200/80">
                     block {h.blockNumber.toString()}
                   </span>

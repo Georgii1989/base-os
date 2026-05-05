@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { createSiweMessage, generateSiweNonce } from "viem/siwe";
 import { formatEther, parseAbiItem, parseEther } from "viem";
 import { base } from "wagmi/chains";
@@ -319,25 +318,15 @@ export function BaseBuilderApp() {
             {balance ? `${Number(formatEther(balance.value)).toFixed(4)} ETH` : "—"}
           </span>
         </p>
-        {address ? (
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/${address}`}
-              className="w-fit rounded-lg border border-cyan-300/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-200"
-            >
-              Open my profile
-            </Link>
-            {sbtAddress ? (
-              <a
-                href={`https://basescan.org/token/${sbtAddress}?a=${address}`}
-                target="_blank"
-                rel="noreferrer"
-                className="w-fit rounded-lg border border-violet-300/35 bg-violet-500/10 px-3 py-1.5 text-xs font-bold text-violet-200"
-              >
-                View my badge
-              </a>
-            ) : null}
-          </div>
+        {address && sbtAddress ? (
+          <a
+            href={`https://basescan.org/token/${sbtAddress}?a=${address}`}
+            target="_blank"
+            rel="noreferrer"
+            className="w-fit rounded-lg border border-violet-300/35 bg-violet-500/10 px-3 py-1.5 text-xs font-bold text-violet-200"
+          >
+            View my badge
+          </a>
         ) : null}
 
         {!isConnected ? (
