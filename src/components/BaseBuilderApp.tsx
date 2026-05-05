@@ -11,6 +11,7 @@ import {
   useConnect,
   useDisconnect,
   usePublicClient,
+  useReadContract,
   useSignMessage,
   useSwitchChain,
   useWaitForTransactionReceipt,
@@ -36,6 +37,16 @@ const TIPJAR_ABI = [
     stateMutability: "payable",
     inputs: [{ name: "message", type: "string", internalType: "string" }],
     outputs: [],
+  },
+] as const;
+
+const SBT_ABI = [
+  {
+    type: "function",
+    name: "hasBadge",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "bool", internalType: "bool" }],
   },
 ] as const;
 
@@ -71,19 +82,26 @@ export function BaseBuilderApp() {
   } | null>(null);
   const [tipActivity, setTipActivity] = useState<TipActivityItem[]>([]);
   const [activityError, setActivityError] = useState<string | null>(null);
-  const [storedBadgeUnlocked] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("base-tip-badge") === "unlocked";
-  });
   const [networkStatus, setNetworkStatus] = useState<string | null>(null);
   const autoSwitchTriedRef = useRef(false);
   const lastScannedBlockRef = useRef<bigint | null>(null);
 
   const tipJarAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
   const sbtAddress = process.env.NEXT_PUBLIC_SBT_ADDRESS;
+  const hasValidSbtAddress =
+    typeof sbtAddress === "string" && /^0x[a-fA-F0-9]{40}$/.test(sbtAddress);
   const isOnBase = chainId === base.id;
   const tipPresets = ["0.0005", "0.0010", "0.0050"];
   const messagePresets = ["gm base", "LFG", "great build", "ship it", "based app"];
+  const { data: hasBadgeOnchain } = useReadContract({
+    address: hasValidSbtAddress ? (sbtAddress as `0x${string}`) : undefined,
+    abi: SBT_ABI,
+    functionName: "hasBadge",
+    args: address ? [address] : undefined,
+    query: {
+      enabled: Boolean(address && hasValidSbtAddress),
+    },
+  });
 
   const shortAddress = useMemo(() => {
     if (!address) return "not connected";
@@ -104,11 +122,6 @@ export function BaseBuilderApp() {
         setNetworkStatus("Auto-switch failed. Click Switch to Base and approve in your wallet.")
       );
   }, [isConnected, isOnBase, isSwitchingChain, switchChainAsync]);
-
-  useEffect(() => {
-    if (!txConfirmed || typeof window === "undefined") return;
-    window.localStorage.setItem("base-tip-badge", "unlocked");
-  }, [txConfirmed]);
 
   useEffect(() => {
     if (!publicClient) return;
@@ -286,7 +299,7 @@ export function BaseBuilderApp() {
     }
   }
 
-  const badgeUnlocked = storedBadgeUnlocked || txConfirmed;
+  const badgeUnlocked = Boolean(hasBadgeOnchain) || txConfirmed;
 
   return (
     <section className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/15 bg-black/45 p-5 text-white shadow-[0_0_50px_rgba(76,29,149,0.45)] backdrop-blur-xl">
