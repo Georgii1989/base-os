@@ -63,26 +63,17 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
       setIsLoading(true);
       try {
         const latestBlock = await publicClient.getBlockNumber();
-        const configuredFromBlock =
-          profileFromBlockEnv && /^[0-9]+$/.test(profileFromBlockEnv)
-            ? BigInt(profileFromBlockEnv)
-            : null;
+        const configuredFromBlock = profileFromBlockEnv ? BigInt(profileFromBlockEnv) : null;
         const fromBlock =
           configuredFromBlock ??
           (latestBlock > DEFAULT_PROFILE_LOOKBACK
             ? latestBlock - DEFAULT_PROFILE_LOOKBACK
             : BigInt(0));
 
-        const logsBySource = await Promise.allSettled(
+        const logsBySource = await Promise.all(
           sourceContracts.map((contract) => fetchLogsChunked(contract, fromBlock, latestBlock))
         );
-        const logs = logsBySource
-          .filter((result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof fetchLogsChunked>>> =>
-            result.status === "fulfilled"
-          )
-          .flatMap((result) => result.value);
-
-        const hasFailures = logsBySource.some((result) => result.status === "rejected");
+        const logs = logsBySource.flat();
 
         if (cancelled) return;
 
@@ -102,7 +93,7 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
           .sort((a, b) => (a.blockNumber === b.blockNumber ? 0 : a.blockNumber > b.blockNumber ? -1 : 1));
 
         setTips(mapped.slice(0, 20));
-        setError(hasFailures ? "Some sources failed to load, showing partial history." : null);
+        setError(null);
         setHistoryHint(
           configuredFromBlock
             ? null
