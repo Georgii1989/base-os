@@ -390,18 +390,30 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
   return (
     <article className="rounded-3xl border border-white/15 bg-slate-950/55 p-4">
       <div className="flex items-start gap-3">
-        <div className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br ${project.accent}`}>
+        <a
+          href={project.website}
+          target="_blank"
+          rel="noreferrer"
+          className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${project.accent} transition hover:scale-105`}
+        >
           <img
             src={project.iconUrl}
             alt={`${project.name} icon`}
             className="h-7 w-7 rounded-lg"
             referrerPolicy="no-referrer"
           />
-        </div>
+        </a>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h3 className="font-black text-white">{project.name}</h3>
+              <a
+                href={project.website}
+                target="_blank"
+                rel="noreferrer"
+                className="font-black text-white underline-offset-4 hover:text-cyan-200 hover:underline"
+              >
+                {project.name}
+              </a>
               <p className="text-xs font-bold text-cyan-200">{project.symbol}</p>
             </div>
             <span

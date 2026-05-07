@@ -124,6 +124,7 @@ export const radarProjects: RadarProject[] = [
     stage: "Growing",
     risk: "Medium",
     website: "https://0xppl.com",
+    x: "https://x.com/0xppl_",
     iconUrl: favicon("0xppl.com"),
     accent: "from-purple-500 to-blue-300",
   },
