@@ -279,12 +279,12 @@ function RadarPanel() {
 
       <aside className="grid content-start gap-4">
         <SidePanel
-          title="Weekly Picks"
-          items={["Aerodrome", "Virtuals", "Moonwell", "Aave"]}
+          title="Bridge / Swap Picks"
+          items={["Base Bridge", "Superbridge", "Relay", "Uniswap"]}
         />
         <SidePanel
-          title="Recently Added"
-          items={["AITV", "AIBased", "AI Agent Arena", "AgentiPy"]}
+          title="Lending Picks"
+          items={["Aave", "Moonwell", "Morpho", "Seamless Protocol"]}
         />
       </aside>
     </div>
@@ -498,15 +498,41 @@ function SidePanel({ title, items }: { title: string; items: string[] }) {
     <div className="rounded-3xl border border-white/15 bg-slate-950/55 p-4">
       <div className="flex items-center justify-between">
         <h2 className="font-black text-white">{title}</h2>
-        <span className="text-xs font-bold text-cyan-200">View all</span>
+        <a
+          href="https://www.base.org/ecosystem"
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs font-bold text-cyan-200 underline decoration-cyan-500/40"
+        >
+          View all
+        </a>
       </div>
       <div className="mt-3 grid gap-2">
-        {items.map((item, index) => (
-          <div key={item} className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2">
-            <span className="text-sm font-bold text-slate-100">{item}</span>
-            <span className="text-xs text-cyan-200">{String(index + 1).padStart(2, "0")}</span>
-          </div>
-        ))}
+        {items.map((item, index) => {
+          const project = radarProjects.find((p) => p.name === item);
+          const content = (
+            <>
+              <span className="text-sm font-bold text-slate-100">{item}</span>
+              <span className="text-xs text-cyan-200">{String(index + 1).padStart(2, "0")}</span>
+            </>
+          );
+
+          return project ? (
+            <a
+              key={item}
+              href={project.website}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 transition hover:bg-cyan-500/10"
+            >
+              {content}
+            </a>
+          ) : (
+            <div key={item} className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2">
+              {content}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
