@@ -281,23 +281,28 @@ function Sparkline({ values, positive }: { values?: number[]; positive: boolean 
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
-  const points = values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * 100;
-      const y = 28 - ((value - min) / range) * 24;
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(" ");
+  const points = values.map((value, index) => ({
+    x: (index / (values.length - 1)) * 100,
+    y: 28 - ((value - min) / range) * 24,
+  }));
+  const path = points.reduce((d, point, index) => {
+    if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+
+    const prev = points[index - 1];
+    const controlX1 = prev.x + (point.x - prev.x) / 2;
+    const controlX2 = point.x - (point.x - prev.x) / 2;
+    return `${d} C ${controlX1.toFixed(2)} ${prev.y.toFixed(2)}, ${controlX2.toFixed(2)} ${point.y.toFixed(2)}, ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+  }, "");
 
   return (
     <svg viewBox="0 0 100 32" className="h-8 w-full overflow-visible rounded-xl bg-white/5">
-      <polyline
+      <path
+        d={path}
         fill="none"
         stroke={positive ? "#34d399" : "#fb7185"}
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="3"
-        points={points}
       />
     </svg>
   );
