@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
     "contract:compile": "node scripts/compile-tipjar.cjs",
     "contract:compile:hardhat": "hardhat compile",
     "contract:deploy:base": "node scripts/deploy-tipjar.js",
@@ -36,6 +37,7 @@
     "hardhat": "^2.28.6",
     "solc": "^0.8.24",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

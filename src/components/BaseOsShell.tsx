@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useMemo, useRef, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useAccount } from "wagmi";
 import { BaseBuilderApp } from "@/components/BaseBuilderApp";
+import { GuardPanel } from "@/components/GuardPanel";
+import { WalletCardPanel } from "@/components/WalletCardPanel";
 import { radarProjects, type RadarProject } from "@/lib/radarProjects";
 
 type TabId = "home" | "tip" | "radar" | "guard" | "wallet";
@@ -29,7 +36,40 @@ type RadarMarketData = {
 
 export function BaseOsShell() {
   const [activeTab, setActiveTab] = useState<TabId>("tip");
+  const { address } = useAccount();
   const activeMeta = useMemo(() => tabs.find((tab) => tab.id === activeTab), [activeTab]);
+  const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const activeIndex = tabs.findIndex((tab) => tab.id === activeTab);
+
+  function focusTabAt(rawIndex: number) {
+    const len = tabs.length;
+    const next = ((rawIndex % len) + len) % len;
+    const id = tabs[next].id;
+    setActiveTab(id);
+    requestAnimationFrame(() => {
+      tabButtonRefs.current[next]?.focus();
+    });
+  }
+
+  function handleTabKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      focusTabAt(activeIndex + 1);
+    }
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      focusTabAt(activeIndex - 1);
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      focusTabAt(0);
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      focusTabAt(tabs.length - 1);
+    }
+  }
 
   return (
     <section className="relative z-10 w-full max-w-7xl rounded-3xl border border-white/15 bg-black/35 p-4 text-white shadow-[0_0_60px_rgba(76,29,149,0.45)] backdrop-blur-xl md:p-6">
@@ -49,11 +89,24 @@ export function BaseOsShell() {
         </div>
       </header>
 
-      <nav className="mt-4 flex flex-wrap gap-2">
-        {tabs.map((tab) => (
+      <nav
+        role="tablist"
+        aria-label="Base OS modules"
+        className="mt-4 flex flex-wrap gap-2"
+        onKeyDown={handleTabKeyDown}
+      >
+        {tabs.map((tab, index) => (
           <button
             key={tab.id}
+            ref={(element) => {
+              tabButtonRefs.current[index] = element;
+            }}
+            id={`base-os-tab-${tab.id}`}
+            role="tab"
             type="button"
+            aria-selected={activeTab === tab.id}
+            aria-controls={`base-os-panel-${tab.id}`}
+            tabIndex={activeTab === tab.id ? 0 : -1}
             onClick={() => setActiveTab(tab.id)}
             className={`rounded-2xl border px-4 py-2 text-left transition ${
               activeTab === tab.id
@@ -67,22 +120,44 @@ export function BaseOsShell() {
         ))}
       </nav>
 
-      <div className="mt-5">
-        {activeTab === "home" ? <HomePanel setActiveTab={setActiveTab} /> : null}
+      <div
+        id={`base-os-panel-${activeTab}`}
+        role="tabpanel"
+        aria-labelledby={`base-os-tab-${activeTab}`}
+        tabIndex={0}
+        className="mt-5 outline-none"
+      >
+        {activeTab === "home" ? <HomePanel connectedAddress={address} setActiveTab={setActiveTab} /> : null}
         {activeTab === "tip" ? (
-          <div className="flex justify-center">
-            <BaseBuilderApp />
+          <div className="flex flex-col items-center gap-4">
+            {address ? (
+              <Link
+                href={`/${address}`}
+                className="text-sm font-bold text-fuchsia-200 underline decoration-fuchsia-500/40 underline-offset-4 hover:text-fuchsia-100"
+              >
+                Open your tip profile
+              </Link>
+            ) : null}
+            <div className="flex justify-center">
+              <BaseBuilderApp />
+            </div>
           </div>
         ) : null}
         {activeTab === "radar" ? <RadarPanel /> : null}
-        {activeTab === "guard" ? <ComingSoonPanel title="Allowance Guard" /> : null}
-        {activeTab === "wallet" ? <ComingSoonPanel title="Wallet Card" /> : null}
+        {activeTab === "guard" ? <GuardPanel /> : null}
+        {activeTab === "wallet" ? <WalletCardPanel /> : null}
       </div>
     </section>
   );
 }
 
-function HomePanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+function HomePanel({
+  setActiveTab,
+  connectedAddress,
+}: {
+  setActiveTab: (tab: TabId) => void;
+  connectedAddress?: `0x${string}`;
+}) {
   const cards: { tab: TabId; title: string; text: string; cta: string }[] = [
     {
       tab: "tip",
@@ -93,39 +168,80 @@ function HomePanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
     {
       tab: "radar",
       title: "Project Radar",
-      text: "Discover useful Base projects with curated signals and safety context.",
+      text: "Curated Base projects with links, risk tags, and live quotes (DexScreener, DefiLlama, optional CMC).",
       cta: "Explore Radar",
     },
     {
       tab: "guard",
       title: "Allowance Guard",
-      text: "A future safety module for checking risky approvals and unlimited permits.",
-      cta: "Preview Guard",
+      text: "Read ERC-20 allowances on Base and jump to revoke.cash for bulk cleanup.",
+      cta: "Open Guard",
     },
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {cards.map((card) => (
-        <button
-          key={card.tab}
-          type="button"
-          onClick={() => setActiveTab(card.tab)}
-          className="rounded-3xl border border-white/15 bg-slate-950/50 p-5 text-left transition hover:border-cyan-200/50 hover:bg-cyan-500/10"
-        >
-          <h2 className="text-xl font-black text-cyan-100">{card.title}</h2>
-          <p className="mt-2 text-sm text-slate-200/80">{card.text}</p>
-          <p className="mt-5 text-sm font-black text-fuchsia-200">{card.cta}</p>
-        </button>
-      ))}
+    <div className="grid gap-4">
+      {connectedAddress ? (
+        <div className="flex flex-col justify-between gap-3 rounded-3xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-5 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/80">Your wallet</p>
+            <p className="mt-1 text-sm text-fuchsia-100/90">View public tip stats and history for this address.</p>
+          </div>
+          <Link
+            href={`/${connectedAddress}`}
+            className="shrink-0 rounded-2xl border border-fuchsia-200/50 bg-fuchsia-500/20 px-4 py-2 text-center text-sm font-black text-fuchsia-50"
+          >
+            Tip profile →
+          </Link>
+        </div>
+      ) : null}
+      <div className="grid gap-4 md:grid-cols-3">
+        {cards.map((card) => (
+          <button
+            key={card.tab}
+            type="button"
+            onClick={() => setActiveTab(card.tab)}
+            className="rounded-3xl border border-white/15 bg-slate-950/50 p-5 text-left transition hover:border-cyan-200/50 hover:bg-cyan-500/10"
+          >
+            <h2 className="text-xl font-black text-cyan-100">{card.title}</h2>
+            <p className="mt-2 text-sm text-slate-200/80">{card.text}</p>
+            <p className="mt-5 text-sm font-black text-fuchsia-200">{card.cta}</p>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
 function RadarPanel() {
-  const [marketData, setMarketData] = useState<Record<string, RadarMarketData>>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [marketError, setMarketError] = useState<string | null>(null);
+  type RadarPayload = { updatedAt?: string; data?: RadarMarketData[] };
+
+  const { data, isLoading, isError, dataUpdatedAt } = useQuery({
+    queryKey: ["radar", "market"],
+    queryFn: async (): Promise<RadarPayload> => {
+      const response = await fetch("/api/radar");
+      if (!response.ok) throw new Error("market-data");
+      return (await response.json()) as RadarPayload;
+    },
+    staleTime: 55_000,
+    refetchInterval: 60_000,
+  });
+
+  const marketData = useMemo(() => {
+    const next: Record<string, RadarMarketData> = {};
+    for (const item of data?.data ?? []) {
+      next[item.id] = item;
+    }
+    return next;
+  }, [data]);
+
+  const marketError = isError ? "Live market data is temporarily unavailable." : null;
+  const updatedLabel = data?.updatedAt
+    ? new Date(data.updatedAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })
+    : dataUpdatedAt
+      ? new Date(dataUpdatedAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })
+      : null;
+
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [stageFilter, setStageFilter] = useState("All");
@@ -134,44 +250,6 @@ function RadarPanel() {
     () => ["All", ...Array.from(new Set(radarProjects.flatMap((project) => project.categories))).sort()],
     []
   );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadMarketData() {
-      try {
-        const response = await fetch("/api/radar");
-        if (!response.ok) throw new Error("market-data");
-        const payload = (await response.json()) as { data?: RadarMarketData[] };
-        if (cancelled) return;
-
-        const next: Record<string, RadarMarketData> = {};
-        for (const item of payload.data ?? []) {
-          next[item.id] = item;
-        }
-        setMarketData(next);
-        setMarketError(null);
-      } catch {
-        if (!cancelled) {
-          setMarketError("Live market data is temporarily unavailable.");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadMarketData();
-    const timer = setInterval(() => {
-      void loadMarketData();
-    }, 60_000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, []);
 
   const projectsWithPrice = radarProjects.filter((project) => typeof marketData[project.id]?.priceUsd === "number");
   const avgRisk =
@@ -255,6 +333,12 @@ function RadarPanel() {
           <p className="mt-2 text-sm font-bold text-cyan-200">
             Showing {filteredProjects.length} of {radarProjects.length} tracked projects
           </p>
+          {!marketError && updatedLabel ? (
+            <p className="mt-2 text-xs text-slate-400">
+              Quotes last bundled at {updatedLabel}. Sources: DexScreener pairs on Base → DefiLlama → CoinMarketCap (if{" "}
+              <code className="font-mono text-slate-300">COINMARKETCAP_API_KEY</code> is set on the server).
+            </p>
+          ) : null}
           {marketError ? <p className="mt-2 text-sm text-amber-200">{marketError}</p> : null}
         </div>
 
@@ -395,13 +479,18 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
           href={project.website}
           target="_blank"
           rel="noreferrer"
+          aria-label={`${project.name} website`}
           className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${project.accent} transition hover:scale-105`}
         >
-          <img
+          <Image
             src={project.iconUrl}
-            alt={`${project.name} icon`}
+            alt=""
+            role="presentation"
+            width={28}
+            height={28}
             className="h-7 w-7 rounded-lg"
             referrerPolicy="no-referrer"
+            unoptimized
           />
         </a>
         <div className="min-w-0 flex-1">
@@ -463,6 +552,9 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
           </div>
           <div className="mt-4">
             <Sparkline values={market?.sparkline} positive={positive} />
+            <p className="mt-1 text-[10px] text-slate-500">
+              Sparkline shape is illustrative (from 24h % when granular candles are unavailable).
+            </p>
           </div>
         </>
       ) : (
@@ -566,14 +658,3 @@ function SidePanel({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-function ComingSoonPanel({ title }: { title: string }) {
-  return (
-    <div className="rounded-3xl border border-white/15 bg-slate-950/55 p-6">
-      <p className="text-xs font-bold uppercase tracking-[0.25em] text-fuchsia-200/80">Coming soon</p>
-      <h2 className="mt-2 text-3xl font-black text-white">{title}</h2>
-      <p className="mt-3 max-w-2xl text-sm text-slate-200/80">
-        This module is planned for the Base OS suite. We will build it after the Radar MVP is stable.
-      </p>
-    </div>
-  );
-}

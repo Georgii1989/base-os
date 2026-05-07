@@ -12,7 +12,13 @@ type HolderRecord = {
 
 /** Max blocks per `getLogs` request — keeps public RPCs happier on long ranges. */
 const CHUNK_SIZE = BigInt(2500);
-const OWNER_ADDRESS = "0x8655520b4b19187038ac9a4f560da0979cc1e95c";
+const DEFAULT_CSV_OWNER = "0x8655520b4b19187038ac9a4f560da0979cc1e95c";
+
+function registryCsvOwnerLower(): string {
+  const raw = process.env.NEXT_PUBLIC_REGISTRY_CSV_OWNER?.trim().toLowerCase();
+  if (raw && /^0x[a-f0-9]{40}$/.test(raw)) return raw;
+  return DEFAULT_CSV_OWNER.toLowerCase();
+}
 
 export function SoulboundHoldersList() {
   const { address } = useAccount();
@@ -144,7 +150,7 @@ export function SoulboundHoldersList() {
     });
   }, [holders]);
 
-  const isOwner = address ? address.toLowerCase() === OWNER_ADDRESS : false;
+  const isOwner = address ? address.toLowerCase() === registryCsvOwnerLower() : false;
 
   function downloadCsv() {
     const header = "address,mint_tx_hash,block_number";
@@ -224,7 +230,9 @@ export function SoulboundHoldersList() {
           </div>
           {!isOwner ? (
             <p className="text-xs text-amber-200/95">
-              CSV export is restricted to the contract owner wallet.
+              CSV export requires the wallet to match{" "}
+              <span className="font-mono text-amber-100/90">NEXT_PUBLIC_REGISTRY_CSV_OWNER</span> (falls back to the
+              default owner address if unset).
             </p>
           ) : null}
 
