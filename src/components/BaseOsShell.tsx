@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BaseBuilderApp } from "@/components/BaseBuilderApp";
+import { radarProjects, type RadarProject } from "@/lib/radarProjects";
 
 type TabId = "home" | "tip" | "radar" | "guard" | "wallet";
 
@@ -13,50 +14,18 @@ const tabs: { id: TabId; label: string; eyebrow: string }[] = [
   { id: "wallet", label: "Wallet Card", eyebrow: "Identity" },
 ];
 
-const projectCards = [
-  {
-    name: "BlueDock",
-    description: "Liquidity hub for Base-native assets with concentrated strategies.",
-    tags: ["DeFi", "DEX", "Liquidity"],
-    risk: "Low",
-    accent: "from-blue-500 to-cyan-300",
-  },
-  {
-    name: "AuroraSwap",
-    description: "Next-gen AMM powering efficient swaps on Base.",
-    tags: ["DeFi", "AMM", "Trading"],
-    risk: "Low",
-    accent: "from-violet-500 to-fuchsia-300",
-  },
-  {
-    name: "BaseBuild",
-    description: "Developer toolkit to deploy and scale apps on Base.",
-    tags: ["Infra", "SDK", "Tools"],
-    risk: "Low",
-    accent: "from-emerald-500 to-cyan-300",
-  },
-  {
-    name: "Pixel Park",
-    description: "Social gaming world where creators and players own their moments.",
-    tags: ["Gaming", "Social", "NFT"],
-    risk: "Medium",
-    accent: "from-pink-500 to-amber-300",
-  },
-  {
-    name: "CipherAI",
-    description: "AI copilot for onchain research and portfolio intelligence.",
-    tags: ["AI", "Analytics", "DeFi"],
-    risk: "Low",
-    accent: "from-lime-500 to-emerald-300",
-  },
-  {
-    name: "ZoraHub",
-    description: "Explore, collect, and trade digital media on Base.",
-    tags: ["NFT", "Marketplace", "Social"],
-    risk: "Low",
-    accent: "from-indigo-500 to-blue-300",
-  },
-];
+type RadarMarketData = {
+  id: string;
+  symbol: string;
+  priceUsd: number | null;
+  change24h: number | null;
+  volume24h: number | null;
+  liquidityUsd: number | null;
+  marketCap: number | null;
+  dex: string | null;
+  pairUrl: string | null;
+  sparkline: number[];
+};
 
 export function BaseOsShell() {
   const [activeTab, setActiveTab] = useState<TabId>("tip");
@@ -154,6 +123,56 @@ function HomePanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
 }
 
 function RadarPanel() {
+  const [marketData, setMarketData] = useState<Record<string, RadarMarketData>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [marketError, setMarketError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMarketData() {
+      try {
+        const response = await fetch("/api/radar");
+        if (!response.ok) throw new Error("market-data");
+        const payload = (await response.json()) as { data?: RadarMarketData[] };
+        if (cancelled) return;
+
+        const next: Record<string, RadarMarketData> = {};
+        for (const item of payload.data ?? []) {
+          next[item.id] = item;
+        }
+        setMarketData(next);
+        setMarketError(null);
+      } catch {
+        if (!cancelled) {
+          setMarketError("Live market data is temporarily unavailable.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadMarketData();
+    const timer = setInterval(() => {
+      void loadMarketData();
+    }, 60_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  const projectsWithPrice = radarProjects.filter((project) => marketData[project.id]?.priceUsd !== null);
+  const avgRisk =
+    radarProjects.some((project) => project.risk === "High")
+      ? "Mixed"
+      : radarProjects.some((project) => project.risk === "Medium")
+        ? "Medium"
+        : "Low";
+
   return (
     <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
       <aside className="rounded-3xl border border-white/15 bg-slate-950/50 p-4">
@@ -176,20 +195,21 @@ function RadarPanel() {
         <div>
           <h2 className="text-3xl font-black text-white md:text-4xl">Project Radar</h2>
           <p className="mt-1 text-sm text-slate-200/80">
-            Discover useful Base projects with curated signals.
+            Discover useful Base projects with curated links, token prices, and live market signals.
           </p>
+          {marketError ? <p className="mt-2 text-sm text-amber-200">{marketError}</p> : null}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric label="Tracked Projects" value="128" />
-          <Metric label="New This Week" value="14" />
-          <Metric label="Avg Risk" value="Low" />
+          <Metric label="Tracked Projects" value={String(radarProjects.length)} />
+          <Metric label="Live Prices" value={isLoading ? "..." : String(projectsWithPrice.length)} />
+          <Metric label="Avg Risk" value={avgRisk} />
           <Metric label="Hot Category" value="DeFi" />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {projectCards.map((project) => (
-            <ProjectCard key={project.name} {...project} />
+          {radarProjects.map((project) => (
+            <ProjectCard key={project.id} project={project} market={marketData[project.id]} />
           ))}
         </div>
       </main>
@@ -197,11 +217,11 @@ function RadarPanel() {
       <aside className="grid content-start gap-4">
         <SidePanel
           title="Weekly Picks"
-          items={["AuroraSwap", "BaseBuild", "CipherAI", "BlueDock"]}
+          items={["Aerodrome", "Virtuals", "Moonwell", "Degen"]}
         />
         <SidePanel
           title="Recently Added"
-          items={["LoopFinance", "Mintify", "DataHive", "QuestBoard"]}
+          items={["Clanker", "Brett", "Moonwell", "Virtuals"]}
         />
       </aside>
     </div>
@@ -239,51 +259,144 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ProjectCard({
-  name,
-  description,
-  tags,
-  risk,
-  accent,
-}: {
-  name: string;
-  description: string;
-  tags: string[];
-  risk: string;
-  accent: string;
-}) {
+function formatUsd(value: number | null | undefined) {
+  if (value === null || value === undefined) return "—";
+  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
+  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`;
+  if (value >= 1) return `$${value.toFixed(2)}`;
+  return `$${value.toPrecision(3)}`;
+}
+
+function formatChange(value: number | null | undefined) {
+  if (value === null || value === undefined) return "—";
+  return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
+}
+
+function Sparkline({ values, positive }: { values?: number[]; positive: boolean }) {
+  if (!values || values.length < 2) {
+    return <div className="h-8 rounded-xl bg-white/5" />;
+  }
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const points = values
+    .map((value, index) => {
+      const x = (index / (values.length - 1)) * 100;
+      const y = 28 - ((value - min) / range) * 24;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg viewBox="0 0 100 32" className="h-8 w-full overflow-visible rounded-xl bg-white/5">
+      <polyline
+        fill="none"
+        stroke={positive ? "#34d399" : "#fb7185"}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="3"
+        points={points}
+      />
+    </svg>
+  );
+}
+
+function ProjectCard({ project, market }: { project: RadarProject; market?: RadarMarketData }) {
+  const change24h = market?.change24h ?? null;
+  const positive = (change24h ?? 0) >= 0;
+
   return (
     <article className="rounded-3xl border border-white/15 bg-slate-950/55 p-4">
       <div className="flex items-start gap-3">
-        <div className={`h-12 w-12 rounded-2xl bg-gradient-to-br ${accent}`} />
+        <div className={`h-12 w-12 rounded-2xl bg-gradient-to-br ${project.accent}`} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="font-black text-white">{name}</h3>
-            <span className="rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-xs font-bold text-emerald-200">
-              {risk}
+            <div>
+              <h3 className="font-black text-white">{project.name}</h3>
+              <p className="text-xs font-bold text-cyan-200">{project.symbol}</p>
+            </div>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-xs font-bold ${
+                project.risk === "Low"
+                  ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-200"
+                  : project.risk === "Medium"
+                    ? "border-amber-300/30 bg-amber-400/10 text-amber-200"
+                    : "border-rose-300/30 bg-rose-400/10 text-rose-200"
+              }`}
+            >
+              {project.risk}
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-200/75">{description}</p>
+          <p className="mt-1 text-sm text-slate-200/75">{project.description}</p>
         </div>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        {tags.map((tag) => (
+        {project.categories.map((tag) => (
           <span key={tag} className="rounded-lg border border-violet-300/25 bg-violet-500/10 px-2 py-1 text-xs text-violet-100">
             {tag}
           </span>
         ))}
       </div>
-      <div className="mt-4 h-8 rounded-xl bg-[linear-gradient(135deg,transparent_0%,rgba(34,211,238,0.18)_45%,transparent_46%,rgba(34,211,238,0.24)_70%,transparent_71%)]" />
+      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-xl bg-white/5 p-2">
+          <p className="text-slate-400">Price</p>
+          <p className="font-black text-white">{formatUsd(market?.priceUsd)}</p>
+        </div>
+        <div className="rounded-xl bg-white/5 p-2">
+          <p className="text-slate-400">24h</p>
+          <p className={`font-black ${positive ? "text-emerald-300" : "text-rose-300"}`}>
+            {formatChange(change24h)}
+          </p>
+        </div>
+        <div className="rounded-xl bg-white/5 p-2">
+          <p className="text-slate-400">Liquidity</p>
+          <p className="font-black text-white">{formatUsd(market?.liquidityUsd)}</p>
+        </div>
+        <div className="rounded-xl bg-white/5 p-2">
+          <p className="text-slate-400">Vol 24h</p>
+          <p className="font-black text-white">{formatUsd(market?.volume24h)}</p>
+        </div>
+      </div>
+      <div className="mt-4">
+        <Sparkline values={market?.sparkline} positive={positive} />
+      </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        {["Website", "BaseScan", "X"].map((label) => (
-          <button
-            key={label}
-            type="button"
+        <a
+          href={project.website}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
+        >
+          Website
+        </a>
+        <a
+          href={`https://basescan.org/token/${project.tokenAddress}`}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
+        >
+          BaseScan
+        </a>
+        <a
+          href={project.x}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
+        >
+          X
+        </a>
+        {market?.pairUrl ? (
+          <a
+            href={market.pairUrl}
+            target="_blank"
+            rel="noreferrer"
             className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
           >
-            {label}
-          </button>
-        ))}
+            Chart
+          </a>
+        ) : null}
       </div>
     </article>
   );
