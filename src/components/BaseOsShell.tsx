@@ -126,6 +126,10 @@ function RadarPanel() {
   const [marketData, setMarketData] = useState<Record<string, RadarMarketData>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [marketError, setMarketError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [stageFilter, setStageFilter] = useState("All");
+  const [riskFilter, setRiskFilter] = useState("All");
 
   useEffect(() => {
     let cancelled = false;
@@ -172,17 +176,64 @@ function RadarPanel() {
       : radarProjects.some((project) => project.risk === "Medium")
         ? "Medium"
         : "Low";
+  const filteredProjects = radarProjects.filter((project) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      project.name.toLowerCase().includes(q) ||
+      project.symbol.toLowerCase().includes(q) ||
+      project.description.toLowerCase().includes(q) ||
+      project.categories.some((category) => category.toLowerCase().includes(q));
+    const matchesCategory = categoryFilter === "All" || project.categories.includes(categoryFilter);
+    const matchesStage = stageFilter === "All" || project.stage === stageFilter;
+    const matchesRisk = riskFilter === "All" || project.risk === riskFilter;
+
+    return matchesSearch && matchesCategory && matchesStage && matchesRisk;
+  });
+
+  function resetFilters() {
+    setSearch("");
+    setCategoryFilter("All");
+    setStageFilter("All");
+    setRiskFilter("All");
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
       <aside className="rounded-3xl border border-white/15 bg-slate-950/50 p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black text-cyan-100">Filters</h2>
-          <span className="text-xs text-slate-400">Reset</span>
+          <button type="button" onClick={resetFilters} className="text-xs font-bold text-slate-400 hover:text-cyan-200">
+            Reset
+          </button>
         </div>
-        <FilterGroup title="Category" items={["DeFi", "NFT", "Social", "Infra", "AI", "Gaming"]} />
-        <FilterGroup title="Stage" items={["New", "Growing", "Mature"]} />
-        <FilterGroup title="Risk" items={["Low", "Medium", "High"]} />
+        <label className="mt-4 block">
+          <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Search</span>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Project, token, category..."
+            className="mt-2 w-full rounded-xl border border-white/15 bg-black/35 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/60"
+          />
+        </label>
+        <FilterGroup
+          title="Category"
+          items={["All", "DeFi", "NFT", "Social", "Infra", "AI", "Gaming", "Meme"]}
+          value={categoryFilter}
+          onChange={setCategoryFilter}
+        />
+        <FilterGroup
+          title="Stage"
+          items={["All", "New", "Growing", "Mature"]}
+          value={stageFilter}
+          onChange={setStageFilter}
+        />
+        <FilterGroup
+          title="Risk"
+          items={["All", "Low", "Medium", "High"]}
+          value={riskFilter}
+          onChange={setRiskFilter}
+        />
         <div className="mt-5 rounded-2xl border border-cyan-300/25 bg-cyan-500/10 p-4">
           <p className="text-sm font-black text-cyan-100">Stay ahead</p>
           <p className="mt-1 text-xs text-cyan-100/75">
@@ -197,6 +248,9 @@ function RadarPanel() {
           <p className="mt-1 text-sm text-slate-200/80">
             Discover useful Base projects with curated links, token prices, and live market signals.
           </p>
+          <p className="mt-2 text-sm font-bold text-cyan-200">
+            Showing {filteredProjects.length} of {radarProjects.length} tracked projects
+          </p>
           {marketError ? <p className="mt-2 text-sm text-amber-200">{marketError}</p> : null}
         </div>
 
@@ -204,14 +258,19 @@ function RadarPanel() {
           <Metric label="Tracked Projects" value={String(radarProjects.length)} />
           <Metric label="Live Prices" value={isLoading ? "..." : String(projectsWithPrice.length)} />
           <Metric label="Avg Risk" value={avgRisk} />
-          <Metric label="Hot Category" value="DeFi" />
+          <Metric label="Visible Now" value={String(filteredProjects.length)} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {radarProjects.map((project) => (
+          {filteredProjects.map((project) => (
             <ProjectCard key={project.id} project={project} market={marketData[project.id]} />
           ))}
         </div>
+        {filteredProjects.length === 0 ? (
+          <div className="rounded-3xl border border-amber-300/25 bg-amber-500/10 p-5 text-sm text-amber-100">
+            No projects match these filters yet. Reset filters or broaden the search.
+          </div>
+        ) : null}
       </main>
 
       <aside className="grid content-start gap-4">
@@ -228,22 +287,34 @@ function RadarPanel() {
   );
 }
 
-function FilterGroup({ title, items }: { title: string; items: string[] }) {
+function FilterGroup({
+  title,
+  items,
+  value,
+  onChange,
+}: {
+  title: string;
+  items: string[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
   return (
     <div className="mt-5">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{title}</p>
       <div className="mt-2 flex flex-wrap gap-2">
-        {items.map((item, index) => (
-          <span
+        {items.map((item) => (
+          <button
             key={item}
+            type="button"
+            onClick={() => onChange(item)}
             className={`rounded-lg border px-3 py-1 text-xs font-bold ${
-              index === 0
+              value === item
                 ? "border-cyan-200/60 bg-cyan-500/20 text-cyan-100"
                 : "border-white/15 bg-white/5 text-slate-200"
             }`}
           >
             {item}
-          </span>
+          </button>
         ))}
       </div>
     </div>
