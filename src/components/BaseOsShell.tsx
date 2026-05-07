@@ -2,24 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
 import { BaseBuilderApp } from "@/components/BaseBuilderApp";
+import { useCommandPalette } from "@/components/CommandPalette";
 import { GuardPanel } from "@/components/GuardPanel";
+import { TxLensPanel } from "@/components/TxLensPanel";
 import { WalletCardPanel } from "@/components/WalletCardPanel";
+import { WatchlistPanel } from "@/components/WatchlistPanel";
+import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
 import { radarProjects, type RadarProject } from "@/lib/radarProjects";
 
-type TabId = "home" | "tip" | "radar" | "guard" | "wallet";
-
-const tabs: { id: TabId; label: string; eyebrow: string }[] = [
-  { id: "home", label: "Home", eyebrow: "Overview" },
-  { id: "tip", label: "Tip", eyebrow: "Support" },
-  { id: "radar", label: "Radar", eyebrow: "Discover" },
-  { id: "guard", label: "Guard", eyebrow: "Safety" },
-  { id: "wallet", label: "Wallet Card", eyebrow: "Identity" },
-];
+type TabId = OsTabId;
 
 type RadarMarketData = {
   id: string;
@@ -35,17 +32,57 @@ type RadarMarketData = {
 };
 
 export function BaseOsShell() {
-  const [activeTab, setActiveTab] = useState<TabId>("tip");
+  return (
+    <Suspense fallback={<OsShellFallback />}>
+      <BaseOsShellInner />
+    </Suspense>
+  );
+}
+
+function OsShellFallback() {
+  return (
+    <section className="relative z-10 w-full max-w-7xl rounded-3xl border border-white/15 bg-black/35 p-8 text-white shadow-[0_0_60px_rgba(76,29,149,0.45)] backdrop-blur-xl">
+      <div className="animate-pulse space-y-6">
+        <div className="h-28 rounded-3xl bg-white/5" />
+        <div className="flex flex-wrap gap-2">
+          <div className="h-12 w-32 rounded-2xl bg-white/10" />
+          <div className="h-12 w-36 rounded-2xl bg-white/10" />
+          <div className="h-12 w-36 rounded-2xl bg-white/10" />
+        </div>
+        <div className="h-72 rounded-3xl bg-white/5" />
+      </div>
+    </section>
+  );
+}
+
+function BaseOsShellInner() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { open: openCommandPalette } = useCommandPalette();
+
+  const activeTab = tabFromSearchParam(searchParams.get("tab"));
   const { address } = useAccount();
-  const activeMeta = useMemo(() => tabs.find((tab) => tab.id === activeTab), [activeTab]);
+  const activeMeta = useMemo(
+    () => OS_TAB_META.find((tab) => tab.id === activeTab),
+    [activeTab]
+  );
   const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const activeIndex = tabs.findIndex((tab) => tab.id === activeTab);
+  function setActiveTab(tab: OsTabId) {
+    if (pathname === "/") {
+      router.replace(`/?tab=${tab}`, { scroll: false });
+    } else {
+      router.push(`/?tab=${tab}`);
+    }
+  }
+
+  const activeIndex = OS_TAB_META.findIndex((tab) => tab.id === activeTab);
 
   function focusTabAt(rawIndex: number) {
-    const len = tabs.length;
+    const len = OS_TAB_META.length;
     const next = ((rawIndex % len) + len) % len;
-    const id = tabs[next].id;
+    const id = OS_TAB_META[next].id;
     setActiveTab(id);
     requestAnimationFrame(() => {
       tabButtonRefs.current[next]?.focus();
@@ -67,7 +104,7 @@ export function BaseOsShell() {
     }
     if (event.key === "End") {
       event.preventDefault();
-      focusTabAt(tabs.length - 1);
+      focusTabAt(OS_TAB_META.length - 1);
     }
   }
 
@@ -76,16 +113,29 @@ export function BaseOsShell() {
       <header className="flex flex-col gap-4 border-b border-white/10 pb-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-200/80">
-            Base ecosystem hub
+            Base hub
           </p>
           <h1 className="mt-1 text-3xl font-black text-fuchsia-100 md:text-5xl">Base OS</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-200/80">
-            One place for Base activity, discovery, safety, and lightweight community tools.
+            Tips, app picks, wallet checks — all in one place.
           </p>
         </div>
-        <div className="rounded-2xl border border-cyan-300/25 bg-cyan-500/10 px-4 py-3">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Current module</p>
-          <p className="text-lg font-black text-cyan-100">{activeMeta?.label}</p>
+        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <button
+            type="button"
+            title="⌘ K or Ctrl K"
+            onClick={() => openCommandPalette()}
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-cyan-300/35 bg-black/55 px-4 py-3 text-xs font-black uppercase tracking-[0.35em] text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm transition hover:border-cyan-200/85 hover:bg-cyan-500/15 hover:shadow-[0_0_42px_rgba(34,211,238,0.18)] sm:w-auto sm:justify-center"
+          >
+            <span>Quick menu</span>
+            <kbd className="hidden rounded-xl border border-white/15 bg-black/70 px-2 py-1 font-mono text-[11px] font-bold text-slate-200 sm:inline">
+              ⌘K
+            </kbd>
+          </button>
+          <div className="w-full rounded-2xl border border-cyan-300/25 bg-cyan-500/10 px-4 py-3 text-right sm:w-auto sm:text-right">
+            <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Open now</p>
+            <p className="text-lg font-black text-cyan-100">{activeMeta?.label}</p>
+          </div>
         </div>
       </header>
 
@@ -95,7 +145,7 @@ export function BaseOsShell() {
         className="mt-4 flex flex-wrap gap-2"
         onKeyDown={handleTabKeyDown}
       >
-        {tabs.map((tab, index) => (
+        {OS_TAB_META.map((tab, index) => (
           <button
             key={tab.id}
             ref={(element) => {
@@ -135,7 +185,7 @@ export function BaseOsShell() {
                 href={`/${address}`}
                 className="text-sm font-bold text-fuchsia-200 underline decoration-fuchsia-500/40 underline-offset-4 hover:text-fuchsia-100"
               >
-                Open your tip profile
+                Open your tip page
               </Link>
             ) : null}
             <div className="flex justify-center">
@@ -144,6 +194,8 @@ export function BaseOsShell() {
           </div>
         ) : null}
         {activeTab === "radar" ? <RadarPanel /> : null}
+        {activeTab === "watch" ? <WatchlistPanel /> : null}
+        {activeTab === "lens" ? <TxLensPanel /> : null}
         {activeTab === "guard" ? <GuardPanel /> : null}
         {activeTab === "wallet" ? <WalletCardPanel /> : null}
       </div>
@@ -161,21 +213,39 @@ function HomePanel({
   const cards: { tab: TabId; title: string; text: string; cta: string }[] = [
     {
       tab: "tip",
-      title: "Tip + Soulbound Badge",
-      text: "Support activity, mint a supporter SBT, and keep a public onchain registry.",
-      cta: "Open Tip",
+      title: "Tips & badge",
+      text: "Send a tip, get a supporter badge, see who else joined.",
+      cta: "Open tips",
     },
     {
       tab: "radar",
-      title: "Project Radar",
-      text: "Curated Base projects with links, risk tags, and live quotes (DexScreener, DefiLlama, optional CMC).",
-      cta: "Explore Radar",
+      title: "Project radar",
+      text: "Hand-picked Base apps with links and live prices.",
+      cta: "Browse apps",
+    },
+    {
+      tab: "watch",
+      title: "Tracked wallets",
+      text: "Save addresses. We show ETH balance and activity. Data stays in this browser only.",
+      cta: "Open tracker",
+    },
+    {
+      tab: "lens",
+      title: "Transaction preview",
+      text: "Try a transaction without sending it. See if it would work and how much gas it might use.",
+      cta: "Open preview",
     },
     {
       tab: "guard",
-      title: "Allowance Guard",
-      text: "Read ERC-20 allowances on Base and jump to revoke.cash for bulk cleanup.",
-      cta: "Open Guard",
+      title: "Token permissions",
+      text: "See how much access you gave apps to your tokens. Revoke on a trusted site if needed.",
+      cta: "Open guard",
+    },
+    {
+      tab: "wallet",
+      title: "Your wallet",
+      text: "Your address, quick links, and disconnect.",
+      cta: "Open wallet",
     },
   ];
 
@@ -184,8 +254,8 @@ function HomePanel({
       {connectedAddress ? (
         <div className="flex flex-col justify-between gap-3 rounded-3xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-5 sm:flex-row sm:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/80">Your wallet</p>
-            <p className="mt-1 text-sm text-fuchsia-100/90">View public tip stats and history for this address.</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/80">Connected</p>
+            <p className="mt-1 text-sm text-fuchsia-100/90">Your public tip page on Base OS.</p>
           </div>
           <Link
             href={`/${connectedAddress}`}
@@ -195,7 +265,34 @@ function HomePanel({
           </Link>
         </div>
       ) : null}
-      <div className="grid gap-4 md:grid-cols-3">
+      <Link
+        href="/safety"
+        className="group relative block overflow-hidden rounded-[1.85rem] border border-teal-300/35 bg-gradient-to-br from-teal-500/14 via-black/65 to-black/85 p-6 shadow-[0_0_55px_rgba(45,212,191,0.12)] transition hover:border-cyan-300/70 hover:shadow-[0_0_60px_rgba(34,211,238,0.15)] md:p-8"
+      >
+        <span className="pointer-events-none absolute -right-8 top-6 h-32 w-32 rounded-full bg-cyan-400/12 blur-[50px]" />
+        <span className="pointer-events-none absolute bottom-[-20%] left-[-5%] h-44 w-44 rounded-full bg-fuchsia-500/10 blur-[70px]" />
+        <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-teal-200/90">
+              No wallet needed
+            </p>
+            <h2 className="mt-3 bg-gradient-to-r from-teal-100 via-white to-fuchsia-200 bg-clip-text text-3xl font-black tracking-tight text-transparent md:text-4xl">
+              Look up any address
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm text-slate-300 md:text-[15px]">
+              Paste a Base address. We show if it’s a wallet or a contract, balance, and links to explore more. Share the
+              page with anyone.
+            </p>
+          </div>
+          <span className="relative inline-flex items-center gap-3 self-start rounded-2xl border border-white/22 bg-black/65 px-5 py-3 text-sm font-black uppercase tracking-[0.26em] text-white transition group-hover:border-cyan-300/85 group-hover:text-cyan-50 md:self-center md:text-xs">
+            Open lookup
+            <span aria-hidden className="text-lg leading-none text-cyan-200">
+              ↗
+            </span>
+          </span>
+        </div>
+      </Link>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => (
           <button
             key={card.tab}
@@ -235,7 +332,7 @@ function RadarPanel() {
     return next;
   }, [data]);
 
-  const marketError = isError ? "Live market data is temporarily unavailable." : null;
+  const marketError = isError ? "Prices unavailable right now. Try again later." : null;
   const updatedLabel = data?.updatedAt
     ? new Date(data.updatedAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })
     : dataUpdatedAt
@@ -294,7 +391,7 @@ function RadarPanel() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Project, token, category..."
+            placeholder="Name, symbol, tag…"
             className="mt-2 w-full rounded-xl border border-white/15 bg-black/35 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/60"
           />
         </label>
@@ -317,35 +414,31 @@ function RadarPanel() {
           onChange={setRiskFilter}
         />
         <div className="mt-5 rounded-2xl border border-cyan-300/25 bg-cyan-500/10 p-4">
-          <p className="text-sm font-black text-cyan-100">Stay ahead</p>
-          <p className="mt-1 text-xs text-cyan-100/75">
-            Track high-potential Base projects before they become obvious.
-          </p>
+          <p className="text-sm font-black text-cyan-100">Filters</p>
+          <p className="mt-1 text-xs text-cyan-100/75">Narrow the list by category, stage, or risk.</p>
         </div>
       </aside>
 
       <main className="grid gap-4">
         <div>
           <h2 className="text-3xl font-black text-white md:text-4xl">Project Radar</h2>
-          <p className="mt-1 text-sm text-slate-200/80">
-            Discover useful Base projects with curated links, token prices, and live market signals.
-          </p>
+          <p className="mt-1 text-sm text-slate-200/80">Projects we like, with links and prices when available.</p>
           <p className="mt-2 text-sm font-bold text-cyan-200">
-            Showing {filteredProjects.length} of {radarProjects.length} tracked projects
+            {filteredProjects.length} / {radarProjects.length} projects
           </p>
           {!marketError && updatedLabel ? (
             <p className="mt-2 text-xs text-slate-400">
-              Last update: {updatedLabel}
+              Updated {updatedLabel}
             </p>
           ) : null}
           {marketError ? <p className="mt-2 text-sm text-amber-200">{marketError}</p> : null}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric label="Tracked Projects" value={String(radarProjects.length)} />
-          <Metric label="Live Prices" value={isLoading ? "..." : String(projectsWithPrice.length)} />
-          <Metric label="Avg Risk" value={avgRisk} />
-          <Metric label="Visible Now" value={String(filteredProjects.length)} />
+          <Metric label="Projects" value={String(radarProjects.length)} />
+          <Metric label="With price" value={isLoading ? "..." : String(projectsWithPrice.length)} />
+          <Metric label="Avg risk" value={avgRisk} />
+          <Metric label="On screen" value={String(filteredProjects.length)} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -355,18 +448,18 @@ function RadarPanel() {
         </div>
         {filteredProjects.length === 0 ? (
           <div className="rounded-3xl border border-amber-300/25 bg-amber-500/10 p-5 text-sm text-amber-100">
-            No projects match these filters yet. Reset filters or broaden the search.
+            Nothing matches — try Reset or a shorter search.
           </div>
         ) : null}
       </main>
 
       <aside className="grid content-start gap-4">
         <SidePanel
-          title="Bridge / Swap Picks"
+          title="Bridge & swap"
           items={["Base Bridge", "Superbridge", "Relay", "Uniswap"]}
         />
         <SidePanel
-          title="Lending Picks"
+          title="Lending"
           items={["Aave", "Moonwell", "Morpho", "Seamless Protocol"]}
         />
       </aside>
@@ -545,26 +638,24 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
               <p className="font-black text-white">{formatUsd(market?.liquidityUsd)}</p>
             </div>
             <div className="rounded-xl bg-white/5 p-2">
-              <p className="text-slate-400">Vol 24h</p>
+              <p className="text-slate-400">24h volume</p>
               <p className="font-black text-white">{formatUsd(market?.volume24h)}</p>
             </div>
           </div>
           <div className="mt-4">
             <Sparkline values={market?.sparkline} positive={positive} />
-            <p className="mt-1 text-[10px] text-slate-500">
-              Sparkline shape is illustrative (from 24h % when granular candles are unavailable).
-            </p>
+            <p className="mt-1 text-[10px] text-slate-500">Simple trend line · not live trading data.</p>
           </div>
         </>
       ) : (
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
           <p className="font-bold text-slate-100">
-            {project.tokenAddress ? "Base market data unavailable" : "No native Base token tracked"}
+            {project.tokenAddress ? "No price data" : "No token price"}
           </p>
           <p className="mt-1 text-slate-400">
             {project.tokenAddress
-              ? "DexScreener has no liquid Base pair for this token yet."
-              : "This is a protocol/app listing, so Radar shows links and category signals instead of price stats."}
+              ? "No active price feed for this token on Base yet."
+              : "App or protocol listing — links and tags only, no chart."}
           </p>
         </div>
       )}

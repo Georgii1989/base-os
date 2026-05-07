@@ -127,7 +127,7 @@ export function SoulboundHoldersList() {
         setError(null);
       } catch {
         if (!cancelled) {
-          setError("Unable to load soulbound holders. Check RPC limits or try again later.");
+          setError("Couldn’t load badge holders. Try again later.");
         }
       }
     }
@@ -176,12 +176,8 @@ export function SoulboundHoldersList() {
   if (!sbtAddress) {
     return (
       <div className="mt-4 grid gap-3 rounded-2xl border border-violet-300/30 bg-slate-950/50 p-4">
-        <h2 className="text-xl font-black text-violet-200">Soulbound registry</h2>
-        <p className="text-sm text-violet-100/90">
-          Set <span className="font-mono text-violet-300">NEXT_PUBLIC_SBT_ADDRESS</span> to list every
-          wallet that minted the soulbound NFT (ERC-721 mints via{" "}
-          <span className="font-mono text-violet-300">Transfer</span> from the zero address).
-        </p>
+        <h2 className="text-xl font-black text-violet-200">Badge holders</h2>
+        <p className="text-sm text-violet-100/90">Badge list isn’t turned on in this build.</p>
       </div>
     );
   }
@@ -194,10 +190,9 @@ export function SoulboundHoldersList() {
         className="flex w-full items-center justify-between gap-3 rounded-xl border border-violet-200/30 bg-violet-500/10 px-3 py-2 text-left"
       >
         <div>
-          <h2 className="text-xl font-black text-violet-200">Soulbound registry</h2>
+          <h2 className="text-xl font-black text-violet-200">Badge holders</h2>
           <p className="mt-1 text-sm text-violet-100/90">
-            Onchain mints for <span className="font-mono text-xs text-violet-300">{sbtAddress}</span>.{" "}
-            {registryExpanded ? "Click to collapse." : "Click to expand."}
+            <span className="font-mono text-xs text-violet-300">{sbtAddress}</span>
           </p>
         </div>
         <span className="text-lg font-black text-violet-200">{registryExpanded ? "▲" : "▼"}</span>
@@ -206,9 +201,7 @@ export function SoulboundHoldersList() {
       {registryExpanded ? (
         <>
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <p className="text-sm text-violet-100/90">
-              Use this list to recognize supporters and run follow-ups (airdrops, allowlists, campaigns).
-            </p>
+            <p className="text-sm text-violet-100/90">For thanking or contacting supporters.</p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -230,9 +223,7 @@ export function SoulboundHoldersList() {
           </div>
           {!isOwner ? (
             <p className="text-xs text-amber-200/95">
-              CSV export requires the wallet to match{" "}
-              <span className="font-mono text-amber-100/90">NEXT_PUBLIC_REGISTRY_CSV_OWNER</span> (falls back to the
-              default owner address if unset).
+              CSV download only works when your connected wallet is the owner set in app config.
             </p>
           ) : null}
 
@@ -240,11 +231,11 @@ export function SoulboundHoldersList() {
           {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
           <p className="text-sm text-violet-100/90">
-            Unique holders: <span className="font-bold text-violet-100">{sortedHolders.length}</span>
+            Wallets: <span className="font-bold text-violet-100">{sortedHolders.length}</span>
           </p>
 
           {sortedHolders.length === 0 ? (
-            <p className="text-sm text-violet-100/90">No mints found in the scanned window yet.</p>
+            <p className="text-sm text-violet-100/90">No badge mints in the range we checked.</p>
           ) : (
             <div className="max-h-72 overflow-y-auto rounded-xl border border-violet-200/20 bg-violet-950/20">
               <ul className="divide-y divide-violet-200/10">

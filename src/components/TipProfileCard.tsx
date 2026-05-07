@@ -132,7 +132,7 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
         if (sourceContracts.length === 0) {
           if (!cancelled) {
             setTips([]);
-            setError("Configure at least one valid tip contract address (NEXT_PUBLIC_TIPJAR_ADDRESS).");
+            setError("Tip contract isn’t set up in this app build.");
             setIsLoading(false);
           }
           return;
@@ -204,19 +204,19 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
         if (mapped.length === 0) {
           if (rpcProbablyDead) {
             setError(
-              "Unable to load profile tips — the RPC rejected log scans. Fix: set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK to your TipJar or router deployment block (smaller window), and optionally NEXT_PUBLIC_TIP_PROFILE_CONTRACTS listing router and TipJar comma-separated."
+              "Couldn’t load tips (network busy). Try again later."
             );
             setHistoryHint(null);
           } else if (aggregatedFailedChunks > 0) {
             setError(null);
             setHistoryHint(
-              "Some block ranges failed (RPC limits). Set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK to the deployment block for a shorter, reliable scan."
+              "Some data may be missing. The site can narrow the time range in settings."
             );
           } else {
             setError(null);
             setHistoryHint(
               configuredFromBlock === null
-                ? "No tips in the recent window. If this wallet tipped earlier, set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK to the deployment block."
+                ? "Only recent tips are shown. Older tips may need a wider range in site settings."
                 : null
             );
           }
@@ -224,12 +224,12 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
           setError(null);
           if (aggregatedFailedChunks > 0 || contractLevelRejections > 0) {
             setHistoryHint(
-              "Some RPC responses were incomplete — list may miss older tips unless NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK is set."
+              "List might be incomplete — network hiccup."
             );
           } else {
             setHistoryHint(
               configuredFromBlock === null
-                ? "Showing tips from a recent block window only. Set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK for full history."
+                ? "Showing recent tips only. Full history may need site settings."
                 : null
             );
           }
@@ -237,7 +237,7 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
       } catch {
         if (!cancelled) {
           setError(
-            "Unable to load profile tips (network error). Check your connection or RPC limits for this chain."
+            "Couldn’t load tips. Check your connection."
           );
         }
       } finally {
@@ -266,10 +266,18 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
   return (
     <section className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/15 bg-black/45 p-5 text-white shadow-[0_0_50px_rgba(76,29,149,0.45)] backdrop-blur-xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-black text-sky-200 md:text-4xl">Tip Profile</h1>
-        <Link href="/" className="rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-bold">
-          Back to app
-        </Link>
+        <h1 className="text-2xl font-black text-sky-200 md:text-4xl">Public tip page</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/safety/${address}`}
+            className="rounded-lg border border-teal-300/55 bg-teal-500/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-teal-100 hover:border-teal-200"
+          >
+            Address lookup
+          </Link>
+          <Link href="/" className="rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-bold">
+            Home
+          </Link>
+        </div>
       </div>
 
       <p className="mt-3 text-sm text-sky-100/90 break-all">{address}</p>
@@ -280,7 +288,7 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
           <p className="text-lg font-black text-sky-100">{totalEth} ETH</p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-sky-300">Tips count</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-sky-300"># Tips</p>
           <p className="text-lg font-black text-sky-100">{tips.length}</p>
         </div>
         <div>
@@ -291,11 +299,11 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
 
       <div className="mt-4 grid gap-2 rounded-2xl border border-sky-300/30 bg-slate-950/50 p-4">
         <h2 className="text-lg font-black text-sky-200">Recent tips</h2>
-        {isLoading ? <p className="text-sm text-sky-100/90">Loading onchain tips...</p> : null}
+        {isLoading ? <p className="text-sm text-sky-100/90">Loading…</p> : null}
         {error ? <p className="text-sm text-rose-300">{error}</p> : null}
         {historyHint ? <p className="text-sm text-amber-200/95">{historyHint}</p> : null}
         {!isLoading && !error && tips.length === 0 ? (
-          <p className="text-sm text-sky-100/90">No tip events found for this address in the scanned window.</p>
+          <p className="text-sm text-sky-100/90">No tips found for this address in the time range we checked.</p>
         ) : null}
         {!isLoading && !error && tips.length > 0 ? (
           <div className="grid gap-2">

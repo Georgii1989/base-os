@@ -97,10 +97,15 @@ export function BaseBuilderApp() {
   const [activityExpanded, setActivityExpanded] = useState(false);
   const [networkStatus, setNetworkStatus] = useState<string | null>(null);
   const autoSwitchTriedRef = useRef(false);
+  /** Monotonic gate so overlapping polls cannot regress lastScannedBlockRef or stale UI updates. */
+  const activityLoadGenRef = useRef(0);
   const lastScannedBlockRef = useRef<bigint | null>(null);
   const tipJarKeyRef = useRef(tipJarAddress);
   const tipActivityRef = useRef<TipActivityItem[]>([]);
-  tipActivityRef.current = tipActivity;
+
+  useEffect(() => {
+    tipActivityRef.current = tipActivity;
+  }, [tipActivity]);
 
   const tipPresets = ["0.0005", "0.0010", "0.0050"];
   const messagePresets = ["gm base", "LFG", "great build", "ship it", "based app"];
@@ -128,9 +133,9 @@ export function BaseBuilderApp() {
 
     autoSwitchTriedRef.current = true;
     switchChainAsync({ chainId: base.id })
-      .then(() => setNetworkStatus("Network automatically switched to Base."))
+      .then(() => setNetworkStatus("Switched to Base."))
       .catch(() =>
-        setNetworkStatus("Auto-switch failed. Click Switch to Base and approve in your wallet.")
+        setNetworkStatus("Could not switch automatically. Tap “Switch to Base”.")
       );
   }, [isConnected, isOnBase, isSwitchingChain, switchChainAsync]);
 
@@ -140,6 +145,7 @@ export function BaseBuilderApp() {
     if (tipJarKeyRef.current !== tipJarAddress) {
       tipJarKeyRef.current = tipJarAddress;
       lastScannedBlockRef.current = null;
+      activityLoadGenRef.current += 1;
     }
 
     let cancelled = false;
@@ -166,25 +172,39 @@ export function BaseBuilderApp() {
             await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
           }
         }
-        if (!ok) throw new Error("activity-rpc-chunk-failed");
+        if (!ok) {
+          throw new Error("activity-rpc-chunk-failed");
+        }
         cursor = end + BigInt(1);
       }
       return out;
     }
 
     async function loadRecentTips() {
+      const gen = ++activityLoadGenRef.current;
+
+      function isStale() {
+        return cancelled || gen !== activityLoadGenRef.current;
+      }
+
       try {
         const latestBlock = await publicClient.getBlockNumber();
+        if (isStale()) return;
+
         const fallbackFromBlock =
           latestBlock > BigInt(1200) ? latestBlock - BigInt(1200) : BigInt(0);
         const fromBlock = lastScannedBlockRef.current
           ? lastScannedBlockRef.current + BigInt(1)
           : fallbackFromBlock;
-        if (fromBlock > latestBlock) return;
+        if (fromBlock > latestBlock) {
+          return;
+        }
 
         const logs = await getLogsWithRetries(fromBlock, latestBlock);
 
-        if (cancelled) return;
+        if (isStale()) {
+          return;
+        }
 
         const mapped = logs
           .map((log) => {
@@ -222,13 +242,13 @@ export function BaseBuilderApp() {
         setActivityError(null);
         setActivitySoftHint(null);
       } catch {
-        if (!cancelled) {
+        if (!isStale()) {
           if (tipActivityRef.current.length === 0) {
-            setActivityError("Unable to load live activity. Check RPC and try again.");
+            setActivityError("Couldn’t load tips. Check your connection and try again.");
             setActivitySoftHint(null);
           } else {
             setActivityError(null);
-            setActivitySoftHint("Could not refresh feed (RPC). Showing last loaded tips.");
+            setActivitySoftHint("Couldn’t refresh — showing the last tips we got.");
           }
         }
       }
@@ -241,6 +261,7 @@ export function BaseBuilderApp() {
 
     return () => {
       cancelled = true;
+      activityLoadGenRef.current += 1;
       clearInterval(timer);
     };
   }, [publicClient, tipJarAddress]);
@@ -250,11 +271,11 @@ export function BaseBuilderApp() {
     setSiweOk(false);
 
     if (!isConnected || !address || !chainId || !publicClient) {
-      setSiweError("Connect your wallet before SIWE.");
+      setSiweError("Connect your wallet first.");
       return;
     }
     if (!isOnBase) {
-      setSiweError("Switch your wallet network to Base first.");
+      setSiweError("Switch to Base in your wallet first.");
       return;
     }
 
@@ -273,13 +294,13 @@ export function BaseBuilderApp() {
       const valid = await publicClient.verifySiweMessage({ message, signature });
 
       if (!valid) {
-        setSiweError("SIWE signature verification failed.");
+        setSiweError("Signature didn’t verify. Try again.");
         return;
       }
 
       setSiweOk(true);
     } catch {
-      setSiweError("SIWE failed. Please try again.");
+      setSiweError("Sign-in failed. Try again.");
     }
   }
 
@@ -287,12 +308,12 @@ export function BaseBuilderApp() {
     setTipStatus(null);
     try {
       if (!isOnBase) {
-        setTipStatus("Switch network to Base first.");
+        setTipStatus("Switch to Base first.");
         return;
       }
       const value = parseEther(tipEth || "0");
       if (value <= BigInt(0)) {
-        setTipStatus("Tip amount must be greater than 0.");
+        setTipStatus("Enter an amount greater than 0.");
         return;
       }
       const normalizedMessage = tipMessage.trim() || "Support Base Tip app";
@@ -310,9 +331,9 @@ export function BaseBuilderApp() {
         args: [normalizedMessage],
         value,
       });
-      setTipStatus("TipJar transaction is being sent on Base...");
+      setTipStatus("Sending…");
     } catch {
-      setTipStatus("Invalid tip amount.");
+      setTipStatus("That amount doesn’t look valid.");
     }
   }
 
@@ -320,9 +341,9 @@ export function BaseBuilderApp() {
     setNetworkStatus(null);
     try {
       await switchChainAsync({ chainId: base.id });
-      setNetworkStatus("Network switched to Base.");
+      setNetworkStatus("Now on Base.");
     } catch {
-      setNetworkStatus("Unable to switch network. Approve the network change in your wallet.");
+      setNetworkStatus("Approve the network change in your wallet.");
     }
   }
 
@@ -361,7 +382,7 @@ export function BaseBuilderApp() {
         <p className="text-sm text-cyan-100">
           Network:{" "}
           <span className="font-bold">
-            {chainId ? `${chainId}${isOnBase ? " (Base)" : " (wrong network)"}` : "—"}
+            {chainId ? `${chainId}${isOnBase ? " (Base)" : " (not Base)"}` : "—"}
           </span>
         </p>
         <p className="text-sm text-cyan-100">
@@ -416,20 +437,20 @@ export function BaseBuilderApp() {
       </div>
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-fuchsia-300/30 bg-slate-950/50 p-4">
-        <h2 className="text-xl font-black text-fuchsia-200">Sign-In with Ethereum</h2>
+        <h2 className="text-xl font-black text-fuchsia-200">Sign in (Ethereum)</h2>
         <button
           onClick={handleSiwe}
           disabled={!isConnected}
           className="w-fit rounded-xl bg-fuchsia-500/85 px-4 py-2 text-sm font-black disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {siweOk ? "SIWE verified" : "Run SIWE auth"}
+          {siweOk ? "Signed in" : "Sign message"}
         </button>
         {siweError ? <p className="text-sm text-rose-300">{siweError}</p> : null}
       </div>
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-emerald-300/30 bg-slate-950/50 p-4">
-        <h2 className="text-xl font-black text-emerald-200">Send onchain tip</h2>
-        <p className="text-sm text-emerald-100/90">TipJar: {tipJarAddress}</p>
+        <h2 className="text-xl font-black text-emerald-200">Send a tip</h2>
+        <p className="text-sm text-emerald-100/90">Tip address: {tipJarAddress}</p>
         <div className="flex flex-wrap items-center gap-2">
           {tipPresets.map((preset) => (
             <button
@@ -484,7 +505,7 @@ export function BaseBuilderApp() {
         {tipStatus ? <p className="text-sm text-cyan-200">{tipStatus}</p> : null}
         {txHash && lastSentTip ? (
           <div className="rounded-2xl border border-emerald-200/30 bg-emerald-950/30 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">Onchain Receipt</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">Receipt</p>
             <p className="mt-2 text-sm text-emerald-100">
               Amount: <span className="font-bold">{lastSentTip.amountEth} ETH</span>
             </p>
@@ -494,12 +515,12 @@ export function BaseBuilderApp() {
             <p className="text-sm text-emerald-100">
               Status:{" "}
               <span className={`font-bold ${txConfirmed ? "text-emerald-300" : "text-amber-200"}`}>
-                {txConfirmed ? "Confirmed on Base" : "Pending confirmation"}
+                {txConfirmed ? "Confirmed on Base" : "Waiting for confirmation"}
               </span>
             </p>
             {txConfirmed ? (
               <div className="mt-2 rounded-lg border border-emerald-200/40 bg-emerald-400/15 p-2 text-xs font-bold text-emerald-100 animate-pulse">
-                ✨ Success! Your tip is final onchain.
+                ✓ Tip received on Base.
               </div>
             ) : null}
             <p className="text-xs text-emerald-200/90">
@@ -532,9 +553,9 @@ export function BaseBuilderApp() {
           className="flex w-full items-center justify-between gap-3 rounded-xl border border-sky-200/30 bg-sky-500/10 px-3 py-2 text-left"
         >
           <div>
-            <h2 className="text-xl font-black text-sky-200">Live tip activity</h2>
+            <h2 className="text-xl font-black text-sky-200">Recent tips</h2>
             <p className="text-sm text-sky-100/90">
-              Latest onchain tip events from TipJar. {activityExpanded ? "Click to collapse." : "Click to expand."}
+              From the tip jar. {activityExpanded ? "Tap to hide." : "Tap to show."}
             </p>
           </div>
           <span className="text-lg font-black text-sky-200">{activityExpanded ? "▲" : "▼"}</span>
@@ -545,7 +566,7 @@ export function BaseBuilderApp() {
             {activityError ? <p className="text-sm text-rose-300">{activityError}</p> : null}
             {activitySoftHint ? <p className="text-sm text-amber-200/95">{activitySoftHint}</p> : null}
             {tipActivity.length === 0 ? (
-              <p className="text-sm text-sky-100/90">No events yet, or they are still loading.</p>
+              <p className="text-sm text-sky-100/90">Nothing here yet.</p>
             ) : (
               <div className="grid gap-2">
                 {tipActivity.map((item) => (
@@ -572,8 +593,8 @@ export function BaseBuilderApp() {
       </div>
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-amber-300/30 bg-slate-950/50 p-4">
-        <h2 className="text-xl font-black text-amber-200">Collector badge</h2>
-        <p className="text-sm text-amber-100/90">Unlock this badge after your first confirmed onchain tip.</p>
+        <h2 className="text-xl font-black text-amber-200">Supporter badge</h2>
+        <p className="text-sm text-amber-100/90">You get this after your first confirmed tip.</p>
         <div
           className={`rounded-xl border p-3 ${
             badgeUnlocked

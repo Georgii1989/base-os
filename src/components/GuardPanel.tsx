@@ -98,10 +98,10 @@ export function GuardPanel() {
     decimalsRaw !== undefined ? Number(decimalsRaw) : undefined;
   const symbol = typeof symbolQuery.data === "string" ? symbolQuery.data : null;
 
-  let allowanceText = "Enter token and spender. Allowance loads automatically when inputs are valid on Base.";
+  let allowanceText = "Add token and app addresses. Amount appears when both are valid.";
   if (allowanceQuery.isFetching) allowanceText = "Loading…";
   else if (decimalsQuery.isError || symbolQuery.isError || allowanceQuery.isError)
-    allowanceText = "Could not read contract. Verify addresses are ERC-20 on Base.";
+    allowanceText = "Couldn’t read this token. Check it’s a normal token on Base.";
   else if (
     allowanceQuery.data !== undefined &&
     decimals !== undefined &&
@@ -112,22 +112,22 @@ export function GuardPanel() {
     const sym = symbol ?? "TOKEN";
     const raw = allowanceQuery.data as bigint;
     allowanceText = `${formatUnits(raw, decimals)} ${sym}`;
-    if (raw >= HUGE_ALLOWANCE) allowanceText += " (effectively unlimited)";
+    if (raw >= HUGE_ALLOWANCE) allowanceText += " (very high — like unlimited)";
   }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
       <div className="rounded-3xl border border-white/15 bg-slate-950/55 p-6">
         <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-200/90">Safety</p>
-        <h2 className="mt-2 text-3xl font-black text-white">Allowance Guard</h2>
+        <h2 className="mt-2 text-3xl font-black text-white">Token access</h2>
         <p className="mt-3 max-w-2xl text-sm text-slate-200/85">
-          Dapps ask you to approve a token <span className="text-emerald-200">spender</span> (router or aggregator).
-          Very large allowances are risky if keys or contracts are exploited. Revoke approvals you don&apos;t need.
+          Apps sometimes ask permission to move your tokens. Here you can <span className="text-emerald-200">see</span> how
+          much a site is allowed to use — not change it. To clean up, use a revoke tool linked on the right.
         </p>
 
         {!isConnected ? (
           <div className="mt-6 rounded-2xl border border-amber-300/25 bg-amber-500/10 p-4">
-            <p className="text-sm text-amber-100">Connect a wallet on Base to read allowances.</p>
+            <p className="text-sm text-amber-100">Connect your wallet (Base) to check permissions.</p>
             <button
               type="button"
               disabled={isConnecting || connectors.length === 0}
@@ -139,7 +139,7 @@ export function GuardPanel() {
           </div>
         ) : !isBase ? (
           <div className="mt-6 rounded-2xl border border-fuchsia-300/25 bg-fuchsia-500/10 p-4">
-            <p className="text-sm text-fuchsia-100">Switch to Base to use this checker.</p>
+            <p className="text-sm text-fuchsia-100">Switch to the Base network to continue.</p>
             <button
               type="button"
               disabled={isSwitching}
@@ -152,7 +152,7 @@ export function GuardPanel() {
         ) : (
           <div className="mt-6 grid gap-4">
             <label className="block">
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">ERC-20 token</span>
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Token</span>
               <input
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value.trim())}
@@ -162,7 +162,7 @@ export function GuardPanel() {
               />
             </label>
             <label className="block">
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Spender contract</span>
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">App / contract</span>
               <input
                 value={spenderInput}
                 onChange={(e) => setSpenderInput(e.target.value.trim())}
@@ -177,7 +177,7 @@ export function GuardPanel() {
                 onClick={() => presetUsdcUni()}
                 className="rounded-xl border border-white/15 bg-emerald-500/15 px-3 py-2 text-xs font-bold text-emerald-100"
               >
-                Preset: USDC + Uniswap Universal Router
+                USDC + Uniswap (example)
               </button>
               <button
                 type="button"
@@ -189,10 +189,10 @@ export function GuardPanel() {
               </button>
             </div>
             {!checksumToken || !checksumSpender ? (
-              <p className="text-xs text-slate-500">Paste valid checksum addresses (0x + 40 hex).</p>
+              <p className="text-xs text-slate-500">Use full addresses (0x + 40 characters).</p>
             ) : null}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs font-bold uppercase text-slate-400">Current allowance</p>
+              <p className="text-xs font-bold uppercase text-slate-400">Allowed amount</p>
               <p className="mt-2 break-all font-mono text-sm font-bold text-white">{allowanceText}</p>
             </div>
           </div>
@@ -201,23 +201,23 @@ export function GuardPanel() {
 
       <aside className="grid content-start gap-4">
         <div className="rounded-3xl border border-emerald-300/25 bg-emerald-500/10 p-5">
-          <h3 className="font-black text-emerald-100">Revoke approvals</h3>
-          <p className="mt-2 text-sm text-emerald-100/90">Bulk manage token approvals on Base with revoke.cash.</p>
+          <h3 className="font-black text-emerald-100">Revoke access</h3>
+          <p className="mt-2 text-sm text-emerald-100/90">Turn off old permissions in one place (external site).</p>
           <a
             href={REVOKE_CASH_BASE}
             target="_blank"
             rel="noreferrer"
             className="mt-4 inline-flex rounded-xl border border-emerald-200/50 bg-emerald-500/20 px-4 py-2 text-sm font-bold text-emerald-50"
           >
-            Open revoke.cash (Base)
+            Open revoke.cash ↗
           </a>
         </div>
         <div className="rounded-3xl border border-white/15 bg-slate-950/55 p-5 text-sm text-slate-300">
-          <p className="font-bold text-white">Tips</p>
+          <p className="font-bold text-white">Hints</p>
           <ul className="mt-2 list-disc space-y-2 pl-4">
-            <li>Copy spender addresses from the approve transaction on BaseScan.</li>
-            <li>Prefer bounded approvals when the app supports permits or exact amounts.</li>
-            <li>This panel only reads onchain state — it never sends transactions.</li>
+            <li>The “app” address often comes from your approve transaction on BaseScan.</li>
+            <li>When an app allows it, prefer a limited amount instead of “max”.</li>
+            <li>This screen only reads data — it never sends transactions.</li>
           </ul>
         </div>
       </aside>

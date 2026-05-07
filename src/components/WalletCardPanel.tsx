@@ -10,11 +10,10 @@ export function WalletCardPanel() {
   if (!isConnected || !address) {
     return (
       <div className="rounded-3xl border border-white/15 bg-slate-950/55 p-6">
-        <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-200/80">Identity</p>
-        <h2 className="mt-2 text-3xl font-black text-white">Wallet Card</h2>
+        <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-200/80">Wallet</p>
+        <h2 className="mt-2 text-3xl font-black text-white">Connect first</h2>
         <p className="mt-3 max-w-xl text-sm text-slate-200/85">
-          Connect from the Tip module (or Guard) first. Here you&apos;ll see your Base address with quick links —
-          Tip profile stats, explorers, copy.
+          Connect in the Tip tab or Guard. Then you’ll see your address and shortcuts here.
         </p>
       </div>
     );
@@ -52,7 +51,7 @@ export function WalletCardPanel() {
       </div>
       <div className="rounded-3xl border border-white/15 bg-white/5 p-5">
         <p className="text-sm text-slate-200/90">
-          Disconnect only affects this browser session inside Base OS utilities.
+          Disconnect only affects this site in your browser. Your wallet app itself stays logged in.
         </p>
         <button
           type="button"
