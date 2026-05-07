@@ -173,7 +173,7 @@ function RadarPanel() {
     };
   }, []);
 
-  const projectsWithPrice = radarProjects.filter((project) => marketData[project.id]?.priceUsd !== null);
+  const projectsWithPrice = radarProjects.filter((project) => typeof marketData[project.id]?.priceUsd === "number");
   const avgRisk =
     radarProjects.some((project) => project.risk === "High")
       ? "Mixed"
@@ -386,6 +386,7 @@ function Sparkline({ values, positive }: { values?: number[]; positive: boolean 
 function ProjectCard({ project, market }: { project: RadarProject; market?: RadarMarketData }) {
   const change24h = market?.change24h ?? null;
   const positive = (change24h ?? 0) >= 0;
+  const hasLiveMarket = typeof market?.priceUsd === "number";
 
   return (
     <article className="rounded-3xl border border-white/15 bg-slate-950/55 p-4">
@@ -438,29 +439,44 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
           </span>
         ))}
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-        <div className="rounded-xl bg-white/5 p-2">
-          <p className="text-slate-400">Price</p>
-          <p className="font-black text-white">{formatUsd(market?.priceUsd)}</p>
-        </div>
-        <div className="rounded-xl bg-white/5 p-2">
-          <p className="text-slate-400">24h</p>
-          <p className={`font-black ${positive ? "text-emerald-300" : "text-rose-300"}`}>
-            {formatChange(change24h)}
+      {hasLiveMarket ? (
+        <>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-xl bg-white/5 p-2">
+              <p className="text-slate-400">Price</p>
+              <p className="font-black text-white">{formatUsd(market?.priceUsd)}</p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-2">
+              <p className="text-slate-400">24h</p>
+              <p className={`font-black ${positive ? "text-emerald-300" : "text-rose-300"}`}>
+                {formatChange(change24h)}
+              </p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-2">
+              <p className="text-slate-400">Liquidity</p>
+              <p className="font-black text-white">{formatUsd(market?.liquidityUsd)}</p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-2">
+              <p className="text-slate-400">Vol 24h</p>
+              <p className="font-black text-white">{formatUsd(market?.volume24h)}</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Sparkline values={market?.sparkline} positive={positive} />
+          </div>
+        </>
+      ) : (
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
+          <p className="font-bold text-slate-100">
+            {project.tokenAddress ? "Base market data unavailable" : "No native Base token tracked"}
+          </p>
+          <p className="mt-1 text-slate-400">
+            {project.tokenAddress
+              ? "DexScreener has no liquid Base pair for this token yet."
+              : "This is a protocol/app listing, so Radar shows links and category signals instead of price stats."}
           </p>
         </div>
-        <div className="rounded-xl bg-white/5 p-2">
-          <p className="text-slate-400">Liquidity</p>
-          <p className="font-black text-white">{formatUsd(market?.liquidityUsd)}</p>
-        </div>
-        <div className="rounded-xl bg-white/5 p-2">
-          <p className="text-slate-400">Vol 24h</p>
-          <p className="font-black text-white">{formatUsd(market?.volume24h)}</p>
-        </div>
-      </div>
-      <div className="mt-4">
-        <Sparkline values={market?.sparkline} positive={positive} />
-      </div>
+      )}
       <div className="mt-4 flex flex-wrap gap-2">
         <a
           href={project.website}
