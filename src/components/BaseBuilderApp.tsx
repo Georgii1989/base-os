@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createSiweMessage, generateSiweNonce } from "viem/siwe";
-import { formatEther, parseAbiItem, parseEther } from "viem";
+import { formatEther, parseAbiItem, parseEther, type AbiEvent } from "viem";
 import { base } from "wagmi/chains";
 import {
   useAccount,
@@ -58,6 +58,12 @@ type TipActivityItem = {
   blockNumber: bigint;
 };
 
+/** Chunked getLogs + retries — public RPC often drops large/rare requests. */
+const ACTIVITY_LOG_CHUNK = BigInt(450);
+const LIVE_TIP_EVENT_ABI = parseAbiItem(
+  "event TipReceived(address indexed from, uint256 amount, string message)"
+) as AbiEvent;
+
 export function BaseBuilderApp() {
   const { address, chainId, isConnected } = useAccount();
   const { connect, connectors, isPending: isConnecting } = useConnect();
@@ -68,6 +74,12 @@ export function BaseBuilderApp() {
   const { signMessageAsync } = useSignMessage();
   const { data: txHash, isPending: isSending, writeContract } = useWriteContract();
   const { isSuccess: txConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
+
+  const tipJarAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
+  const sbtAddress = process.env.NEXT_PUBLIC_SBT_ADDRESS;
+  const hasValidSbtAddress =
+    typeof sbtAddress === "string" && /^0x[a-fA-F0-9]{40}$/.test(sbtAddress);
+  const isOnBase = chainId === base.id;
 
   const [siweOk, setSiweOk] = useState(false);
   const [siweError, setSiweError] = useState<string | null>(null);
@@ -81,16 +93,15 @@ export function BaseBuilderApp() {
   } | null>(null);
   const [tipActivity, setTipActivity] = useState<TipActivityItem[]>([]);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [activitySoftHint, setActivitySoftHint] = useState<string | null>(null);
   const [activityExpanded, setActivityExpanded] = useState(false);
   const [networkStatus, setNetworkStatus] = useState<string | null>(null);
   const autoSwitchTriedRef = useRef(false);
   const lastScannedBlockRef = useRef<bigint | null>(null);
+  const tipJarKeyRef = useRef(tipJarAddress);
+  const tipActivityRef = useRef<TipActivityItem[]>([]);
+  tipActivityRef.current = tipActivity;
 
-  const tipJarAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
-  const sbtAddress = process.env.NEXT_PUBLIC_SBT_ADDRESS;
-  const hasValidSbtAddress =
-    typeof sbtAddress === "string" && /^0x[a-fA-F0-9]{40}$/.test(sbtAddress);
-  const isOnBase = chainId === base.id;
   const tipPresets = ["0.0005", "0.0010", "0.0050"];
   const messagePresets = ["gm base", "LFG", "great build", "ship it", "based app"];
   const { data: hasBadgeOnchain } = useReadContract({
@@ -126,8 +137,40 @@ export function BaseBuilderApp() {
   useEffect(() => {
     if (!publicClient) return;
 
+    if (tipJarKeyRef.current !== tipJarAddress) {
+      tipJarKeyRef.current = tipJarAddress;
+      lastScannedBlockRef.current = null;
+    }
+
     let cancelled = false;
-    const tipEvent = parseAbiItem("event TipReceived(address indexed from, uint256 amount, string message)");
+
+    async function getLogsWithRetries(fromBlock: bigint, toBlock: bigint) {
+      const contract = tipJarAddress as `0x${string}`;
+      const out: Awaited<ReturnType<typeof publicClient.getLogs>> = [];
+      let cursor = fromBlock;
+      while (cursor <= toBlock) {
+        const end =
+          cursor + ACTIVITY_LOG_CHUNK - BigInt(1) > toBlock ? toBlock : cursor + ACTIVITY_LOG_CHUNK - BigInt(1);
+        let ok = false;
+        for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+          try {
+            const chunk = await publicClient.getLogs({
+              address: contract,
+              event: LIVE_TIP_EVENT_ABI,
+              fromBlock: cursor,
+              toBlock: end,
+            });
+            out.push(...chunk);
+            ok = true;
+          } catch {
+            await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
+          }
+        }
+        if (!ok) throw new Error("activity-rpc-chunk-failed");
+        cursor = end + BigInt(1);
+      }
+      return out;
+    }
 
     async function loadRecentTips() {
       try {
@@ -139,27 +182,28 @@ export function BaseBuilderApp() {
           : fallbackFromBlock;
         if (fromBlock > latestBlock) return;
 
-        const logs = await publicClient.getLogs({
-          address: tipJarAddress as `0x${string}`,
-          event: tipEvent,
-          fromBlock,
-          toBlock: latestBlock,
-        });
+        const logs = await getLogsWithRetries(fromBlock, latestBlock);
 
         if (cancelled) return;
 
         const mapped = logs
           .map((log) => {
-            const args = log.args as { from?: `0x${string}`; amount?: bigint; message?: string };
-            if (!args.from || args.amount === undefined || !log.transactionHash) return null;
-            const hash = log.transactionHash;
+            const row = log as {
+              transactionHash?: `0x${string}` | null;
+              logIndex?: number | null;
+              blockNumber?: bigint | null;
+              args?: { from?: `0x${string}`; amount?: bigint; message?: string };
+            };
+            const args = row.args ?? {};
+            if (!args.from || args.amount === undefined || !row.transactionHash) return null;
+            const hash = row.transactionHash;
             return {
-              id: `${hash}-${log.logIndex?.toString() ?? "0"}`,
+              id: `${hash}-${row.logIndex?.toString() ?? "0"}`,
               from: args.from,
               amount: Number(formatEther(args.amount)).toFixed(6),
               message: args.message?.trim() ? args.message : "(no message)",
               txHash: hash,
-              blockNumber: log.blockNumber ?? BigInt(0),
+              blockNumber: row.blockNumber ?? BigInt(0),
             };
           })
           .filter((entry): entry is TipActivityItem => entry !== null);
@@ -176,9 +220,16 @@ export function BaseBuilderApp() {
 
         lastScannedBlockRef.current = latestBlock;
         setActivityError(null);
+        setActivitySoftHint(null);
       } catch {
         if (!cancelled) {
-          setActivityError("Unable to load live activity. Check RPC and try again.");
+          if (tipActivityRef.current.length === 0) {
+            setActivityError("Unable to load live activity. Check RPC and try again.");
+            setActivitySoftHint(null);
+          } else {
+            setActivityError(null);
+            setActivitySoftHint("Could not refresh feed (RPC). Showing last loaded tips.");
+          }
         }
       }
     }
@@ -492,6 +543,7 @@ export function BaseBuilderApp() {
         {activityExpanded ? (
           <>
             {activityError ? <p className="text-sm text-rose-300">{activityError}</p> : null}
+            {activitySoftHint ? <p className="text-sm text-amber-200/95">{activitySoftHint}</p> : null}
             {tipActivity.length === 0 ? (
               <p className="text-sm text-sky-100/90">No events yet, or they are still loading.</p>
             ) : (
