@@ -130,6 +130,10 @@ function RadarPanel() {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [stageFilter, setStageFilter] = useState("All");
   const [riskFilter, setRiskFilter] = useState("All");
+  const categoryOptions = useMemo(
+    () => ["All", ...Array.from(new Set(radarProjects.flatMap((project) => project.categories))).sort()],
+    []
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -218,7 +222,7 @@ function RadarPanel() {
         </label>
         <FilterGroup
           title="Category"
-          items={["All", "DeFi", "NFT", "Social", "Infra", "AI", "Gaming", "Meme"]}
+          items={categoryOptions}
           value={categoryFilter}
           onChange={setCategoryFilter}
         />
@@ -276,11 +280,11 @@ function RadarPanel() {
       <aside className="grid content-start gap-4">
         <SidePanel
           title="Weekly Picks"
-          items={["Aerodrome", "Virtuals", "Moonwell", "Degen"]}
+          items={["Aerodrome", "Virtuals", "Moonwell", "Aave"]}
         />
         <SidePanel
           title="Recently Added"
-          items={["Clanker", "Brett", "Moonwell", "Virtuals"]}
+          items={["AITV", "AIBased", "AI Agent Arena", "AgentiPy"]}
         />
       </aside>
     </div>
@@ -386,7 +390,14 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
   return (
     <article className="rounded-3xl border border-white/15 bg-slate-950/55 p-4">
       <div className="flex items-start gap-3">
-        <div className={`h-12 w-12 rounded-2xl bg-gradient-to-br ${project.accent}`} />
+        <div className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br ${project.accent}`}>
+          <img
+            src={project.iconUrl}
+            alt={`${project.name} icon`}
+            className="h-7 w-7 rounded-lg"
+            referrerPolicy="no-referrer"
+          />
+        </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <div>
@@ -447,22 +458,26 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
         >
           Website
         </a>
-        <a
-          href={`https://basescan.org/token/${project.tokenAddress}`}
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
-        >
-          BaseScan
-        </a>
-        <a
-          href={project.x}
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
-        >
-          X
-        </a>
+        {project.tokenAddress ? (
+          <a
+            href={`https://basescan.org/token/${project.tokenAddress}`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
+          >
+            BaseScan
+          </a>
+        ) : null}
+        {project.x ? (
+          <a
+            href={project.x}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
+          >
+            X
+          </a>
+        ) : null}
         {market?.pairUrl ? (
           <a
             href={market.pairUrl}

@@ -62,7 +62,12 @@ function pickBestPair(pairs: DexPair[], tokenAddress: string) {
 }
 
 export async function GET() {
-  const addresses = radarProjects.map((project) => project.tokenAddress).join(",");
+  const tokenProjects = radarProjects.filter((project) => project.tokenAddress);
+  const addresses = tokenProjects.map((project) => project.tokenAddress).join(",");
+  if (!addresses) {
+    return NextResponse.json({ updatedAt: new Date().toISOString(), data: [] });
+  }
+
   const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addresses}`, {
     next: { revalidate },
   });
@@ -77,8 +82,8 @@ export async function GET() {
   const payload = (await response.json()) as { pairs?: DexPair[] };
   const pairs = payload.pairs ?? [];
 
-  const data = radarProjects.map((project) => {
-    const bestPair = pickBestPair(pairs, project.tokenAddress);
+  const data = tokenProjects.map((project) => {
+    const bestPair = pickBestPair(pairs, project.tokenAddress as `0x${string}`);
     const price = numberOrNull(bestPair?.priceUsd);
 
     return {
