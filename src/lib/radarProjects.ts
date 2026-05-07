@@ -7,6 +7,7 @@ export type RadarProject = {
   stage: "New" | "Growing" | "Mature";
   risk: "Low" | "Medium" | "High";
   tokenAddress?: `0x${string}`;
+  baseScanUrl?: string;
   website: string;
   x?: string;
   iconUrl: string;
@@ -199,6 +200,7 @@ export const radarProjects: RadarProject[] = [
     categories: ["DeFi", "Lending", "Borrowing"],
     stage: "Mature",
     risk: "Low",
+    tokenAddress: "0x63706e401c06ac8513145b7687a14804d17f814b",
     website: "https://app.aave.com",
     x: "https://x.com/aave",
     iconUrl: favicon("aave.com"),
@@ -349,6 +351,7 @@ export const radarProjects: RadarProject[] = [
     categories: ["Bridge", "DeFi", "Infra"],
     stage: "Mature",
     risk: "Low",
+    tokenAddress: "0xE3B53AF74a4BF62Ae5511055290838050bf764Df",
     website: "https://www.stargate.finance",
     x: "https://x.com/StargateFinance",
     iconUrl: favicon("stargate.finance"),
@@ -362,6 +365,7 @@ export const radarProjects: RadarProject[] = [
     categories: ["Bridge", "Swap", "Aggregator"],
     stage: "Mature",
     risk: "Low",
+    baseScanUrl: "https://basescan.org/address/0x3a23F943181408EAC424116Af7b7790c94Cb97a5",
     website: "https://www.bungee.exchange",
     x: "https://x.com/BungeeExchange",
     iconUrl: favicon("bungee.exchange"),
@@ -388,6 +392,7 @@ export const radarProjects: RadarProject[] = [
     categories: ["DeFi", "DEX", "Swap"],
     stage: "Mature",
     risk: "Low",
+    tokenAddress: "0xc3de830EA07524a0761646a6a4e4be0e114a3C83",
     website: "https://app.uniswap.org",
     x: "https://x.com/Uniswap",
     iconUrl: favicon("uniswap.org"),
@@ -401,6 +406,7 @@ export const radarProjects: RadarProject[] = [
     categories: ["DeFi", "DEX", "Swap"],
     stage: "Mature",
     risk: "Low",
+    tokenAddress: "0x0214d750cfccec11e8d1078c863256df4dce6ec4",
     website: "https://sushi.com/base/swap",
     x: "https://x.com/SushiSwap",
     iconUrl: favicon("sushi.com"),
@@ -428,6 +434,7 @@ export const radarProjects: RadarProject[] = [
     categories: ["DeFi", "Swap", "Aggregator"],
     stage: "Mature",
     risk: "Low",
+    tokenAddress: "0xca73ed1815e5915489570014e024b7EbE65dE679",
     website: "https://app.odos.xyz",
     x: "https://x.com/odosprotocol",
     iconUrl: favicon("odos.xyz"),
@@ -454,6 +461,7 @@ export const radarProjects: RadarProject[] = [
     categories: ["DeFi", "Lending", "Yield"],
     stage: "Mature",
     risk: "Low",
+    tokenAddress: "0xBAa5CC21fd487B8Fcc2F632f3F4E8D37262a0842",
     website: "https://app.morpho.org",
     x: "https://x.com/MorphoLabs",
     iconUrl: favicon("morpho.org"),
@@ -481,6 +489,7 @@ export const radarProjects: RadarProject[] = [
     categories: ["DeFi", "Lending", "Borrowing"],
     stage: "Mature",
     risk: "Low",
+    tokenAddress: "0x9e1028F5F1D5eDE59748FFceE5532509976840E0",
     website: "https://app.compound.finance",
     x: "https://x.com/compoundfinance",
     iconUrl: favicon("compound.finance"),

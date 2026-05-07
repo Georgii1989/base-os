@@ -486,9 +486,9 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
         >
           Website
         </a>
-        {project.tokenAddress ? (
+        {project.tokenAddress || project.baseScanUrl ? (
           <a
-            href={`https://basescan.org/token/${project.tokenAddress}`}
+            href={project.tokenAddress ? `https://basescan.org/token/${project.tokenAddress}` : project.baseScanUrl}
             target="_blank"
             rel="noreferrer"
             className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
