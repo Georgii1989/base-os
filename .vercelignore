@@ -1,0 +1,9 @@
+# Local secrets — never send to Vercel build upload
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test.local
+.env.production.local
+contracts.local.env
+*.pem
