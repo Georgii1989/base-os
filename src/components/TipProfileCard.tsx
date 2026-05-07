@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { formatEther, parseAbiItem } from "viem";
+import { formatEther, getAddress, isAddress, parseAbiItem, type AbiEvent } from "viem";
 import { usePublicClient } from "wagmi";
 
 type TipEntry = {
@@ -14,8 +14,34 @@ type TipEntry = {
 };
 
 const DEFAULT_TIPJAR = "0x47ad142c4f04431164737cACD601796932b7357A";
-const DEFAULT_PROFILE_LOOKBACK = BigInt(100_000);
-const LOGS_CHUNK_SIZE = BigInt(2_500);
+/** Narrower window keeps public RPCs from failing on huge eth_getLogs ranges. Override with NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK. */
+const DEFAULT_PROFILE_LOOKBACK = BigInt(25_000);
+const LOGS_CHUNK_SIZE = BigInt(1_500);
+
+const TIP_RECEIVED_ABI = parseAbiItem(
+  "event TipReceived(address indexed from, uint256 amount, string message)"
+) as AbiEvent;
+
+function parseCommaAddresses(raw: string | undefined): `0x${string}`[] {
+  if (!raw?.trim()) return [];
+  const out: `0x${string}`[] = [];
+  for (const piece of raw.split(",")) {
+    const t = piece.trim();
+    if (isAddress(t)) out.push(getAddress(t));
+  }
+  return out;
+}
+
+function parseFromBlockEnv(value: string | undefined): bigint | null {
+  if (!value?.trim()) return null;
+  const t = value.trim();
+  if (!/^\d+$/.test(t)) return null;
+  try {
+    return BigInt(t);
+  } catch {
+    return null;
+  }
+}
 
 export function TipProfileCard({ address }: { address: `0x${string}` }) {
   const publicClient = usePublicClient();
@@ -23,85 +49,196 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
   const [error, setError] = useState<string | null>(null);
   const [historyHint, setHistoryHint] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
   const tipSourceAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
-  const profileFromBlockEnv = process.env.NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK;
+  const profileFromBlockEnvRaw = process.env.NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK;
+  const extraContractsRaw = process.env.NEXT_PUBLIC_TIP_PROFILE_CONTRACTS;
+
   const sourceContracts = useMemo(() => {
-    const normalized = new Set<string>([
-      tipSourceAddress.toLowerCase(),
-      DEFAULT_TIPJAR.toLowerCase(),
-    ]);
-    return Array.from(normalized) as `0x${string}`[];
-  }, [tipSourceAddress]);
+    const lower = new Set<string>();
+    const candidates = [tipSourceAddress, DEFAULT_TIPJAR, ...parseCommaAddresses(extraContractsRaw)];
+    for (const candidate of candidates) {
+      const t = candidate?.trim();
+      if (!t) continue;
+      if (isAddress(t)) lower.add(getAddress(t).toLowerCase());
+    }
+    return Array.from(lower, (hex) => getAddress(hex)) as `0x${string}`[];
+  }, [tipSourceAddress, extraContractsRaw]);
+
+  const watcherFrom = useMemo(() => parseFromBlockEnv(profileFromBlockEnvRaw), [profileFromBlockEnvRaw]);
 
   useEffect(() => {
-    if (!publicClient) return;
-    let cancelled = false;
-    const tipEvent = parseAbiItem("event TipReceived(address indexed from, uint256 amount, string message)");
+    if (!publicClient) return undefined;
 
-    async function fetchLogsChunked(contractAddress: `0x${string}`, fromBlock: bigint, toBlock: bigint) {
-      const allLogs = [];
+    let cancelled = false;
+
+    async function fetchLogsChunked(
+      contractAddress: `0x${string}`,
+      fromBlock: bigint,
+      toBlock: bigint,
+      fromWallet: `0x${string}`
+    ): Promise<{ logs: Awaited<ReturnType<typeof publicClient.getLogs>>; failedChunks: number }> {
+      const allLogs: Awaited<ReturnType<typeof publicClient.getLogs>> = [];
       let start = fromBlock;
+      let failedChunks = 0;
+
       while (start <= toBlock) {
         const end =
           start + LOGS_CHUNK_SIZE - BigInt(1) > toBlock
             ? toBlock
             : start + LOGS_CHUNK_SIZE - BigInt(1);
-        const chunk = await publicClient.getLogs({
-          address: contractAddress,
-          event: tipEvent,
-          args: { from: address },
-          fromBlock: start,
-          toBlock: end,
-        });
-        allLogs.push(...chunk);
+        let ok = false;
+        for (let attempt = 0; attempt < 2 && !ok; attempt++) {
+          try {
+            const chunk = await publicClient.getLogs({
+              address: contractAddress,
+              event: TIP_RECEIVED_ABI,
+              args: { from: fromWallet },
+              fromBlock: start,
+              toBlock: end,
+            });
+            allLogs.push(...chunk);
+            ok = true;
+          } catch {
+            await new Promise((r) => setTimeout(r, 350));
+          }
+        }
+        if (!ok) failedChunks++;
         start = end + BigInt(1);
       }
-      return allLogs;
+      return { logs: allLogs, failedChunks };
     }
 
     async function loadProfileTips() {
       setIsLoading(true);
+      setError(null);
+
+
       try {
         const latestBlock = await publicClient.getBlockNumber();
-        const configuredFromBlock = profileFromBlockEnv ? BigInt(profileFromBlockEnv) : null;
-        const fromBlock =
-          configuredFromBlock ??
-          (latestBlock > DEFAULT_PROFILE_LOOKBACK
-            ? latestBlock - DEFAULT_PROFILE_LOOKBACK
-            : BigInt(0));
+        if (cancelled) return;
 
-        const logsBySource = await Promise.all(
-          sourceContracts.map((contract) => fetchLogsChunked(contract, fromBlock, latestBlock))
+        const fromWallet = getAddress(address);
+        const configuredFromBlock = watcherFrom;
+        let fromBlock: bigint;
+        if (configuredFromBlock !== null) {
+          fromBlock = configuredFromBlock;
+        } else if (latestBlock > DEFAULT_PROFILE_LOOKBACK) {
+          fromBlock = latestBlock - DEFAULT_PROFILE_LOOKBACK;
+        } else {
+          fromBlock = BigInt(0);
+        }
+
+        if (sourceContracts.length === 0) {
+          if (!cancelled) {
+            setTips([]);
+            setError("Configure at least one valid tip contract address (NEXT_PUBLIC_TIPJAR_ADDRESS).");
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        const results = await Promise.allSettled(
+          sourceContracts.map((contract) =>
+            fetchLogsChunked(contract, fromBlock, latestBlock, fromWallet)
+          )
         );
-        const logs = logsBySource.flat();
+
+        const flat: Awaited<ReturnType<typeof publicClient.getLogs>> = [];
+        let aggregatedFailedChunks = 0;
+
+        let contractLevelRejections = 0;
+
+        for (const result of results) {
+          if (result.status === "rejected") {
+            contractLevelRejections++;
+            continue;
+          }
+          flat.push(...result.value.logs);
+          aggregatedFailedChunks += result.value.failedChunks;
+        }
+
+        const span = latestBlock >= fromBlock ? latestBlock - fromBlock + BigInt(1) : BigInt(0);
+        const windowsPerContract =
+          span > BigInt(0) ? Number((span + LOGS_CHUNK_SIZE - BigInt(1)) / LOGS_CHUNK_SIZE) : 0;
+
+        const seenTxIndex = new Set<string>();
+        const dedup = flat.filter((log) => {
+          const k = `${log.transactionHash}-${String(log.logIndex)}`;
+          if (seenTxIndex.has(k)) return false;
+          seenTxIndex.add(k);
+          return true;
+        });
 
         if (cancelled) return;
 
-        const mapped = logs
+        const mapped = dedup
           .map((log) => {
-            const args = log.args as { amount?: bigint; message?: string };
-            if (args.amount === undefined || !log.transactionHash) return null;
+            const row = log as {
+              transactionHash?: `0x${string}` | null;
+              logIndex?: number | null;
+              blockNumber?: bigint | null;
+              args?: { amount?: bigint; message?: string };
+            };
+            const args = row.args ?? {};
+            if (args.amount === undefined || !row.transactionHash) return null;
             return {
-              id: `${log.transactionHash}-${log.logIndex?.toString() ?? "0"}`,
+              id: `${row.transactionHash}-${row.logIndex?.toString() ?? "0"}`,
               amountEth: Number(formatEther(args.amount)).toFixed(6),
               message: args.message?.trim() ? args.message : "(no message)",
-              txHash: log.transactionHash,
-              blockNumber: log.blockNumber ?? BigInt(0),
+              txHash: row.transactionHash,
+              blockNumber: row.blockNumber ?? BigInt(0),
             };
           })
           .filter((entry): entry is TipEntry => entry !== null)
           .sort((a, b) => (a.blockNumber === b.blockNumber ? 0 : a.blockNumber > b.blockNumber ? -1 : 1));
 
         setTips(mapped.slice(0, 20));
-        setError(null);
-        setHistoryHint(
-          configuredFromBlock
-            ? null
-            : "Showing tips from the last ~100k blocks. Set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK for full history."
-        );
+
+        const rpcProbablyDead =
+          mapped.length === 0 &&
+          (contractLevelRejections === results.length ||
+            (windowsPerContract > 0 &&
+              aggregatedFailedChunks >= windowsPerContract * sourceContracts.length));
+
+        if (mapped.length === 0) {
+          if (rpcProbablyDead) {
+            setError(
+              "Unable to load profile tips — the RPC rejected log scans. Fix: set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK to your TipJar or router deployment block (smaller window), and optionally NEXT_PUBLIC_TIP_PROFILE_CONTRACTS listing router and TipJar comma-separated."
+            );
+            setHistoryHint(null);
+          } else if (aggregatedFailedChunks > 0) {
+            setError(null);
+            setHistoryHint(
+              "Some block ranges failed (RPC limits). Set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK to the deployment block for a shorter, reliable scan."
+            );
+          } else {
+            setError(null);
+            setHistoryHint(
+              configuredFromBlock === null
+                ? "No tips in the recent window. If this wallet tipped earlier, set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK to the deployment block."
+                : null
+            );
+          }
+        } else {
+          setError(null);
+          if (aggregatedFailedChunks > 0 || contractLevelRejections > 0) {
+            setHistoryHint(
+              "Some RPC responses were incomplete — list may miss older tips unless NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK is set."
+            );
+          } else {
+            setHistoryHint(
+              configuredFromBlock === null
+                ? "Showing tips from a recent block window only. Set NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK for full history."
+                : null
+            );
+          }
+        }
       } catch {
         if (!cancelled) {
-          setError("Unable to load profile tips.");
+          setError(
+            "Unable to load profile tips (network error). Check your connection or RPC limits for this chain."
+          );
         }
       } finally {
         if (!cancelled) {
@@ -114,7 +251,7 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
     return () => {
       cancelled = true;
     };
-  }, [publicClient, address, profileFromBlockEnv, sourceContracts]);
+  }, [publicClient, address, watcherFrom, sourceContracts]);
 
   const totalEth = useMemo(
     () => tips.reduce((sum, item) => sum + Number(item.amountEth), 0).toFixed(6),
@@ -158,7 +295,7 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
         {error ? <p className="text-sm text-rose-300">{error}</p> : null}
         {historyHint ? <p className="text-sm text-amber-200/95">{historyHint}</p> : null}
         {!isLoading && !error && tips.length === 0 ? (
-          <p className="text-sm text-sky-100/90">No tip events found for this address yet.</p>
+          <p className="text-sm text-sky-100/90">No tip events found for this address in the scanned window.</p>
         ) : null}
         {!isLoading && !error && tips.length > 0 ? (
           <div className="grid gap-2">
