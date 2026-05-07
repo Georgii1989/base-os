@@ -335,8 +335,7 @@ function RadarPanel() {
           </p>
           {!marketError && updatedLabel ? (
             <p className="mt-2 text-xs text-slate-400">
-              Quotes last bundled at {updatedLabel}. Sources: DexScreener pairs on Base → DefiLlama → CoinMarketCap (if{" "}
-              <code className="font-mono text-slate-300">COINMARKETCAP_API_KEY</code> is set on the server).
+              Last update: {updatedLabel}
             </p>
           ) : null}
           {marketError ? <p className="mt-2 text-sm text-amber-200">{marketError}</p> : null}
