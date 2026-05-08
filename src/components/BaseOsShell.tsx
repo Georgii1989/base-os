@@ -442,7 +442,7 @@ function RadarPanel() {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
+    <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
       <aside className="rounded-xl border border-white/10 bg-slate-950/40 p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-cyan-100">Filters</h2>
@@ -477,7 +477,7 @@ function RadarPanel() {
         <FilterList title="Risk" items={riskOptions} value={resolvedRisk} onChange={setRiskFilter} />
       </aside>
 
-      <main className="grid gap-4">
+      <main className="grid content-start gap-4 self-start">
         <div>
           <h2 className="text-3xl font-black text-white md:text-4xl">Project Radar</h2>
           <p className="mt-1 text-sm text-slate-200/80">Projects we like, with links and prices when available.</p>
