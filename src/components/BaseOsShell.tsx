@@ -142,7 +142,7 @@ function BaseOsShellInner() {
       <nav
         role="tablist"
         aria-label="Base OS modules"
-        className="mt-4 flex flex-wrap gap-2"
+        className="mt-4 flex gap-0 overflow-x-auto border-b border-white/10 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         onKeyDown={handleTabKeyDown}
       >
         {OS_TAB_META.map((tab, index) => (
@@ -158,14 +158,22 @@ function BaseOsShellInner() {
             aria-controls={`base-os-panel-${tab.id}`}
             tabIndex={activeTab === tab.id ? 0 : -1}
             onClick={() => setActiveTab(tab.id)}
-            className={`rounded-2xl border px-4 py-2 text-left transition ${
+            className={`relative shrink-0 px-3 py-2.5 text-left transition sm:min-w-[5.5rem] sm:px-4 ${
               activeTab === tab.id
-                ? "border-cyan-200/80 bg-cyan-400/20 text-cyan-100 shadow-[0_0_20px_rgba(34,211,238,0.25)]"
-                : "border-white/15 bg-white/5 text-slate-200 hover:border-cyan-200/40 hover:bg-cyan-400/10"
+                ? "text-cyan-100"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-70">{tab.eyebrow}</p>
-            <p className="text-sm font-black">{tab.label}</p>
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              {tab.eyebrow}
+            </span>
+            <span className="mt-0.5 block text-sm font-bold">{tab.label}</span>
+            {activeTab === tab.id ? (
+              <span
+                className="absolute bottom-0 left-1 right-1 h-[3px] rounded-t-sm bg-gradient-to-r from-cyan-400 to-fuchsia-400 shadow-[0_0_14px_rgba(34,211,238,0.45)]"
+                aria-hidden
+              />
+            ) : null}
           </button>
         ))}
       </nav>
@@ -343,10 +351,65 @@ function RadarPanel() {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [stageFilter, setStageFilter] = useState("All");
   const [riskFilter, setRiskFilter] = useState("All");
-  const categoryOptions = useMemo(
-    () => ["All", ...Array.from(new Set(radarProjects.flatMap((project) => project.categories))).sort()],
-    []
-  );
+
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const project of radarProjects) {
+      for (const category of project.categories) {
+        counts.set(category, (counts.get(category) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, []);
+
+  const categoryOptions = useMemo(() => {
+    const labels = Array.from(categoryCounts.entries())
+      .filter(([, count]) => count > 0)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([label]) => label);
+    return ["All", ...labels];
+  }, [categoryCounts]);
+
+  const stageCounts = useMemo(() => {
+    const counts: Partial<Record<RadarProject["stage"], number>> = {};
+    for (const project of radarProjects) {
+      counts[project.stage] = (counts[project.stage] ?? 0) + 1;
+    }
+    return counts;
+  }, []);
+
+  const stageOptions = useMemo(() => {
+    const order: RadarProject["stage"][] = ["New", "Growing", "Mature"];
+    return ["All", ...order.filter((stage) => (stageCounts[stage] ?? 0) > 0)];
+  }, [stageCounts]);
+
+  const riskCounts = useMemo(() => {
+    const counts: Partial<Record<RadarProject["risk"], number>> = {};
+    for (const project of radarProjects) {
+      counts[project.risk] = (counts[project.risk] ?? 0) + 1;
+    }
+    return counts;
+  }, []);
+
+  const riskOptions = useMemo(() => {
+    const order: RadarProject["risk"][] = ["Low", "Medium", "High"];
+    return ["All", ...order.filter((risk) => (riskCounts[risk] ?? 0) > 0)];
+  }, [riskCounts]);
+
+  const resolvedCategory = useMemo(() => {
+    if (categoryFilter === "All" || categoryOptions.includes(categoryFilter)) return categoryFilter;
+    return "All";
+  }, [categoryFilter, categoryOptions]);
+
+  const resolvedStage = useMemo(() => {
+    if (stageFilter === "All" || stageOptions.includes(stageFilter)) return stageFilter;
+    return "All";
+  }, [stageFilter, stageOptions]);
+
+  const resolvedRisk = useMemo(() => {
+    if (riskFilter === "All" || riskOptions.includes(riskFilter)) return riskFilter;
+    return "All";
+  }, [riskFilter, riskOptions]);
 
   const projectsWithPrice = radarProjects.filter((project) => typeof marketData[project.id]?.priceUsd === "number");
   const avgRisk =
@@ -363,9 +426,9 @@ function RadarPanel() {
       project.symbol.toLowerCase().includes(q) ||
       project.description.toLowerCase().includes(q) ||
       project.categories.some((category) => category.toLowerCase().includes(q));
-    const matchesCategory = categoryFilter === "All" || project.categories.includes(categoryFilter);
-    const matchesStage = stageFilter === "All" || project.stage === stageFilter;
-    const matchesRisk = riskFilter === "All" || project.risk === riskFilter;
+    const matchesCategory = resolvedCategory === "All" || project.categories.includes(resolvedCategory);
+    const matchesStage = resolvedStage === "All" || project.stage === resolvedStage;
+    const matchesRisk = resolvedRisk === "All" || project.risk === resolvedRisk;
 
     return matchesSearch && matchesCategory && matchesStage && matchesRisk;
   });
@@ -379,44 +442,35 @@ function RadarPanel() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
-      <aside className="rounded-3xl border border-white/15 bg-slate-950/50 p-4">
+      <aside className="rounded-xl border border-white/10 bg-slate-950/40 p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-black text-cyan-100">Filters</h2>
-          <button type="button" onClick={resetFilters} className="text-xs font-bold text-slate-400 hover:text-cyan-200">
+          <h2 className="text-base font-bold text-cyan-100">Filters</h2>
+          <button type="button" onClick={resetFilters} className="text-xs font-semibold text-slate-500 hover:text-cyan-200">
             Reset
           </button>
         </div>
         <label className="mt-4 block">
-          <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Search</span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Search</span>
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Name, symbol, tag…"
-            className="mt-2 w-full rounded-xl border border-white/15 bg-black/35 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/60"
+            className="mt-1.5 w-full border-b border-white/15 bg-transparent px-0 py-2 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-400/70"
           />
         </label>
-        <FilterGroup
+        <FilterList
           title="Category"
           items={categoryOptions}
-          value={categoryFilter}
+          value={resolvedCategory}
           onChange={setCategoryFilter}
         />
-        <FilterGroup
+        <FilterList
           title="Stage"
-          items={["All", "New", "Growing", "Mature"]}
-          value={stageFilter}
+          items={stageOptions}
+          value={resolvedStage}
           onChange={setStageFilter}
         />
-        <FilterGroup
-          title="Risk"
-          items={["All", "Low", "Medium", "High"]}
-          value={riskFilter}
-          onChange={setRiskFilter}
-        />
-        <div className="mt-5 rounded-2xl border border-cyan-300/25 bg-cyan-500/10 p-4">
-          <p className="text-sm font-black text-cyan-100">Filters</p>
-          <p className="mt-1 text-xs text-cyan-100/75">Narrow the list by category, stage, or risk.</p>
-        </div>
+        <FilterList title="Risk" items={riskOptions} value={resolvedRisk} onChange={setRiskFilter} />
       </aside>
 
       <main className="grid gap-4">
@@ -434,9 +488,9 @@ function RadarPanel() {
           {marketError ? <p className="mt-2 text-sm text-amber-200">{marketError}</p> : null}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="flex flex-wrap divide-x divide-white/[0.08] overflow-hidden rounded-lg border border-white/[0.08] bg-black/25">
           <Metric label="Projects" value={String(radarProjects.length)} />
-          <Metric label="With price" value={isLoading ? "..." : String(projectsWithPrice.length)} />
+          <Metric label="With price" value={isLoading ? "…" : String(projectsWithPrice.length)} />
           <Metric label="Avg risk" value={avgRisk} />
           <Metric label="On screen" value={String(filteredProjects.length)} />
         </div>
@@ -467,7 +521,7 @@ function RadarPanel() {
   );
 }
 
-function FilterGroup({
+function FilterList({
   title,
   items,
   value,
@@ -480,32 +534,39 @@ function FilterGroup({
 }) {
   return (
     <div className="mt-5">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{title}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {items.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => onChange(item)}
-            className={`rounded-lg border px-3 py-1 text-xs font-bold ${
-              value === item
-                ? "border-cyan-200/60 bg-cyan-500/20 text-cyan-100"
-                : "border-white/15 bg-white/5 text-slate-200"
-            }`}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{title}</p>
+      <ul className="mt-1.5 divide-y divide-white/[0.06] rounded-md border border-white/[0.07] bg-black/30">
+        {items.map((item) => {
+          const active = value === item;
+          return (
+            <li key={item}>
+              <button
+                type="button"
+                onClick={() => onChange(item)}
+                className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 text-left text-sm transition first:rounded-t-md last:rounded-b-md ${
+                  active ? "bg-cyan-500/[0.12] text-cyan-50" : "text-slate-300 hover:bg-white/[0.04]"
+                }`}
+              >
+                <span className="min-w-0 truncate">{item}</span>
+                {active ? (
+                  <span className="shrink-0 text-xs text-cyan-300/90" aria-hidden>
+                    ●
+                  </span>
+                ) : null}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-cyan-300/20 bg-slate-950/55 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200/70">{label}</p>
-      <p className="mt-2 text-2xl font-black text-white">{value}</p>
+    <div className="min-w-[108px] flex-1 px-3 py-3 sm:px-4">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-1 text-xl font-bold tabular-nums tracking-tight text-white">{value}</p>
     </div>
   );
 }
@@ -565,7 +626,7 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
   const hasLiveMarket = typeof market?.priceUsd === "number";
 
   return (
-    <article className="rounded-3xl border border-white/15 bg-slate-950/55 p-4">
+    <article className="rounded-xl border border-white/12 bg-slate-950/45 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <div className="flex items-start gap-3">
         <a
           href={project.website}
@@ -599,47 +660,41 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
               <p className="text-xs font-bold text-cyan-200">{project.symbol}</p>
             </div>
             <span
-              className={`rounded-full border px-2 py-0.5 text-xs font-bold ${
+              className={`shrink-0 border-l-2 px-2 py-0.5 text-xs font-semibold ${
                 project.risk === "Low"
-                  ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-200"
+                  ? "border-emerald-400/70 text-emerald-200"
                   : project.risk === "Medium"
-                    ? "border-amber-300/30 bg-amber-400/10 text-amber-200"
-                    : "border-rose-300/30 bg-rose-400/10 text-rose-200"
+                    ? "border-amber-400/70 text-amber-200"
+                    : "border-rose-400/70 text-rose-200"
               }`}
             >
               {project.risk}
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-200/75">{project.description}</p>
+          <p className="mt-2 line-clamp-2 text-sm leading-snug text-slate-300/90">{project.description}</p>
+          <p className="mt-2 text-xs text-slate-500">{project.categories.join(" · ")}</p>
         </div>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {project.categories.map((tag) => (
-          <span key={tag} className="rounded-lg border border-violet-300/25 bg-violet-500/10 px-2 py-1 text-xs text-violet-100">
-            {tag}
-          </span>
-        ))}
       </div>
       {hasLiveMarket ? (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-xl bg-white/5 p-2">
-              <p className="text-slate-400">Price</p>
-              <p className="font-black text-white">{formatUsd(market?.priceUsd)}</p>
+          <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-md bg-white/[0.06] text-xs">
+            <div className="bg-black/30 p-2.5">
+              <p className="text-slate-500">Price</p>
+              <p className="font-bold text-white">{formatUsd(market?.priceUsd)}</p>
             </div>
-            <div className="rounded-xl bg-white/5 p-2">
-              <p className="text-slate-400">24h</p>
-              <p className={`font-black ${positive ? "text-emerald-300" : "text-rose-300"}`}>
+            <div className="bg-black/30 p-2.5">
+              <p className="text-slate-500">24h</p>
+              <p className={`font-bold ${positive ? "text-emerald-300" : "text-rose-300"}`}>
                 {formatChange(change24h)}
               </p>
             </div>
-            <div className="rounded-xl bg-white/5 p-2">
-              <p className="text-slate-400">Liquidity</p>
-              <p className="font-black text-white">{formatUsd(market?.liquidityUsd)}</p>
+            <div className="bg-black/30 p-2.5">
+              <p className="text-slate-500">Liquidity</p>
+              <p className="font-bold text-white">{formatUsd(market?.liquidityUsd)}</p>
             </div>
-            <div className="rounded-xl bg-white/5 p-2">
-              <p className="text-slate-400">24h volume</p>
-              <p className="font-black text-white">{formatUsd(market?.volume24h)}</p>
+            <div className="bg-black/30 p-2.5">
+              <p className="text-slate-500">24h volume</p>
+              <p className="font-bold text-white">{formatUsd(market?.volume24h)}</p>
             </div>
           </div>
           <div className="mt-4">
@@ -648,23 +703,23 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
           </div>
         </>
       ) : (
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
-          <p className="font-bold text-slate-100">
+        <div className="mt-4 border border-white/[0.07] bg-black/25 p-3 text-xs text-slate-400">
+          <p className="font-semibold text-slate-200">
             {project.tokenAddress ? "No price data" : "No token price"}
           </p>
-          <p className="mt-1 text-slate-400">
+          <p className="mt-1 leading-relaxed">
             {project.tokenAddress
               ? "No active price feed for this token on Base yet."
-              : "App or protocol listing — links and tags only, no chart."}
+              : "App listing — links only, no chart."}
           </p>
         </div>
       )}
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 border-t border-white/[0.06] pt-3">
         <a
           href={project.website}
           target="_blank"
           rel="noreferrer"
-          className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
+          className="text-xs font-semibold text-cyan-200/90 underline decoration-cyan-500/35 underline-offset-4 hover:text-cyan-100"
         >
           Website
         </a>
@@ -673,7 +728,7 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
             href={project.tokenAddress ? `https://basescan.org/token/${project.tokenAddress}` : project.baseScanUrl}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
+            className="text-xs font-semibold text-cyan-200/90 underline decoration-cyan-500/35 underline-offset-4 hover:text-cyan-100"
           >
             BaseScan
           </a>
@@ -683,7 +738,7 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
             href={project.x}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
+            className="text-xs font-semibold text-cyan-200/90 underline decoration-cyan-500/35 underline-offset-4 hover:text-cyan-100"
           >
             X
           </a>
@@ -693,7 +748,7 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
             href={market.pairUrl}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200"
+            className="text-xs font-semibold text-cyan-200/90 underline decoration-cyan-500/35 underline-offset-4 hover:text-cyan-100"
           >
             Chart
           </a>
@@ -705,45 +760,46 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
 
 function SidePanel({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="rounded-3xl border border-white/15 bg-slate-950/55 p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-black text-white">{title}</h2>
+    <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4">
+      <div className="flex items-center justify-between gap-2 border-b border-white/[0.07] pb-3">
+        <h2 className="text-base font-bold text-white">{title}</h2>
         <a
           href="https://www.base.org/ecosystem"
           target="_blank"
           rel="noreferrer"
-          className="text-xs font-bold text-cyan-200 underline decoration-cyan-500/40"
+          className="shrink-0 text-xs font-semibold text-cyan-300/90 underline decoration-cyan-500/35"
         >
           View all
         </a>
       </div>
-      <div className="mt-3 grid gap-2">
+      <ul className="mt-2 divide-y divide-white/[0.06]">
         {items.map((item, index) => {
           const project = radarProjects.find((p) => p.name === item);
-          const content = (
+          const row = (
             <>
-              <span className="text-sm font-bold text-slate-100">{item}</span>
-              <span className="text-xs text-cyan-200">{String(index + 1).padStart(2, "0")}</span>
+              <span className="text-sm font-medium text-slate-100">{item}</span>
+              <span className="tabular-nums text-xs text-slate-500">{String(index + 1).padStart(2, "0")}</span>
             </>
           );
 
-          return project ? (
-            <a
-              key={item}
-              href={project.website}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 transition hover:bg-cyan-500/10"
-            >
-              {content}
-            </a>
-          ) : (
-            <div key={item} className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2">
-              {content}
-            </div>
+          return (
+            <li key={item}>
+              {project ? (
+                <a
+                  href={project.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between gap-2 py-2.5 transition hover:text-cyan-100"
+                >
+                  {row}
+                </a>
+              ) : (
+                <div className="flex items-center justify-between gap-2 py-2.5">{row}</div>
+              )}
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }
