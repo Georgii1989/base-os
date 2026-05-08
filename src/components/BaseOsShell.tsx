@@ -142,7 +142,7 @@ function BaseOsShellInner() {
       <nav
         role="tablist"
         aria-label="Base OS modules"
-        className="mt-4 flex gap-0 overflow-x-auto border-b border-white/10 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="mt-4 flex gap-2 overflow-x-auto border-b border-[#6b2248]/70 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         onKeyDown={handleTabKeyDown}
       >
         {OS_TAB_META.map((tab, index) => (
@@ -158,19 +158,19 @@ function BaseOsShellInner() {
             aria-controls={`base-os-panel-${tab.id}`}
             tabIndex={activeTab === tab.id ? 0 : -1}
             onClick={() => setActiveTab(tab.id)}
-            className={`relative shrink-0 px-3 py-2.5 text-left transition sm:min-w-[5.5rem] sm:px-4 ${
+            className={`relative shrink-0 rounded-lg border px-3 py-2.5 text-left transition sm:min-w-[5.5rem] sm:px-4 ${
               activeTab === tab.id
-                ? "text-cyan-100"
-                : "text-slate-400 hover:text-slate-200"
+                ? "border-[#b64072] bg-[#3a0d26]/70 text-[#ffd3e6] shadow-[0_0_16px_rgba(182,64,114,0.35)]"
+                : "border-[#5c1d3f]/70 bg-[#210818]/45 text-slate-300 hover:border-[#8b2f58] hover:text-[#ffd3e6]"
             }`}
           >
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
               {tab.eyebrow}
             </span>
             <span className="mt-0.5 block text-sm font-bold">{tab.label}</span>
             {activeTab === tab.id ? (
               <span
-                className="absolute bottom-0 left-1 right-1 h-[3px] rounded-t-sm bg-gradient-to-r from-cyan-400 to-fuchsia-400 shadow-[0_0_14px_rgba(34,211,238,0.45)]"
+                className="absolute bottom-0 left-1 right-1 h-[2px] rounded-t-sm bg-gradient-to-r from-[#f08ab4] to-[#b64072]"
                 aria-hidden
               />
             ) : null}
@@ -351,6 +351,7 @@ function RadarPanel() {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [stageFilter, setStageFilter] = useState("All");
   const [riskFilter, setRiskFilter] = useState("All");
+  const [categoriesOpen, setCategoriesOpen] = useState(true);
 
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -463,6 +464,9 @@ function RadarPanel() {
           items={categoryOptions}
           value={resolvedCategory}
           onChange={setCategoryFilter}
+          collapsible
+          expanded={categoriesOpen}
+          onToggle={() => setCategoriesOpen((prev) => !prev)}
         />
         <FilterList
           title="Stage"
@@ -488,7 +492,7 @@ function RadarPanel() {
           {marketError ? <p className="mt-2 text-sm text-amber-200">{marketError}</p> : null}
         </div>
 
-        <div className="flex flex-wrap divide-x divide-white/[0.08] overflow-hidden rounded-lg border border-white/[0.08] bg-black/25">
+        <div className="flex flex-wrap gap-2">
           <Metric label="Projects" value={String(radarProjects.length)} />
           <Metric label="With price" value={isLoading ? "…" : String(projectsWithPrice.length)} />
           <Metric label="Avg risk" value={avgRisk} />
@@ -526,47 +530,73 @@ function FilterList({
   items,
   value,
   onChange,
+  collapsible = false,
+  expanded = true,
+  onToggle,
 }: {
   title: string;
   items: string[];
   value: string;
   onChange: (value: string) => void;
+  collapsible?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
 }) {
   return (
     <div className="mt-5">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{title}</p>
-      <ul className="mt-1.5 divide-y divide-white/[0.06] rounded-md border border-white/[0.07] bg-black/30">
-        {items.map((item) => {
-          const active = value === item;
-          return (
-            <li key={item}>
-              <button
-                type="button"
-                onClick={() => onChange(item)}
-                className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 text-left text-sm transition first:rounded-t-md last:rounded-b-md ${
-                  active ? "bg-cyan-500/[0.12] text-cyan-50" : "text-slate-300 hover:bg-white/[0.04]"
-                }`}
-              >
-                <span className="min-w-0 truncate">{item}</span>
-                {active ? (
-                  <span className="shrink-0 text-xs text-cyan-300/90" aria-hidden>
-                    ●
-                  </span>
-                ) : null}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{title}</p>
+        {collapsible ? (
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={expanded ? `Collapse ${title}` : `Expand ${title}`}
+            className="rounded border border-[#7f2a52]/70 bg-[#2a0b1b]/60 px-1.5 py-0.5 text-xs text-[#f1aac9] transition hover:border-[#c14a7e] hover:text-[#ffd8e8]"
+          >
+            {expanded ? "▾" : "▸"}
+          </button>
+        ) : null}
+      </div>
+      {expanded ? (
+        <ul className="mt-1.5 divide-y divide-white/[0.06] rounded-md border border-white/[0.07] bg-black/30">
+          {items.map((item) => {
+            const active = value === item;
+            return (
+              <li key={item}>
+                <button
+                  type="button"
+                  onClick={() => onChange(item)}
+                  className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 text-left text-sm transition first:rounded-t-md last:rounded-b-md ${
+                    active
+                      ? "border-l-2 border-[#d25b8f] bg-[#4a102d]/75 text-[#ffe1ee]"
+                      : "text-slate-300 hover:bg-white/[0.04]"
+                  }`}
+                >
+                  <span className="min-w-0 truncate">{item}</span>
+                  {active ? (
+                    <span className="shrink-0 text-xs text-cyan-300/90" aria-hidden>
+                      ●
+                    </span>
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="mt-1.5 rounded-md border border-dashed border-white/[0.08] px-2.5 py-2 text-xs text-slate-500">
+          Hidden
+        </div>
+      )}
     </div>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-[108px] flex-1 px-3 py-3 sm:px-4">
+    <div className="rounded-md border border-white/[0.09] bg-black/30 px-3 py-2">
       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-bold tabular-nums tracking-tight text-white">{value}</p>
+      <p className="mt-1 text-base font-bold tabular-nums tracking-tight text-white">{value}</p>
     </div>
   );
 }
