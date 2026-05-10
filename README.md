@@ -33,7 +33,7 @@ cp .env.example .env.local
 ```env
 NEXT_PUBLIC_TIPJAR_ADDRESS=0x47ad142c4f04431164737cACD601796932b7357A
 NEXT_PUBLIC_BASE_BUILDER_CODE=YOUR-BUILDER-CODE
-NEXT_PUBLIC_APP_URL=https://base-tips.vercel.app
+NEXT_PUBLIC_APP_URL=https://app-base-os.vercel.app
 
 # Optional — soulbound (ERC-721) supporter NFT + on-chain holder registry in the UI
 NEXT_PUBLIC_SBT_ADDRESS=0xYourSoulboundNft

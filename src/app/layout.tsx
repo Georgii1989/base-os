@@ -5,7 +5,7 @@ import { Web3Providers } from "@/components/Web3Providers";
 export const metadata: Metadata = {
   title: "Base OS · tips, apps & safety",
   description: "Tips, curated Base apps, tracked wallets, and simple safety tools — wallet optional.",
-  metadataBase: new URL("https://base-tips.vercel.app"),
+  metadataBase: new URL("https://app-base-os.vercel.app"),
   other: {
     "base:app_id": "69f884af879b4ae3fa1c7162",
   },
