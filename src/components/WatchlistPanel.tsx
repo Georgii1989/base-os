@@ -21,6 +21,14 @@ export type WatchSnapshot = {
   isContract: boolean;
 };
 
+export type WatchTxExtraStats = {
+  deployments: number;
+  uniqueSendTargets: number;
+  txsAnalyzed: number;
+  capped: boolean;
+  source: "ok" | "error";
+};
+
 async function snapshotOne(
   client: {
     getBalance: (opts: { address: `0x${string}` }) => Promise<bigint>;
@@ -91,6 +99,38 @@ export function WatchlistPanel() {
     refetchInterval: 120_000,
   });
 
+  const { data: txExtra, isFetching: txExtraFetching, isError: txExtraError } = useQuery({
+    queryKey: ["watchlist-tx-stats", listKey],
+    enabled: list.length > 0,
+    queryFn: async () => {
+      const response = await fetch("/api/watchlist-stats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ addresses: list }),
+      });
+      if (!response.ok) throw new Error("watchlist-stats");
+      return (await response.json()) as
+        | { ok: false; reason: "missing_api_key"; byAddress: Record<string, never> }
+        | { ok: true; byAddress: Record<string, WatchTxExtraStats> };
+    },
+    staleTime: 120_000,
+    refetchInterval: 300_000,
+  });
+
+  const txStatsByAddress = useMemo(() => {
+    const m = new Map<string, WatchTxExtraStats>();
+    if (!txExtra || !("ok" in txExtra) || !txExtra.ok) return m;
+    for (const [k, v] of Object.entries(txExtra.byAddress)) {
+      m.set(k.toLowerCase(), v);
+    }
+    return m;
+  }, [txExtra]);
+
+  const basescanHint =
+    txExtra && "ok" in txExtra && txExtra.ok === false && txExtra.reason === "missing_api_key"
+      ? "Deployments & unique send targets use Basescan. Add BASESCAN_API_KEY on the server (Vercel env) to enable."
+      : null;
+
   const prevSnapshotsRef = useRef<WatchSnapshot[] | null>(null);
   const [deltaByAddress, setDeltaByAddress] = useState(
     () => new Map<string, { balanceWeiDelta: bigint; nonceDelta: number }>()
@@ -140,12 +180,14 @@ export function WatchlistPanel() {
     setInputError(null);
     syncFromStorage();
     void queryClient.invalidateQueries({ queryKey: ["watchlist-snapshots"] });
+    void queryClient.invalidateQueries({ queryKey: ["watchlist-tx-stats"] });
   }
 
   function handleRemove(addr: `0x${string}`) {
     removeFromWatchlist(addr);
     syncFromStorage();
     void queryClient.invalidateQueries({ queryKey: ["watchlist-snapshots"] });
+    void queryClient.invalidateQueries({ queryKey: ["watchlist-tx-stats"] });
   }
 
   return (
@@ -160,8 +202,10 @@ export function WatchlistPanel() {
             Tracked wallets
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-slate-300 md:text-base">
-            Add addresses you care about. We refresh balance and how many transactions they’ve sent. Nothing is sent to
-            our servers — it stays in your browser.
+            Add addresses you care about. Balance and transaction count come from the public Base RPC.
+            With <code className="font-mono text-slate-400">BASESCAN_API_KEY</code> on the host we also
+            estimate contracts deployed and how many distinct addresses received outgoing txs. Your pin
+            list stays only in this browser.
           </p>
         </header>
       </div>
@@ -242,19 +286,47 @@ export function WatchlistPanel() {
                   </time>
                 </>
               ) : null}
+              {txExtraFetching ? " · loading on-chain extras…" : null}
             </p>
+            {basescanHint ? <p className="mt-2 max-w-2xl text-xs leading-relaxed text-slate-500">{basescanHint}</p> : null}
+            {txExtraError ? (
+              <p className="mt-2 text-xs text-amber-200/90">Could not load deploy / send-target stats. Try again later.</p>
+            ) : null}
           </div>
           <div className="grid gap-3">
             {list.map((addr) => {
               const key = addr.toLowerCase();
               const snap = snapByAddress.get(key);
               const delta = deltaByAddress.get(key);
+              const extra = txStatsByAddress.get(key);
+              const missingKey =
+                txExtra !== undefined &&
+                "ok" in txExtra &&
+                txExtra.ok === false &&
+                txExtra.reason === "missing_api_key";
               const bal =
                 snap !== undefined ? formatEtherSnap(snap.balanceWei) : publicClient ? "…" : "—";
               const deltaLine =
                 snap !== undefined && delta !== undefined
                   ? summarizeDelta(delta.balanceWeiDelta, delta.nonceDelta)
                   : null;
+
+              let deployStr = "—";
+              let targetsStr = "—";
+              let capNote: string | null = null;
+              if (!missingKey && txExtra && "ok" in txExtra && txExtra.ok) {
+                if (txExtraFetching && !extra) {
+                  deployStr = "…";
+                  targetsStr = "…";
+                } else if (extra?.source === "ok") {
+                  deployStr = extra.deployments.toLocaleString();
+                  targetsStr = extra.uniqueSendTargets.toLocaleString();
+                  if (extra.capped) {
+                    capNote = `Stats from the first ${extra.txsAnalyzed.toLocaleString()} outgoing normal txs (per-address cap).`;
+                  }
+                }
+              }
+
               return (
                 <article
                   key={addr}
@@ -270,7 +342,7 @@ export function WatchlistPanel() {
                       <p className="mt-3 break-all font-mono text-sm font-bold tracking-tight text-white md:text-base">
                         {addr}
                       </p>
-                      <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
+                      <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
                         <div>
                           <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
                             Balance
@@ -280,12 +352,32 @@ export function WatchlistPanel() {
                         <div>
                           <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
                             Tx count
+                            <span className="ml-1 font-normal normal-case text-slate-600">(nonce)</span>
                           </dt>
                           <dd className="mt-1 font-mono font-semibold text-white">
                             {snap !== undefined ? snap.txCount.toLocaleString() : "—"}
                           </dd>
                         </div>
+                        <div>
+                          <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                            Deployments
+                            <span className="ml-1 block pt-0.5 font-normal normal-case text-[10px] text-slate-600">
+                              contracts created
+                            </span>
+                          </dt>
+                          <dd className="mt-1 font-mono font-semibold text-fuchsia-200">{deployStr}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                            Send targets
+                            <span className="ml-1 block pt-0.5 font-normal normal-case text-[10px] text-slate-600">
+                              unique outgoing “to” addresses
+                            </span>
+                          </dt>
+                          <dd className="mt-1 font-mono font-semibold text-violet-200">{targetsStr}</dd>
+                        </div>
                       </dl>
+                      {capNote ? <p className="mt-3 text-[11px] text-slate-500">{capNote}</p> : null}
                       {snap !== undefined && delta !== undefined ? (
                         <p className="mt-4 text-[12px] font-medium leading-relaxed text-slate-400">
                           since last refresh:{" "}
