@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAddress, isAddress } from "viem";
 import {
   computeStatsFromTxList,
-  fetchAddressTxListAll,
+  fetchMergedTxListForOutgoingStats,
 } from "@/lib/basescanAccountTx";
 
 export const maxDuration = 60;
@@ -77,8 +77,8 @@ export async function POST(request: Request) {
   await Promise.all(
     normalized.map(async (address) => {
       try {
-        const { txs, capped } = await fetchAddressTxListAll(address, apiKey, {
-          maxTxs: 25_000,
+        const { txs, capped } = await fetchMergedTxListForOutgoingStats(address, apiKey, {
+          perDirectionMax: 14_000,
           offset: 1000,
         });
         const stats = computeStatsFromTxList(txs, address.toLowerCase());

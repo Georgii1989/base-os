@@ -29,4 +29,22 @@ describe("computeStatsFromTxList", () => {
       txsAnalyzed: 2,
     });
   });
+
+  it("treats 40-char from/to without 0x", () => {
+    expect(
+      computeStatsFromTxList(
+        [
+          {
+            from: "f39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            to: "0000000000000000000000000000000000000001",
+          },
+        ],
+        W
+      )
+    ).toEqual({
+      deployments: 0,
+      uniqueSendTargets: 1,
+      txsAnalyzed: 1,
+    });
+  });
 });
