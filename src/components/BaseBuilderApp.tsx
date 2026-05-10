@@ -84,7 +84,7 @@ export function BaseBuilderApp() {
   const [siweOk, setSiweOk] = useState(false);
   const [siweError, setSiweError] = useState<string | null>(null);
   const [tipEth, setTipEth] = useState("0.0005");
-  const [tipMessage, setTipMessage] = useState("Support Base Tip app");
+  const [tipMessage, setTipMessage] = useState("Support Base OS");
   const [tipStatus, setTipStatus] = useState<string | null>(null);
   const [lastSentTip, setLastSentTip] = useState<{
     amountEth: string;
@@ -356,7 +356,7 @@ export function BaseBuilderApp() {
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({
-          title: "Base Tip receipt",
+          title: "Base OS receipt",
           text: shareText,
           url: txUrl,
         });
@@ -375,7 +375,7 @@ export function BaseBuilderApp() {
 
   return (
     <section className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/15 bg-black/45 p-5 text-white shadow-[0_0_50px_rgba(76,29,149,0.45)] backdrop-blur-xl">
-      <h1 className="text-3xl font-black text-fuchsia-200 md:text-5xl">Base Tip</h1>
+      <h1 className="text-3xl font-black text-fuchsia-200 md:text-5xl">Base OS</h1>
 
       <div className="mt-5 grid gap-3 rounded-2xl border border-cyan-300/30 bg-slate-950/50 p-4">
         <p className="text-sm text-cyan-100">Wallet: <span className="font-bold">{shortAddress}</span></p>

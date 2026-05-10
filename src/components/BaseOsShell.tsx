@@ -113,7 +113,7 @@ function BaseOsShellInner() {
       <header className="flex flex-col gap-4 border-b border-white/10 pb-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-200/80">
-            Base hub
+            Base OS
           </p>
           <h1 className="mt-1 text-3xl font-black text-fuchsia-100 md:text-5xl">Base OS</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-200/80">

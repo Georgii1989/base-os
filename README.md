@@ -1,4 +1,4 @@
-# Base Tip
+# Base OS
 
 Standard web app for Base App migration:
 - wallet connection with `wagmi`,

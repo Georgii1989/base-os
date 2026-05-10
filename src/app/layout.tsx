@@ -3,7 +3,7 @@ import "./globals.css";
 import { Web3Providers } from "@/components/Web3Providers";
 
 export const metadata: Metadata = {
-  title: "Base OS · tips, projects & safety checks",
+  title: "Base OS · tips, apps & safety",
   description: "Tips, curated Base apps, tracked wallets, and simple safety tools — wallet optional.",
   metadataBase: new URL("https://base-tips.vercel.app"),
   other: {
