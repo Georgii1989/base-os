@@ -99,7 +99,7 @@ export function WatchlistPanel() {
     refetchInterval: 120_000,
   });
 
-  const { data: txExtra, isFetching: txExtraFetching, isError: txExtraError } = useQuery({
+  const { data: txExtra, isFetching: txExtraFetching, isError: txExtraError, refetch: refetchTxExtra } = useQuery({
     queryKey: ["watchlist-tx-stats", listKey],
     enabled: list.length > 0,
     queryFn: async () => {
@@ -128,7 +128,7 @@ export function WatchlistPanel() {
 
   const basescanHint =
     txExtra && "ok" in txExtra && txExtra.ok === false && txExtra.reason === "missing_api_key"
-      ? "Deployments & unique send targets use Basescan. Add BASESCAN_API_KEY on the server (Vercel env) to enable."
+      ? "Deployments & send targets load from Basescan. Add BASESCAN_API_KEY (or ETHERSCAN_API_KEY) in Vercel / .env.local, then redeploy."
       : null;
 
   const prevSnapshotsRef = useRef<WatchSnapshot[] | null>(null);
@@ -203,9 +203,14 @@ export function WatchlistPanel() {
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-slate-300 md:text-base">
             Add addresses you care about. Balance and transaction count come from the public Base RPC.
-            With <code className="font-mono text-slate-400">BASESCAN_API_KEY</code> on the host we also
-            estimate contracts deployed and how many distinct addresses received outgoing txs. Your pin
-            list stays only in this browser.
+            With <code className="font-mono text-slate-400">BASESCAN_API_KEY</code>
+            {""} / <code className="font-mono text-slate-400">ETHERSCAN_API_KEY</code>
+            {""} on the host we aggregate your{" "}
+            <span className="font-semibold text-slate-200">outgoing</span> txs from Basescan: deployments (empty{" "}
+            <code className="font-mono text-slate-500">to</code>) and unique recipients.
+            {""} Contracts deployed via factories only count when your wallet is the outer sender with an empty{" "}
+            <code className="font-mono text-slate-500">to</code> — not internal creates.
+            {""} Your pin list stays only in this browser.
           </p>
         </header>
       </div>
@@ -251,11 +256,14 @@ export function WatchlistPanel() {
         ) : null}
         <button
           type="button"
-          disabled={list.length === 0 || !publicClient || isFetching}
-          onClick={() => void refetch()}
+          disabled={list.length === 0 || !publicClient || isFetching || txExtraFetching}
+          onClick={() => {
+            void refetch();
+            void refetchTxExtra();
+          }}
           className="mt-2 w-full rounded-2xl border border-cyan-300/55 bg-transparent px-4 py-2.5 text-sm font-black uppercase tracking-[0.12em] text-cyan-100 hover:bg-cyan-500/15 disabled:pointer-events-none disabled:opacity-40 md:mt-[22px] md:w-auto md:min-w-[160px]"
         >
-          {isFetching ? "Refreshing…" : "Refresh now"}
+          {isFetching || txExtraFetching ? "Refreshing…" : "Refresh now"}
         </button>
       </section>
 
@@ -321,9 +329,18 @@ export function WatchlistPanel() {
                 } else if (extra?.source === "ok") {
                   deployStr = extra.deployments.toLocaleString();
                   targetsStr = extra.uniqueSendTargets.toLocaleString();
-                  if (extra.capped) {
-                    capNote = `Stats from the first ${extra.txsAnalyzed.toLocaleString()} outgoing normal txs (per-address cap).`;
+
+                  if (extra.txsAnalyzed === 0 && snap !== undefined && snap.txCount > 0) {
+                    capNote =
+                      "No outgoing txs in the Basescan slice we pulled (mixed with incoming) — try again later or we need a higher scan limit.";
                   }
+                  if (extra.capped) {
+                    const tail = `Fetched up to ~25k txs involving this address (incoming+outgoing mixed); stats use only your sends (${extra.txsAnalyzed.toLocaleString()} in that window).`;
+                    capNote = capNote ? `${capNote} ${tail}` : tail;
+                  }
+                } else if (extra?.source === "error") {
+                  deployStr = "—";
+                  targetsStr = "—";
                 }
               }
 
@@ -377,6 +394,11 @@ export function WatchlistPanel() {
                           <dd className="mt-1 font-mono font-semibold text-violet-200">{targetsStr}</dd>
                         </div>
                       </dl>
+                      {extra?.source === "error" && !missingKey && !txExtraFetching ? (
+                        <p className="mt-2 text-[11px] text-amber-200/90">
+                          Basescan did not return stats (check the key, plan limits, or try later).
+                        </p>
+                      ) : null}
                       {capNote ? <p className="mt-3 text-[11px] text-slate-500">{capNote}</p> : null}
                       {snap !== undefined && delta !== undefined ? (
                         <p className="mt-4 text-[12px] font-medium leading-relaxed text-slate-400">

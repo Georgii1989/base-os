@@ -33,18 +33,30 @@ function normalizeRecipient(tx: BasescanNormalTx): `0x${string}` | null {
   return getAddress(raw);
 }
 
-export function computeStatsFromTxList(txs: BasescanNormalTx[]): Omit<AddressTxStats, "capped"> {
+export function computeStatsFromTxList(
+  txs: BasescanNormalTx[],
+  /** Lowercase 0x-prefixed address we are tracking — only outgoing txs (\`from\` matches). */
+  watcherLower: string
+): Omit<AddressTxStats, "capped"> {
   let deployments = 0;
   const targets = new Set<string>();
+  let txsAnalyzed = 0;
+
   for (const tx of txs) {
+    const from = (tx.from ?? "").trim().toLowerCase();
+    if (from !== watcherLower) continue;
+
+    txsAnalyzed += 1;
     if (isContractCreationRow(tx)) deployments += 1;
+
     const recipient = normalizeRecipient(tx);
     if (recipient) targets.add(recipient.toLowerCase());
   }
+
   return {
     deployments,
     uniqueSendTargets: targets.size,
-    txsAnalyzed: txs.length,
+    txsAnalyzed,
   };
 }
 
@@ -73,7 +85,7 @@ export async function fetchAddressTxListAll(
       endblock: "99999999",
       page: String(page),
       offset: String(offset),
-      sort: "asc",
+      sort: "desc",
       apikey: apiKey,
     });
     const url = `${BASESCAN_API}?${params.toString()}`;

@@ -11,7 +11,8 @@ type Body = { addresses?: unknown };
 
 /** Extra on-chain stats for watchlist (Basescan txlist). Requires BASESCAN_API_KEY. */
 export async function POST(request: Request) {
-  const apiKey = process.env.BASESCAN_API_KEY?.trim();
+  const apiKey =
+    process.env.BASESCAN_API_KEY?.trim() || process.env.ETHERSCAN_API_KEY?.trim() || "";
   if (!apiKey) {
     return NextResponse.json(
       {
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
           maxTxs: 25_000,
           offset: 1000,
         });
-        const stats = computeStatsFromTxList(txs);
+        const stats = computeStatsFromTxList(txs, address.toLowerCase());
         byAddress[address.toLowerCase()] = {
           deployments: stats.deployments,
           uniqueSendTargets: stats.uniqueSendTargets,
