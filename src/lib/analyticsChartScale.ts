@@ -15,11 +15,32 @@ export function buildYAxisTicks(min: number, max: number, targetCount = 5): numb
   const ticks: number[] = [];
   for (let v = tickMin; v <= max + step * 0.01; v += step) {
     ticks.push(v);
-    if (ticks.length > targetCount + 2) break;
+    if (ticks.length > targetCount + 4) break;
   }
 
-  if (ticks[ticks.length - 1]! < max) ticks.push(tickMin + step * (ticks.length - 1));
+  let top = ticks[ticks.length - 1] ?? max;
+  while (top < max) {
+    top += step;
+    ticks.push(top);
+  }
+
   return ticks;
+}
+
+/** Y domain for chart plot: ticks always cover [dataMin, dataMax] with headroom. */
+export function chartYDomain(
+  dataMin: number,
+  dataMax: number,
+  targetCount = 5
+): { yMin: number; yMax: number; yTicks: number[] } {
+  const span = dataMax - dataMin || Math.max(Math.abs(dataMax), 1);
+  const pad = span * 0.06;
+  const floor = dataMin >= 0 && dataMin <= span * 0.05 ? 0 : dataMin - pad;
+  const ceil = dataMax + pad;
+  const yTicks = buildYAxisTicks(floor, ceil, targetCount);
+  const yMin = yTicks[0] ?? floor;
+  const yMax = yTicks[yTicks.length - 1] ?? ceil;
+  return { yMin, yMax, yTicks };
 }
 
 export function pickXAxisIndices(length: number, count = 5): number[] {

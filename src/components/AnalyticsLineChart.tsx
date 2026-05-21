@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import {
-  buildYAxisTicks,
+  chartYDomain,
   formatChartDate,
   pickXAxisIndices,
 } from "@/lib/analyticsChartScale";
@@ -22,17 +22,29 @@ const PLOT = { left: 58, right: 16, top: 18, bottom: 36 };
 const WIDTH = 640;
 const HEIGHT = 280;
 
-function buildSmoothPath(
-  coords: { x: number; y: number }[]
-): string {
+/** Monotone polyline — no Bézier overshoot above/below data. */
+function buildLinePath(coords: { x: number; y: number }[]): string {
   if (coords.length === 0) return "";
-  return coords.reduce((d, point, index) => {
-    if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-    const prev = coords[index - 1]!;
-    const controlX1 = prev.x + (point.x - prev.x) / 2;
-    const controlX2 = point.x - (point.x - prev.x) / 2;
-    return `${d} C ${controlX1.toFixed(2)} ${prev.y.toFixed(2)}, ${controlX2.toFixed(2)} ${point.y.toFixed(2)}, ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-  }, "");
+  return coords
+    .map((point, index) =>
+      index === 0
+        ? `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`
+        : `L ${point.x.toFixed(2)} ${point.y.toFixed(2)}`
+    )
+    .join(" ");
+}
+
+function nearestIndexFromPlotX(coords: { x: number; index: number }[], plotX: number): number {
+  let nearest = 0;
+  let best = Infinity;
+  for (const c of coords) {
+    const dist = Math.abs(c.x - plotX);
+    if (dist < best) {
+      best = dist;
+      nearest = c.index;
+    }
+  }
+  return nearest;
 }
 
 export function AnalyticsLineChart({
@@ -48,6 +60,7 @@ export function AnalyticsLineChart({
   const stroke =
     accent === "emerald" ? "#34d399" : accent === "fuchsia" ? "#e879f9" : "#22d3ee";
   const fillId = `chart-fill-${uid}`;
+  const clipId = `chart-clip-${uid}`;
 
   const layout = useMemo(() => {
     if (points.length < 2) return null;
@@ -55,9 +68,7 @@ export function AnalyticsLineChart({
     const values = points.map((p) => p.value);
     const dataMin = Math.min(...values);
     const dataMax = Math.max(...values);
-    const yTicks = buildYAxisTicks(dataMin, dataMax, 5);
-    const yMin = yTicks[0] ?? dataMin;
-    const yMax = yTicks[yTicks.length - 1] ?? dataMax;
+    const { yTicks, yMin, yMax } = chartYDomain(dataMin, dataMax, 5);
     const yRange = yMax - yMin || 1;
 
     const plotW = WIDTH - PLOT.left - PLOT.right;
@@ -85,29 +96,26 @@ export function AnalyticsLineChart({
     );
   }
 
-  const { yTicks, coords, xIndices, plotH } = layout;
-  const linePath = buildSmoothPath(coords);
-  const areaPath = `${linePath} L ${coords[coords.length - 1]!.x.toFixed(2)} ${PLOT.top + plotH} L ${coords[0]!.x.toFixed(2)} ${PLOT.top + plotH} Z`;
+  const { yTicks, coords, xIndices, plotH, plotW } = layout;
+  const plotBottom = PLOT.top + plotH;
+  const linePath = buildLinePath(coords);
+  const areaPath = `${linePath} L ${coords[coords.length - 1]!.x.toFixed(2)} ${plotBottom} L ${coords[0]!.x.toFixed(2)} ${plotBottom} Z`;
 
   const active =
     hoverIndex != null && coords[hoverIndex] ? coords[hoverIndex]! : coords[coords.length - 1]!;
 
-  function handlePointer(clientX: number, rect: DOMRect) {
-    const x = ((clientX - rect.left) / rect.width) * WIDTH;
-    let nearest = 0;
-    let best = Infinity;
-    for (const c of coords) {
-      const dist = Math.abs(c.x - x);
-      if (dist < best) {
-        best = dist;
-        nearest = c.index;
-      }
-    }
-    setHoverIndex(nearest);
+  function setHoverFromSvg(svg: SVGSVGElement, clientX: number) {
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = 0;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const local = pt.matrixTransform(ctm.inverse());
+    setHoverIndex(nearestIndexFromPlotX(coords, local.x));
   }
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative overflow-hidden ${className}`}>
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2 rounded-xl border border-white/8 bg-black/25 px-3 py-2 text-xs">
         <div>
           <p className="text-slate-500">Selected</p>
@@ -129,17 +137,31 @@ export function AnalyticsLineChart({
 
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="h-56 w-full min-h-[220px] md:h-72 lg:h-80"
+        preserveAspectRatio="xMidYMid meet"
+        className="block h-56 w-full max-w-full min-h-[220px] md:h-72 lg:h-80"
         role="img"
         aria-label="Historical chart"
         onMouseLeave={() => setHoverIndex(null)}
-        onMouseMove={(e) => handlePointer(e.clientX, e.currentTarget.getBoundingClientRect())}
+        onMouseMove={(e) => setHoverFromSvg(e.currentTarget, e.clientX)}
+        onTouchStart={(e) => {
+          const touch = e.touches[0];
+          if (touch) setHoverFromSvg(e.currentTarget, touch.clientX);
+        }}
         onTouchMove={(e) => {
           const touch = e.touches[0];
-          if (touch) handlePointer(touch.clientX, e.currentTarget.getBoundingClientRect());
+          if (touch) setHoverFromSvg(e.currentTarget, touch.clientX);
         }}
       >
         <defs>
+          <clipPath id={clipId}>
+            <rect
+              x={PLOT.left}
+              y={PLOT.top}
+              width={plotW}
+              height={plotH}
+              rx="2"
+            />
+          </clipPath>
           <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={stroke} stopOpacity={positive ? 0.45 : 0.3} />
             <stop offset="100%" stopColor={stroke} stopOpacity={0} />
@@ -177,41 +199,51 @@ export function AnalyticsLineChart({
 
         <line
           x1={PLOT.left}
-          y1={PLOT.top + plotH}
+          y1={plotBottom}
           x2={WIDTH - PLOT.right}
-          y2={PLOT.top + plotH}
+          y2={plotBottom}
           stroke="rgba(255,255,255,0.2)"
         />
         <line
           x1={PLOT.left}
           y1={PLOT.top}
           x2={PLOT.left}
-          y2={PLOT.top + plotH}
+          y2={plotBottom}
           stroke="rgba(255,255,255,0.2)"
         />
 
-        <path d={areaPath} fill={`url(#${fillId})`} />
-        <path
-          d={linePath}
-          fill="none"
-          stroke={stroke}
-          strokeWidth="2.75"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <g clipPath={`url(#${clipId})`}>
+          <path d={areaPath} fill={`url(#${fillId})`} />
+          <path
+            d={linePath}
+            fill="none"
+            stroke={stroke}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </g>
 
         {hoverIndex != null ? (
-          <>
+          <g clipPath={`url(#${clipId})`}>
             <line
               x1={active.x}
               y1={PLOT.top}
               x2={active.x}
-              y2={PLOT.top + plotH}
-              stroke="rgba(255,255,255,0.25)"
+              y2={plotBottom}
+              stroke="rgba(255,255,255,0.35)"
+              strokeWidth="1"
               strokeDasharray="3 4"
             />
-            <circle cx={active.x} cy={active.y} r="5" fill={stroke} stroke="#0f172a" strokeWidth="2" />
-          </>
+            <circle
+              cx={active.x}
+              cy={active.y}
+              r="5"
+              fill={stroke}
+              stroke="#0f172a"
+              strokeWidth="2"
+            />
+          </g>
         ) : null}
 
         {xIndices.map((idx) => {
