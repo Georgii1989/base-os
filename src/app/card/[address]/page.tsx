@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { isAddress } from "viem";
+import { getAddress, isAddress } from "viem";
 import { IdentityCard } from "@/components/IdentityCard";
 import { fetchOnchainScore } from "@/lib/onchainScoreFetch";
 
@@ -17,10 +17,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const data = await fetchOnchainScore(address);
     if (!data) return { title: "Identity card" };
-    const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
+    const checksum = getAddress(address);
+    const short = `${checksum.slice(0, 6)}…${checksum.slice(-4)}`;
+    const title = `Base identity · ${short} · Grade ${data.score.grade}`;
+    const description = `Onchain score ${data.score.score} on Base — ${data.score.metrics.activeDays} active days.`;
+    const ogPath = `/card/${checksum}/opengraph-image`;
+
     return {
-      title: `Base identity · ${short} · Grade ${data.score.grade}`,
-      description: `Onchain score ${data.score.score} on Base — ${data.score.metrics.activeDays} active days.`,
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: "website",
+        url: `/card/${checksum}`,
+        images: [
+          {
+            url: ogPath,
+            width: 1200,
+            height: 630,
+            alt: `Onchain score ${data.score.score} · Grade ${data.score.grade}`,
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [ogPath],
+      },
     };
   } catch {
     return { title: "Identity card · Base OS" };
