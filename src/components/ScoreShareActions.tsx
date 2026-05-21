@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { formatCompactNumber } from "@/lib/baseAnalyticsFormat";
 import type { OnchainScorePayload } from "@/lib/onchainScoreFetch";
 import {
+  buildIdentityCardUrl,
   buildScoreTabShareUrl,
   buildScoreTweetText,
   buildTwitterIntentUrl,
@@ -91,7 +92,13 @@ export function ScoreShareActions({ data }: Props) {
       </button>
       <p className="mt-3 text-xs text-slate-500">
         Preview: {data.score.score} · Grade {data.score.grade} ·{" "}
-        {formatCompactNumber(data.score.metrics.outgoingTxs)} txs
+        {formatCompactNumber(data.score.metrics.outgoingTxs)} txs ·{" "}
+        <a
+          href={buildIdentityCardUrl(data.address, window.location.origin)}
+          className="text-cyan-400/90 underline-offset-2 hover:underline"
+        >
+          Public card ↗
+        </a>
       </p>
       {status ? <p className="mt-2 text-sm text-cyan-100/90">{status}</p> : null}
     </section>

@@ -31,6 +31,14 @@ export function buildScoreTabShareUrl(appOrigin?: string): string {
   return `${base}/?tab=score`;
 }
 
+export function buildIdentityCardUrl(address: string, appOrigin?: string): string {
+  const base = (appOrigin ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://app-base-os.vercel.app").replace(
+    /\/$/,
+    ""
+  );
+  return `${base}/card/${address}`;
+}
+
 export function buildScoreTweetText(input: ScoreShareCardInput, shareUrl: string): string {
   return [
     `My Base onchain score: ${input.score} (Grade ${input.grade})`,

@@ -9,6 +9,7 @@ import {
   computeOnchainScoreFromTxList,
   type OnchainScoreResult,
 } from "@/lib/onchainScoreCompute";
+import { computeTopProtocolsFromTxList, type TopProtocolHit } from "@/lib/identityCardCompute";
 import type { BasescanNormalTx } from "@/lib/basescanAccountTx";
 
 export type OnchainScorePayload = {
@@ -18,6 +19,7 @@ export type OnchainScorePayload = {
   rpcTxCount: number;
   score: OnchainScoreResult;
   source: TxListSource | "rpc_only";
+  topProtocols: TopProtocolHit[];
   message?: string;
 };
 
@@ -49,6 +51,7 @@ export async function fetchOnchainScore(addressRaw: string): Promise<OnchainScor
     capped,
     tokenTransfers
   );
+  const topProtocols = computeTopProtocolsFromTxList(txs as BasescanNormalTx[], watcherLower, 8);
 
   return {
     address,
@@ -57,6 +60,7 @@ export async function fetchOnchainScore(addressRaw: string): Promise<OnchainScor
     rpcTxCount,
     score,
     source,
+    topProtocols,
     message: capped
       ? "History capped at Blockscout index limits (~10k txs) — score may be a lower bound."
       : undefined,

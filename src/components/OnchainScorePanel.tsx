@@ -229,6 +229,12 @@ export function OnchainScorePanel() {
                     BaseScan ↗
                   </a>
                   <Link
+                    href={`/card/${data.address}`}
+                    className="rounded-xl border border-cyan-300/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-100"
+                  >
+                    Identity card ↗
+                  </Link>
+                  <Link
                     href={`/${data.address}`}
                     className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-500/15 px-3 py-1.5 text-xs font-bold text-fuchsia-100"
                   >
