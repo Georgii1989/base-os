@@ -18,7 +18,8 @@ import {
 } from "wagmi";
 import { SoulboundHoldersList } from "@/components/SoulboundHoldersList";
 
-const DEFAULT_TIPJAR = "0x47ad142c4f04431164737cACD601796932b7357A";
+/** Fallback sends tips through TipWithBadgeRouter → underlying TipJar + soulbound badge. */
+const DEFAULT_TIPJAR = "0xDd1090aFba3117953B892A6390B18abe5A979894";
 const TIPJAR_ABI = [
   {
     type: "event",
@@ -351,7 +352,7 @@ export function BaseBuilderApp() {
     if (!txHash || !lastSentTip) return;
 
     const txUrl = `https://basescan.org/tx/${txHash}`;
-    const shareText = `Just tipped ${lastSentTip.amountEth} ETH on Base Tip.\n"${lastSentTip.message}"\n${txUrl}`;
+    const shareText = `Just tipped ${lastSentTip.amountEth} ETH on Base OS.\n"${lastSentTip.message}"\n${txUrl}`;
 
     try {
       if (typeof navigator !== "undefined" && navigator.share) {

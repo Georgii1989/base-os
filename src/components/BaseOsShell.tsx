@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
+import { BaseAnalyticsPanel } from "@/components/BaseAnalyticsPanel";
 import { BaseBuilderApp } from "@/components/BaseBuilderApp";
 import { useCommandPalette } from "@/components/CommandPalette";
 import { GuardPanel } from "@/components/GuardPanel";
@@ -201,6 +202,7 @@ function BaseOsShellInner() {
             </div>
           </div>
         ) : null}
+        {activeTab === "analytics" ? <BaseAnalyticsPanel /> : null}
         {activeTab === "radar" ? <RadarPanel /> : null}
         {activeTab === "watch" ? <WatchlistPanel /> : null}
         {activeTab === "lens" ? <TxLensPanel /> : null}
@@ -224,6 +226,12 @@ function HomePanel({
       title: "Tips & badge",
       text: "Send a tip, get a supporter badge, see who else joined.",
       cta: "Open tips",
+    },
+    {
+      tab: "analytics",
+      title: "Base analytics",
+      text: "TVL, stablecoins, fees, and top protocols — DeFi Llama style.",
+      cta: "Open analytics",
     },
     {
       tab: "radar",

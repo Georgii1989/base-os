@@ -28,19 +28,18 @@ npm install
 cp .env.example .env.local
 ```
 
-3) Adjust env if needed (defaults match the deployed TipJar + builder code):
+3) Adjust env if needed (`.env.example` has production defaults: **router** tips + soulbound + [app-base-os.vercel.app](https://app-base-os.vercel.app/)):
 
 ```env
-NEXT_PUBLIC_TIPJAR_ADDRESS=0x47ad142c4f04431164737cACD601796932b7357A
+# TipWithBadgeRouter — tips forward to TipJar + mint tip-profile badge once per address
+NEXT_PUBLIC_TIPJAR_ADDRESS=0xDd1090aFba3117953B892A6390B18abe5A979894
 NEXT_PUBLIC_BASE_BUILDER_CODE=YOUR-BUILDER-CODE
 NEXT_PUBLIC_APP_URL=https://app-base-os.vercel.app
 
-# Optional — soulbound (ERC-721) supporter NFT + on-chain holder registry in the UI
-NEXT_PUBLIC_SBT_ADDRESS=0xYourSoulboundNft
-# Recommended — block where the soulbound contract was deployed (full mint history for the registry)
-NEXT_PUBLIC_SBT_FROM_BLOCK=12345678
+NEXT_PUBLIC_SBT_ADDRESS=0x3736b7A4fC567192AA359CaDd8407786C556F729
+NEXT_PUBLIC_SBT_FROM_BLOCK=45587033
 # Optional — for Tip Profile full history (without this: last ~100k blocks)
-NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK=12345678
+NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK=45000000
 ```
 
 4) Run app:
@@ -92,6 +91,12 @@ This runs `node scripts/deploy-tipjar.js` (loads `contracts.local.env`, uses `et
 ```bash
 npx hardhat verify --network base <DEPLOYED_CONTRACT_ADDRESS> <TIPJAR_OWNER_ADDRESS>
 ```
+
+## Base analytics (DeFi Llama)
+
+The **Analytics** tab loads chain metrics from [DeFi Llama](https://defillama.com/chain/base): TVL, DEX volume (per-protocol on Base + chain total when available), history chart, stablecoin supply, fees, chain rankings, and top protocols on Base. Data is proxied through `GET /api/analytics/base` (cached ~5 minutes).
+
+No API key required. Refresh in the UI if a feed was partial.
 
 ## Soulbound badge flow
 
