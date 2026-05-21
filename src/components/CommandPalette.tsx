@@ -58,6 +58,8 @@ function tabCommandIcon(tabId: OsTabId): string {
       return "⎊";
     case "score":
       return "◇";
+    case "launch":
+      return "⬡";
     case "tip":
     default:
       return "✦";
@@ -75,6 +77,8 @@ function tabNavKeywords(tab: { id: OsTabId; label: string; eyebrow: string }): s
       return `${base} allowance permission token revoke access`;
     case "score":
       return `${base} onchain activity txs bridge contracts score`;
+    case "launch":
+      return `${base} token erc20 deploy create launch mint supply`;
     default:
       return base;
   }

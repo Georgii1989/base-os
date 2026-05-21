@@ -11,7 +11,8 @@
     "contract:compile": "node scripts/compile-tipjar.cjs",
     "contract:compile:hardhat": "hardhat compile",
     "contract:deploy:base": "node scripts/deploy-tipjar.js",
-    "contract:deploy:soulbound": "node scripts/deploy-soulbound-system.js"
+    "contract:deploy:soulbound": "node scripts/deploy-soulbound-system.js",
+    "contract:deploy:factory": "node scripts/deploy-token-factory.js"
   },
   "dependencies": {
     "@base-org/account": "^2.5.5",

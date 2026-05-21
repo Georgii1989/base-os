@@ -1,8 +1,18 @@
-export type OsTabId = "home" | "tip" | "analytics" | "radar" | "guard" | "score" | "watch" | "lens";
+export type OsTabId =
+  | "home"
+  | "tip"
+  | "launch"
+  | "analytics"
+  | "radar"
+  | "guard"
+  | "score"
+  | "watch"
+  | "lens";
 
 export const OS_TAB_META: readonly { id: OsTabId; label: string; eyebrow: string }[] = [
   { id: "home", label: "Home", eyebrow: "Start here" },
   { id: "tip", label: "Tip", eyebrow: "Give tips" },
+  { id: "launch", label: "Launch", eyebrow: "ERC-20" },
   { id: "analytics", label: "Analytics", eyebrow: "Base TVL" },
   { id: "radar", label: "Radar", eyebrow: "Explore" },
   { id: "watch", label: "Tracked", eyebrow: "Addresses" },

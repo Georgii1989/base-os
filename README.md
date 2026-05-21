@@ -153,6 +153,30 @@ After one test tip in production:
 
 If those three checks pass, tip + soulbound mint flow is live.
 
+## Token launcher (ERC-20 on Base)
+
+Users deploy a standard ERC-20 from the **Launch** tab; **they pay gas** in their connected wallet.
+
+1) Compile factory contracts:
+
+```bash
+npm run contract:compile:hardhat
+```
+
+2) Deploy `TokenFactory` to Base (uses `contracts.local.env`):
+
+```bash
+npm run contract:deploy:factory
+```
+
+3) Paste into `.env.local` / Vercel:
+
+```env
+NEXT_PUBLIC_TOKEN_FACTORY_ADDRESS=0x...
+```
+
+Until that env var is set, the Launch tab shows deploy instructions instead of the form.
+
 ## Notes
 
 - This project is migrated away from Farcaster mini-app SDK flow.

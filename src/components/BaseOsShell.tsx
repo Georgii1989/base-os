@@ -14,11 +14,10 @@ import { GuardPanel } from "@/components/GuardPanel";
 import { TxLensPanel } from "@/components/TxLensPanel";
 import { HomeHubPanel } from "@/components/HomeHubPanel";
 import { OnchainScorePanel } from "@/components/OnchainScorePanel";
+import { TokenLauncherPanel } from "@/components/TokenLauncherPanel";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
 import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
 import { radarProjects, type RadarProject } from "@/lib/radarProjects";
-
-type TabId = OsTabId;
 
 type RadarMarketData = {
   id: string;
@@ -194,6 +193,7 @@ function BaseOsShellInner() {
             onOpenCommandPalette={openCommandPalette}
           />
         ) : null}
+        {activeTab === "launch" ? <TokenLauncherPanel /> : null}
         {activeTab === "tip" ? (
           <div className="flex flex-col items-center gap-4">
             {address ? (

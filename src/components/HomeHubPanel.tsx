@@ -50,6 +50,13 @@ const MODULES: {
     accent: "from-emerald-500/10 to-teal-500/10",
   },
   {
+    tab: "launch",
+    title: "Launch token",
+    text: "Deploy your ERC-20 on Base — you pay gas.",
+    cta: "Create token",
+    accent: "from-emerald-500/20 to-cyan-500/10",
+  },
+  {
     tab: "tip",
     title: "Tips & badge",
     text: "Send tips, mint supporter badge.",
