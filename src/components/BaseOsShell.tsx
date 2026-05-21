@@ -12,6 +12,7 @@ import { BaseBuilderApp } from "@/components/BaseBuilderApp";
 import { useCommandPalette } from "@/components/CommandPalette";
 import { GuardPanel } from "@/components/GuardPanel";
 import { TxLensPanel } from "@/components/TxLensPanel";
+import { HomeHubPanel } from "@/components/HomeHubPanel";
 import { OnchainScorePanel } from "@/components/OnchainScorePanel";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
 import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
@@ -186,7 +187,13 @@ function BaseOsShellInner() {
         tabIndex={0}
         className="mt-5 outline-none"
       >
-        {activeTab === "home" ? <HomePanel connectedAddress={address} setActiveTab={setActiveTab} /> : null}
+        {activeTab === "home" ? (
+          <HomeHubPanel
+            connectedAddress={address}
+            setActiveTab={setActiveTab}
+            onOpenCommandPalette={openCommandPalette}
+          />
+        ) : null}
         {activeTab === "tip" ? (
           <div className="flex flex-col items-center gap-4">
             {address ? (
@@ -210,119 +217,6 @@ function BaseOsShellInner() {
         {activeTab === "score" ? <OnchainScorePanel /> : null}
       </div>
     </section>
-  );
-}
-
-function HomePanel({
-  setActiveTab,
-  connectedAddress,
-}: {
-  setActiveTab: (tab: TabId) => void;
-  connectedAddress?: `0x${string}`;
-}) {
-  const cards: { tab: TabId; title: string; text: string; cta: string }[] = [
-    {
-      tab: "tip",
-      title: "Tips & badge",
-      text: "Send a tip, get a supporter badge, see who else joined.",
-      cta: "Open tips",
-    },
-    {
-      tab: "analytics",
-      title: "Base analytics",
-      text: "TVL, stablecoins, fees, and top protocols — DeFi Llama style.",
-      cta: "Open analytics",
-    },
-    {
-      tab: "radar",
-      title: "Project radar",
-      text: "Hand-picked Base apps with links and live prices.",
-      cta: "Browse apps",
-    },
-    {
-      tab: "watch",
-      title: "Tracked wallets",
-      text: "Save addresses. We show ETH balance and activity. Data stays in this browser only.",
-      cta: "Open tracker",
-    },
-    {
-      tab: "lens",
-      title: "Transaction preview",
-      text: "Try a transaction without sending it. See if it would work and how much gas it might use.",
-      cta: "Open preview",
-    },
-    {
-      tab: "guard",
-      title: "Token permissions",
-      text: "See how much access you gave apps to your tokens. Revoke on a trusted site if needed.",
-      cta: "Open guard",
-    },
-    {
-      tab: "score",
-      title: "Onchain score",
-      text: "Paste a Base address — txs, contracts, bridges, deployments, token moves.",
-      cta: "Check score",
-    },
-  ];
-
-  return (
-    <div className="grid gap-4">
-      {connectedAddress ? (
-        <div className="flex flex-col justify-between gap-3 rounded-3xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-5 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/80">Connected</p>
-            <p className="mt-1 text-sm text-fuchsia-100/90">Your public tip page on Base OS.</p>
-          </div>
-          <Link
-            href={`/${connectedAddress}`}
-            className="shrink-0 rounded-2xl border border-fuchsia-200/50 bg-fuchsia-500/20 px-4 py-2 text-center text-sm font-black text-fuchsia-50"
-          >
-            Tip profile →
-          </Link>
-        </div>
-      ) : null}
-      <Link
-        href="/safety"
-        className="group relative block overflow-hidden rounded-[1.85rem] border border-teal-300/35 bg-gradient-to-br from-teal-500/14 via-black/65 to-black/85 p-6 shadow-[0_0_55px_rgba(45,212,191,0.12)] transition hover:border-cyan-300/70 hover:shadow-[0_0_60px_rgba(34,211,238,0.15)] md:p-8"
-      >
-        <span className="pointer-events-none absolute -right-8 top-6 h-32 w-32 rounded-full bg-cyan-400/12 blur-[50px]" />
-        <span className="pointer-events-none absolute bottom-[-20%] left-[-5%] h-44 w-44 rounded-full bg-fuchsia-500/10 blur-[70px]" />
-        <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-teal-200/90">
-              No wallet needed
-            </p>
-            <h2 className="mt-3 bg-gradient-to-r from-teal-100 via-white to-fuchsia-200 bg-clip-text text-3xl font-black tracking-tight text-transparent md:text-4xl">
-              Look up any address
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm text-slate-300 md:text-[15px]">
-              Paste a Base address. We show if it’s a wallet or a contract, balance, and links to explore more. Share the
-              page with anyone.
-            </p>
-          </div>
-          <span className="relative inline-flex items-center gap-3 self-start rounded-2xl border border-white/22 bg-black/65 px-5 py-3 text-sm font-black uppercase tracking-[0.26em] text-white transition group-hover:border-cyan-300/85 group-hover:text-cyan-50 md:self-center md:text-xs">
-            Open lookup
-            <span aria-hidden className="text-lg leading-none text-cyan-200">
-              ↗
-            </span>
-          </span>
-        </div>
-      </Link>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map((card) => (
-          <button
-            key={card.tab}
-            type="button"
-            onClick={() => setActiveTab(card.tab)}
-            className="rounded-3xl border border-white/15 bg-slate-950/50 p-5 text-left transition hover:border-cyan-200/50 hover:bg-cyan-500/10"
-          >
-            <h2 className="text-xl font-black text-cyan-100">{card.title}</h2>
-            <p className="mt-2 text-sm text-slate-200/80">{card.text}</p>
-            <p className="mt-5 text-sm font-black text-fuchsia-200">{card.cta}</p>
-          </button>
-        ))}
-      </div>
-    </div>
   );
 }
 

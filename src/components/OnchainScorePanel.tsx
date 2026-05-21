@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatEther, isAddress } from "viem";
 import { useAccount } from "wagmi";
+import { ScoreBreakdown } from "@/components/ScoreBreakdown";
 import { ScoreShareActions } from "@/components/ScoreShareActions";
 import { formatCompactNumber } from "@/lib/baseAnalyticsFormat";
 import type { OnchainScorePayload } from "@/lib/onchainScoreFetch";
@@ -257,6 +258,13 @@ export function OnchainScorePanel() {
               </div>
             </section>
           </div>
+
+          <ScoreBreakdown
+            metrics={m}
+            tokenTransfers={m.tokenTransfers}
+            score={data.score.score}
+            rpcTxCount={data.rpcTxCount}
+          />
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MetricTile

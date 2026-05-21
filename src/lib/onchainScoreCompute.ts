@@ -1,6 +1,10 @@
 import { isLikelyBridgeTarget } from "@/lib/baseBridgeContracts";
 import type { BasescanNormalTx } from "@/lib/basescanAccountTx";
 import { normalizeHexAddrField } from "@/lib/basescanAccountTx";
+import {
+  computeScoreFromComponents,
+  rawScoreComponents,
+} from "@/lib/onchainScoreBreakdown";
 
 export type OnchainScoreMetrics = {
   outgoingTxs: number;
@@ -138,16 +142,27 @@ export function computeOnchainScoreFromTxList(
     capped,
   };
 
-  const score = Math.min(
-    100,
-    Math.round(
-      Math.log10(outgoingTxs + 1) * 18 +
-        Math.log10(uniqueContractsTouched + 1) * 12 +
-        Math.log10(uniqueAddressesTouched + 1) * 6 +
-        bridgeTxs * 4 +
-        deployments * 8 +
-        Math.min(activeDays, 90) * 0.35 +
-        (tokenTransfers != null ? Math.log10(tokenTransfers + 1) * 5 : 0)
+  const score = computeScoreFromComponents(
+    rawScoreComponents(
+      {
+        outgoingTxs,
+        incomingTxs,
+        totalTxsSeen: txs.length,
+        contractCalls,
+        simpleTransfers,
+        uniqueContractsTouched,
+        uniqueAddressesTouched,
+        bridgeTxs,
+        deployments,
+        failedTxs,
+        activeDays,
+        firstActivityAt,
+        lastActivityAt,
+        tokenTransfers,
+        txsAnalyzed,
+        capped,
+      },
+      tokenTransfers
     )
   );
 
