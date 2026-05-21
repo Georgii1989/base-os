@@ -22,12 +22,13 @@ export function shortenAddress(address: string): string {
   return `${t.slice(0, 6)}…${t.slice(-4)}`;
 }
 
-export function buildScoreSharePageUrl(address: string, appOrigin?: string): string {
+/** Public link for tweets — opens score tab without exposing a wallet address. */
+export function buildScoreTabShareUrl(appOrigin?: string): string {
   const base = (appOrigin ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://app-base-os.vercel.app").replace(
     /\/$/,
     ""
   );
-  return `${base}/?tab=score&address=${encodeURIComponent(address)}`;
+  return `${base}/?tab=score`;
 }
 
 export function buildScoreTweetText(input: ScoreShareCardInput, shareUrl: string): string {
@@ -227,7 +228,7 @@ export function renderScoreShareCard(
     `${formatCompactNumber(input.deployments)} deploys`
   );
 
-  const shareUrl = buildScoreSharePageUrl(input.address, appOrigin);
+  const shareUrl = buildScoreTabShareUrl(appOrigin);
   ctx.textAlign = "left";
   ctx.fillStyle = "#67e8f9";
   ctx.font = "600 20px ui-monospace, monospace";

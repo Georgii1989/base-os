@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { formatCompactNumber } from "@/lib/baseAnalyticsFormat";
 import type { OnchainScorePayload } from "@/lib/onchainScoreFetch";
 import {
-  buildScoreSharePageUrl,
+  buildScoreTabShareUrl,
   buildScoreTweetText,
   buildTwitterIntentUrl,
   renderScoreShareCard,
@@ -53,7 +53,7 @@ export function ScoreShareActions({ data }: Props) {
     setBusy(true);
     setStatus(null);
     try {
-      const shareUrl = buildScoreSharePageUrl(data.address, window.location.origin);
+      const shareUrl = buildScoreTabShareUrl(window.location.origin);
       const tweet = buildScoreTweetText(toCardInput(data), shareUrl);
       const intentUrl = buildTwitterIntentUrl(tweet);
 

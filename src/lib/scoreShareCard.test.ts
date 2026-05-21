@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildScoreSharePageUrl,
+  buildScoreTabShareUrl,
   buildScoreTweetText,
   buildTwitterIntentUrl,
   shortenAddress,
@@ -14,10 +14,13 @@ describe("scoreShareCard", () => {
     );
   });
 
-  it("builds share page URL", () => {
-    expect(
-      buildScoreSharePageUrl("0xAbC", "https://app-base-os.vercel.app")
-    ).toBe("https://app-base-os.vercel.app/?tab=score&address=0xAbC");
+  it("builds share page URL without wallet address", () => {
+    expect(buildScoreTabShareUrl("https://app-base-os.vercel.app")).toBe(
+      "https://app-base-os.vercel.app/?tab=score"
+    );
+    expect(buildScoreTabShareUrl("https://app-base-os.vercel.app/")).toBe(
+      "https://app-base-os.vercel.app/?tab=score"
+    );
   });
 
   it("builds Twitter intent with score and link", () => {
@@ -33,11 +36,12 @@ describe("scoreShareCard", () => {
       firstActivityAt: null,
       isContract: false,
     };
-    const url = buildScoreSharePageUrl("0xabc", "https://app-base-os.vercel.app");
+    const url = buildScoreTabShareUrl("https://app-base-os.vercel.app");
     const tweet = buildScoreTweetText(input, url);
     expect(tweet).toContain("96");
     expect(tweet).toContain("Grade A");
     expect(tweet).toContain(url);
+    expect(url).not.toContain("address=");
     expect(buildTwitterIntentUrl(tweet)).toMatch(/^https:\/\/twitter\.com\/intent\/tweet\?text=/);
   });
 });
