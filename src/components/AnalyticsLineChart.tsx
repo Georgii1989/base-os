@@ -2,6 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import {
+  buildChartYearBands,
   chartYDomain,
   formatChartDate,
   pickXAxisIndices,
@@ -18,9 +19,9 @@ type Props = {
   className?: string;
 };
 
-const PLOT = { left: 58, right: 16, top: 18, bottom: 36 };
+const PLOT = { left: 58, right: 16, top: 18, bottom: 52 };
 const WIDTH = 640;
-const HEIGHT = 280;
+const HEIGHT = 296;
 
 /** Monotone polyline — no Bézier overshoot above/below data. */
 function buildLinePath(coords: { x: number; y: number }[]): string {
@@ -82,8 +83,9 @@ export function AnalyticsLineChart({
     }));
 
     const xIndices = pickXAxisIndices(points.length, 6);
+    const yearBands = buildChartYearBands(points.map((p) => p.date), (i) => coords[i]!.x);
 
-    return { yTicks, yMin, yMax, plotW, plotH, coords, xIndices, dataMin, dataMax };
+    return { yTicks, yMin, yMax, plotW, plotH, coords, xIndices, yearBands, dataMin, dataMax };
   }, [points]);
 
   if (!layout) {
@@ -96,7 +98,7 @@ export function AnalyticsLineChart({
     );
   }
 
-  const { yTicks, coords, xIndices, plotH, plotW } = layout;
+  const { yTicks, coords, xIndices, yearBands, plotH, plotW } = layout;
   const plotBottom = PLOT.top + plotH;
   const linePath = buildLinePath(coords);
   const areaPath = `${linePath} L ${coords[coords.length - 1]!.x.toFixed(2)} ${plotBottom} L ${coords[0]!.x.toFixed(2)} ${plotBottom} Z`;
@@ -119,7 +121,9 @@ export function AnalyticsLineChart({
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2 rounded-xl border border-white/8 bg-black/25 px-3 py-2 text-xs">
         <div>
           <p className="text-slate-500">Selected</p>
-          <p className="text-sm font-bold text-white">{formatChartDate(active.point.date)}</p>
+          <p className="text-sm font-bold text-white">
+            {formatChartDate(active.point.date, { withYear: true })}
+          </p>
         </div>
         <div className="text-right">
           <p className="text-slate-500">Value</p>
@@ -246,13 +250,38 @@ export function AnalyticsLineChart({
           </g>
         ) : null}
 
+        {yearBands.map((band) => (
+          <g key={band.year}>
+            {band.startX > PLOT.left + 4 ? (
+              <line
+                x1={band.startX}
+                y1={plotBottom + 4}
+                x2={band.startX}
+                y2={HEIGHT - 22}
+                stroke="rgba(255,255,255,0.1)"
+              />
+            ) : null}
+            <text
+              x={band.midX}
+              y={HEIGHT - 4}
+              textAnchor="middle"
+              fill="rgba(100,116,139,0.95)"
+              fontSize="10"
+              fontWeight="600"
+              fontFamily="ui-sans-serif, system-ui, sans-serif"
+            >
+              {band.year}
+            </text>
+          </g>
+        ))}
+
         {xIndices.map((idx) => {
           const c = coords[idx]!;
           return (
             <text
               key={idx}
               x={c.x}
-              y={HEIGHT - 10}
+              y={HEIGHT - 22}
               textAnchor="middle"
               fill="rgba(148,163,184,0.95)"
               fontSize="11"

@@ -57,9 +57,50 @@ export function toChartTimestamp(date: number): number {
   return date > 1e12 ? date : date * 1000;
 }
 
-export function formatChartDate(date: number): string {
+export function formatChartDate(date: number, opts?: { withYear?: boolean }): string {
   return new Date(toChartTimestamp(date)).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    ...(opts?.withYear ? { year: "numeric" } : {}),
   });
+}
+
+export function formatChartYear(date: number): string {
+  return String(new Date(toChartTimestamp(date)).getFullYear());
+}
+
+export type ChartYearBand = {
+  year: number;
+  startX: number;
+  endX: number;
+  midX: number;
+};
+
+/** One band per calendar year along the X axis (for a year row under month labels). */
+export function buildChartYearBands(
+  dates: number[],
+  xAtIndex: (index: number) => number
+): ChartYearBand[] {
+  if (dates.length === 0) return [];
+
+  const bands: ChartYearBand[] = [];
+  let year = new Date(toChartTimestamp(dates[0]!)).getFullYear();
+  let startX = xAtIndex(0);
+  let endX = startX;
+
+  for (let i = 1; i < dates.length; i += 1) {
+    const nextYear = new Date(toChartTimestamp(dates[i]!)).getFullYear();
+    const x = xAtIndex(i);
+    if (nextYear !== year) {
+      bands.push({ year, startX, endX, midX: (startX + endX) / 2 });
+      year = nextYear;
+      startX = x;
+      endX = x;
+    } else {
+      endX = x;
+    }
+  }
+
+  bands.push({ year, startX, endX, midX: (startX + endX) / 2 });
+  return bands;
 }

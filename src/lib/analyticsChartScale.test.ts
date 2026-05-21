@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildYAxisTicks, chartYDomain, pickXAxisIndices } from "@/lib/analyticsChartScale";
+import {
+  buildChartYearBands,
+  buildYAxisTicks,
+  chartYDomain,
+  pickXAxisIndices,
+} from "@/lib/analyticsChartScale";
 
 describe("analyticsChartScale", () => {
   it("builds ascending Y ticks", () => {
@@ -18,5 +23,13 @@ describe("analyticsChartScale", () => {
     const idx = pickXAxisIndices(90, 5);
     expect(idx[0]).toBe(0);
     expect(idx[idx.length - 1]).toBe(89);
+  });
+
+  it("builds year bands when data spans multiple years", () => {
+    const t2023 = Date.UTC(2023, 5, 15);
+    const t2024 = Date.UTC(2024, 0, 18);
+    const t2025 = Date.UTC(2025, 4, 21);
+    const bands = buildChartYearBands([t2023, t2024, t2025], (i) => i * 100);
+    expect(bands.map((b) => b.year)).toEqual([2023, 2024, 2025]);
   });
 });
