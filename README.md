@@ -94,9 +94,13 @@ npx hardhat verify --network base <DEPLOYED_CONTRACT_ADDRESS> <TIPJAR_OWNER_ADDR
 
 ## Base analytics (DeFi Llama)
 
-The **Analytics** tab loads chain metrics from [DeFi Llama](https://defillama.com/chain/base): TVL, DEX volume (per-protocol on Base + chain total when available), history chart, stablecoin supply, fees, chain rankings, and top protocols on Base. Data is proxied through `GET /api/analytics/base` (cached ~5 minutes).
+The **Analytics** tab lets you pick a data source:
 
-No API key required. Refresh in the UI if a feed was partial.
+- **DeFi Llama** — TVL, DEX volume, fees, stablecoins, protocols
+- **L2BEAT** — daily transactions & UOPS on Base
+- **Blockscout** — on-chain network stats (txs, addresses, gas)
+
+Data is proxied through `GET /api/analytics/base?source=defillama|l2beat|blockscout` (cached ~5 minutes). No API key required.
 
 ## Soulbound badge flow
 

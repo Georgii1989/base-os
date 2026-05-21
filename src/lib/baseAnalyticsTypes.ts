@@ -1,3 +1,5 @@
+import type { AnalyticsSourceId } from "@/lib/analyticsSources";
+
 export type TvlPoint = { date: number; tvl: number };
 
 export type ChainRankRow = {
@@ -25,15 +27,36 @@ export type DexVolumeRow = {
   defillamaUrl: string;
 };
 
+export type ActivityPoint = {
+  date: number;
+  transactions: number;
+  uops: number | null;
+};
+
+export type OnchainStats = {
+  transactionsToday: number;
+  totalTransactions: number;
+  totalAddresses: number;
+  totalBlocks: number;
+  gasGwei: { slow: number; average: number; fast: number };
+  networkUtilizationPct: number;
+  ethPriceUsd: number | null;
+  ethPriceChange24hPct: number | null;
+  averageBlockTimeMs: number | null;
+};
+
 export type BaseAnalyticsPayload = {
   updatedAt: string;
-  source: "defillama";
+  source: AnalyticsSourceId;
+  sourceLabel: string;
+  sourceHref: string;
+  sourceDescription: string;
   chain: {
     name: string;
     chainId: number;
-    tvlUsd: number;
-    rank: number;
-    totalChains: number;
+    tvlUsd: number | null;
+    rank: number | null;
+    totalChains: number | null;
   };
   tvlHistory: TvlPoint[];
   tvlChange30dPct: number | null;
@@ -56,6 +79,14 @@ export type BaseAnalyticsPayload = {
     source: "overview" | "aggregated";
     byProtocol: DexVolumeRow[];
   } | null;
+  activity: {
+    history: ActivityPoint[];
+    transactionsLatest: number;
+    uopsLatest: number | null;
+    change7dPct: number | null;
+    avgTransactions7d: number | null;
+  } | null;
+  onchain: OnchainStats | null;
   chainRanks: ChainRankRow[];
   protocols: ProtocolTvlRow[];
   errors: string[];
