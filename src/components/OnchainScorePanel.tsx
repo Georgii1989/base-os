@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatEther, isAddress } from "viem";
 import { useAccount } from "wagmi";
+import { ScoreShareActions } from "@/components/ScoreShareActions";
 import { formatCompactNumber } from "@/lib/baseAnalyticsFormat";
 import type { OnchainScorePayload } from "@/lib/onchainScoreFetch";
 
@@ -195,6 +196,8 @@ export function OnchainScorePanel() {
               {data.source === "rpc_only" ? " Transaction index unavailable — showing RPC estimate only." : null}
             </p>
           ) : null}
+
+          <ScoreShareActions data={data} />
 
           <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
             <section className="flex flex-col items-center justify-center rounded-3xl border border-fuchsia-300/20 bg-slate-950/50 p-6">
