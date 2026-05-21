@@ -44,8 +44,5 @@ export function pickPreferredConnector(connectors: readonly Connector[]): Connec
 export function connectorButtonLabel(connector: Connector | undefined, isConnecting: boolean): string {
   if (isConnecting) return "Connecting…";
   if (!connector) return "Install Rabby";
-  const name = connector.name;
-  if (name.toLowerCase().includes("rabby")) return "Connect Rabby";
-  if (name.toLowerCase().includes("metamask")) return "Connect MetaMask";
-  return `Connect ${name}`;
+  return "Connect";
 }
