@@ -15,6 +15,7 @@ import { TxLensPanel } from "@/components/TxLensPanel";
 import { HomeHubPanel } from "@/components/HomeHubPanel";
 import { OnchainScorePanel } from "@/components/OnchainScorePanel";
 import { TokenLauncherPanel } from "@/components/TokenLauncherPanel";
+import { WalletConnectControl } from "@/components/WalletConnectControl";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
 import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
 import { radarProjects, type RadarProject } from "@/lib/radarProjects";
@@ -121,7 +122,8 @@ function BaseOsShellInner() {
             Tips, app picks, wallet checks — all in one place.
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:min-w-[12rem] sm:items-end">
+          <WalletConnectControl />
           <button
             type="button"
             title="⌘ K or Ctrl K"
@@ -133,7 +135,7 @@ function BaseOsShellInner() {
               ⌘K
             </kbd>
           </button>
-          <div className="w-full rounded-2xl border border-cyan-300/25 bg-cyan-500/10 px-4 py-3 text-right sm:w-auto sm:text-right">
+          <div className="w-full rounded-2xl border border-cyan-300/25 bg-cyan-500/10 px-4 py-3 text-right sm:w-auto">
             <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Open now</p>
             <p className="text-lg font-black text-cyan-100">{activeMeta?.label}</p>
           </div>
