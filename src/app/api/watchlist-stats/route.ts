@@ -1,40 +1,14 @@
 import { NextResponse } from "next/server";
 import { getAddress, isAddress } from "viem";
-import {
-  computeStatsFromTxList,
-  fetchMergedTxListForOutgoingStats,
-  getExplorerApiKey,
-} from "@/lib/basescanAccountTx";
+import { fetchMergedTxListForOutgoingStats } from "@/lib/accountTxListFetch";
+import { computeStatsFromTxList } from "@/lib/basescanAccountTx";
 
 export const maxDuration = 60;
 
 type Body = { addresses?: unknown };
 
-/** Extra on-chain stats for watchlist (Basescan txlist). Requires BASESCAN_API_KEY. */
+/** Extra on-chain stats for watchlist (Blockscout txlist on Base). */
 export async function POST(request: Request) {
-  const apiKey = getExplorerApiKey();
-  if (!apiKey) {
-    return NextResponse.json(
-      {
-        ok: false as const,
-        reason: "missing_api_key" as const,
-        byAddress: {} as Record<
-          string,
-          {
-            deployments: number;
-            uniqueSendTargets: number;
-            txsAnalyzed: number;
-            capped: boolean;
-          }
-        >,
-      },
-      {
-        status: 200,
-        headers: { "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300" },
-      }
-    );
-  }
-
   let body: Body;
   try {
     body = (await request.json()) as Body;
@@ -77,8 +51,8 @@ export async function POST(request: Request) {
   await Promise.all(
     normalized.map(async (address) => {
       try {
-        const { txs, capped } = await fetchMergedTxListForOutgoingStats(address, apiKey, {
-          perDirectionMax: 14_000,
+        const { txs, capped } = await fetchMergedTxListForOutgoingStats(address, {
+          perDirectionMax: 5_000,
           offset: 1000,
         });
         const stats = computeStatsFromTxList(txs, address.toLowerCase());

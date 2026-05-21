@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchOnchainScore } from "@/lib/onchainScoreFetch";
+import { fetchOnchainScore, formatExplorerErrorMessage } from "@/lib/onchainScoreFetch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "fetch_failed";
-    return NextResponse.json({ error: message }, { status: 502 });
+    const raw = err instanceof Error ? err.message : "fetch_failed";
+    return NextResponse.json({ error: formatExplorerErrorMessage(raw) }, { status: 502 });
   }
 }

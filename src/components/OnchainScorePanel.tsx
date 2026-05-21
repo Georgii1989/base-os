@@ -192,9 +192,7 @@ export function OnchainScorePanel() {
           {data.message ? (
             <p className="rounded-xl border border-amber-300/25 bg-amber-500/10 px-4 py-2 text-sm text-amber-100">
               {data.message}
-              {data.source === "rpc_only"
-                ? " Add BASESCAN_API_KEY on the server for full history."
-                : null}
+              {data.source === "rpc_only" ? " Transaction index unavailable — showing RPC estimate only." : null}
             </p>
           ) : null}
 
@@ -297,7 +295,13 @@ export function OnchainScorePanel() {
           </div>
 
           <p className="text-center text-xs text-slate-500">
-            Data via {data.source === "basescan" ? "Basescan tx history" : "RPC nonce"} ·{" "}
+            Data via{" "}
+            {data.source === "blockscout"
+              ? "Blockscout (Base)"
+              : data.source === "etherscan"
+                ? "Etherscan API"
+                : "RPC nonce"}{" "}
+            ·{" "}
             {m.txsAnalyzed.toLocaleString()} txs analyzed
             {m.capped ? " (capped)" : ""}
           </p>
