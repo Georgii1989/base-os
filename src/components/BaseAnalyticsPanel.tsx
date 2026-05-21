@@ -9,6 +9,7 @@ import {
   type AnalyticsSourceId,
   parseAnalyticsSource,
 } from "@/lib/analyticsSources";
+import { AnalyticsLineChart } from "@/components/AnalyticsLineChart";
 import type { BaseAnalyticsPayload } from "@/lib/baseAnalyticsTypes";
 
 const SOURCE_STORAGE_KEY = "base-os-analytics-source";
@@ -20,45 +21,6 @@ function readStoredSource(): AnalyticsSourceId {
   } catch {
     return "defillama";
   }
-}
-
-function Sparkline({ values, positive }: { values: number[]; positive: boolean }) {
-  if (values.length < 2) {
-    return <div className="h-24 rounded-2xl bg-white/5" />;
-  }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const points = values.map((value, index) => ({
-    x: (index / (values.length - 1)) * 100,
-    y: 80 - ((value - min) / range) * 68,
-  }));
-  const path = points.reduce((d, point, index) => {
-    if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-    const prev = points[index - 1]!;
-    const controlX1 = prev.x + (point.x - prev.x) / 2;
-    const controlX2 = point.x - (point.x - prev.x) / 2;
-    return `${d} C ${controlX1.toFixed(2)} ${prev.y.toFixed(2)}, ${controlX2.toFixed(2)} ${point.y.toFixed(2)}, ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-  }, "");
-
-  return (
-    <svg viewBox="0 0 100 88" className="h-24 w-full rounded-2xl bg-white/5">
-      <defs>
-        <linearGradient id="baseAnalyticsFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={positive ? "#34d399" : "#fb7185"} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={positive ? "#34d399" : "#fb7185"} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={`${path} L 100 88 L 0 88 Z`} fill="url(#baseAnalyticsFill)" />
-      <path
-        d={path}
-        fill="none"
-        stroke={positive ? "#34d399" : "#fb7185"}
-        strokeLinecap="round"
-        strokeWidth="2.5"
-      />
-    </svg>
-  );
 }
 
 function MetricCard({
@@ -99,12 +61,18 @@ function MetricCard({
 }
 
 function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
-  const chartValues =
+  const chartPoints =
     data.source === "l2beat"
-      ? (data.activity?.history.map((p) => p.transactions) ?? [])
-      : data.tvlHistory.map((p) => p.tvl);
+      ? (data.activity?.history.map((p) => ({ date: p.date, value: p.transactions })) ?? [])
+      : data.tvlHistory.map((p) => ({ date: p.date, value: p.tvl }));
 
   const chartPositive = (data.tvlChange30dPct ?? 0) >= 0;
+  const chartAccent =
+    data.source === "l2beat" ? "fuchsia" : chartPositive ? "emerald" : "fuchsia";
+  const chartFormatter =
+    data.source === "l2beat"
+      ? (v: number) => v.toLocaleString("en-US")
+      : (v: number) => formatUsd(v);
   const maxChainTvl = Math.max(...data.chainRanks.map((c) => c.tvl), 1);
   const maxProtocolTvl = Math.max(...data.protocols.map((p) => p.tvlUsd ?? 0), 1);
   const maxDexVol = Math.max(...(data.dexVolume?.byProtocol.map((p) => p.volume24h) ?? [1]), 1);
@@ -156,38 +124,26 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
         </section>
       ) : null}
 
-      {chartValues.length >= 2 ? (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <section className="rounded-3xl border border-cyan-300/20 bg-slate-950/50 p-5">
-            <div className="flex items-baseline justify-between gap-2">
-              <h3 className="text-lg font-black text-cyan-100">
+      {chartPoints.length >= 2 ? (
+        <>
+          <section className="rounded-3xl border border-cyan-300/25 bg-slate-950/55 p-5 md:p-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-xl font-black text-cyan-100">
                 {data.source === "l2beat" ? "Transaction activity" : "TVL history"}
               </h3>
-              <span className="text-xs text-slate-500">~90d sampled</span>
+              <span className="text-xs text-slate-500">~90 days · hover for values</span>
             </div>
-            <div className="mt-4">
-              <Sparkline values={chartValues} positive={chartPositive} />
-            </div>
-            <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-400">
-              <span>
-                Start{" "}
-                <span className="font-bold text-slate-200">
-                  {data.source === "l2beat"
-                    ? chartValues[0]?.toLocaleString("en-US")
-                    : formatUsd(chartValues[0])}
-                </span>
-              </span>
-              <span>
-                Now{" "}
-                <span className="font-bold text-slate-200">
-                  {data.source === "l2beat"
-                    ? chartValues.at(-1)?.toLocaleString("en-US")
-                    : formatUsd(chartValues.at(-1))}
-                </span>
-              </span>
+            <div className="mt-5">
+              <AnalyticsLineChart
+                points={chartPoints}
+                positive={chartPositive}
+                formatValue={chartFormatter}
+                accent={chartAccent}
+              />
             </div>
           </section>
 
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           {data.source === "defillama" ? (
             <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
               <h3 className="text-lg font-black text-white">Fees on Base</h3>
@@ -237,7 +193,8 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
               </ul>
             </section>
           ) : null}
-        </div>
+          </div>
+        </>
       ) : null}
 
       {data.dexVolume && data.dexVolume.byProtocol.length > 0 ? (
