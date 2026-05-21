@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { pickPreferredConnector } from "@/lib/walletConnectors";
+import {
+  isCoinbaseLikeConnector,
+  pickPreferredConnector,
+} from "@/lib/walletConnectors";
 import type { Connector } from "wagmi";
 
 function mockConnector(partial: { id: string; name: string; type?: string }): Connector {
@@ -11,19 +14,35 @@ function mockConnector(partial: { id: string; name: string; type?: string }): Co
 }
 
 describe("pickPreferredConnector", () => {
-  it("prefers Rabby over Base Account", () => {
+  it("prefers Rabby and ignores Coinbase", () => {
     const picked = pickPreferredConnector([
-      mockConnector({ id: "baseAccount", name: "Base Account", type: "injected" }),
+      mockConnector({ id: "baseAccount", name: "Base Account" }),
+      mockConnector({ id: "com.coinbase.wallet", name: "Coinbase Wallet" }),
       mockConnector({ id: "io.rabby", name: "Rabby Wallet" }),
     ]);
     expect(picked?.name).toBe("Rabby Wallet");
   });
 
-  it("prefers MetaMask over Base Account", () => {
+  it("falls back to MetaMask when Rabby missing", () => {
     const picked = pickPreferredConnector([
-      mockConnector({ id: "baseAccount", name: "Coinbase Wallet" }),
+      mockConnector({ id: "baseAccount", name: "Coinbase Smart Wallet" }),
       mockConnector({ id: "io.metamask", name: "MetaMask" }),
     ]);
     expect(picked?.name).toBe("MetaMask");
+  });
+
+  it("returns undefined when only Coinbase-like connectors exist", () => {
+    const picked = pickPreferredConnector([
+      mockConnector({ id: "baseAccount", name: "Base Account" }),
+    ]);
+    expect(picked).toBeUndefined();
+  });
+});
+
+describe("isCoinbaseLikeConnector", () => {
+  it("detects Coinbase Smart Wallet", () => {
+    expect(
+      isCoinbaseLikeConnector(mockConnector({ id: "x", name: "Coinbase Smart Wallet" }))
+    ).toBe(true);
   });
 });

@@ -29,6 +29,7 @@ export function WalletConnectControl() {
       <button
         type="button"
         disabled={isConnecting || !connector}
+        title={connector ? undefined : "Install the Rabby browser extension"}
         onClick={() =>
           connector &&
           connect({

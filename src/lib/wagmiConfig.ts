@@ -15,7 +15,8 @@ const dataSuffix = builderCode
 export const wagmiConfig = createConfig({
   chains: [base],
   connectors: createWalletConnectors(),
-  multiInjectedProviderDiscovery: true,
+  /** Avoid auto-adding Coinbase / other EIP-6963 wallets that hijack connect. */
+  multiInjectedProviderDiscovery: false,
   storage: createStorage({ storage: cookieStorage }),
   ssr: true,
   transports: {
