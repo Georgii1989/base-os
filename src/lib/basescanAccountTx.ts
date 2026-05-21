@@ -1,6 +1,21 @@
 import { getAddress, isAddress } from "viem";
 
-const BASESCAN_API = "https://api.basescan.org/api";
+/** Etherscan API V2 — unified endpoint for Base (chainid 8453). */
+const ETHERSCAN_API_V2 = "https://api.etherscan.io/v2/api";
+const BASE_CHAIN_ID = "8453";
+
+export function getExplorerApiKey(): string {
+  return process.env.BASESCAN_API_KEY?.trim() || process.env.ETHERSCAN_API_KEY?.trim() || "";
+}
+
+export function buildExplorerV2Url(params: Record<string, string>, apiKey: string): string {
+  const search = new URLSearchParams({
+    chainid: BASE_CHAIN_ID,
+    apikey: apiKey,
+    ...params,
+  });
+  return `${ETHERSCAN_API_V2}?${search.toString()}`;
+}
 
 export type BasescanNormalTx = {
   blockNumber?: string;
@@ -90,18 +105,19 @@ export async function fetchAddressTxListAll(
   let capped = false;
 
   while (txs.length < maxTxs) {
-    const params = new URLSearchParams({
-      module: "account",
-      action: "txlist",
-      address,
-      startblock: "0",
-      endblock: "99999999",
-      page: String(page),
-      offset: String(offset),
-      sort,
-      apikey: apiKey,
-    });
-    const url = `${BASESCAN_API}?${params.toString()}`;
+    const url = buildExplorerV2Url(
+      {
+        module: "account",
+        action: "txlist",
+        address,
+        startblock: "0",
+        endblock: "99999999",
+        page: String(page),
+        offset: String(offset),
+        sort,
+      },
+      apiKey
+    );
     const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) throw new Error(`basescan_http_${response.status}`);
 

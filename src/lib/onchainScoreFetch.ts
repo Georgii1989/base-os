@@ -5,11 +5,11 @@ import {
   type OnchainScoreResult,
 } from "@/lib/onchainScoreCompute";
 import {
+  buildExplorerV2Url,
   fetchMergedTxListForOutgoingStats,
+  getExplorerApiKey,
   type BasescanNormalTx,
 } from "@/lib/basescanAccountTx";
-
-const BASESCAN_API = "https://api.basescan.org/api";
 
 export type OnchainScorePayload = {
   address: `0x${string}`;
@@ -26,18 +26,22 @@ async function fetchTokenTransferCount(
   apiKey: string
 ): Promise<number | null> {
   try {
-    const params = new URLSearchParams({
-      module: "account",
-      action: "tokentx",
-      address,
-      startblock: "0",
-      endblock: "99999999",
-      page: "1",
-      offset: "10000",
-      sort: "desc",
-      apikey: apiKey,
-    });
-    const res = await fetch(`${BASESCAN_API}?${params.toString()}`, { cache: "no-store" });
+    const res = await fetch(
+      buildExplorerV2Url(
+        {
+          module: "account",
+          action: "tokentx",
+          address,
+          startblock: "0",
+          endblock: "99999999",
+          page: "1",
+          offset: "10000",
+          sort: "desc",
+        },
+        apiKey
+      ),
+      { cache: "no-store" }
+    );
     if (!res.ok) return null;
     const json = (await res.json()) as { status: string; result: unknown };
     if (json.status !== "1" || !Array.isArray(json.result)) return null;
@@ -60,8 +64,7 @@ export async function fetchOnchainScore(addressRaw: string): Promise<OnchainScor
   ]);
 
   const isContract = Boolean(bytecode && bytecode !== "0x" && bytecode.length > 2);
-  const apiKey =
-    process.env.BASESCAN_API_KEY?.trim() || process.env.ETHERSCAN_API_KEY?.trim() || "";
+  const apiKey = getExplorerApiKey();
 
   if (!apiKey) {
     const emptyScore = computeOnchainScoreFromTxList([], watcherLower, false, null);

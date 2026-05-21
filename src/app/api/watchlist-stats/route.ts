@@ -3,6 +3,7 @@ import { getAddress, isAddress } from "viem";
 import {
   computeStatsFromTxList,
   fetchMergedTxListForOutgoingStats,
+  getExplorerApiKey,
 } from "@/lib/basescanAccountTx";
 
 export const maxDuration = 60;
@@ -11,8 +12,7 @@ type Body = { addresses?: unknown };
 
 /** Extra on-chain stats for watchlist (Basescan txlist). Requires BASESCAN_API_KEY. */
 export async function POST(request: Request) {
-  const apiKey =
-    process.env.BASESCAN_API_KEY?.trim() || process.env.ETHERSCAN_API_KEY?.trim() || "";
+  const apiKey = getExplorerApiKey();
   if (!apiKey) {
     return NextResponse.json(
       {
