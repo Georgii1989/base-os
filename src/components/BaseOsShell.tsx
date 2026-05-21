@@ -12,7 +12,7 @@ import { BaseBuilderApp } from "@/components/BaseBuilderApp";
 import { useCommandPalette } from "@/components/CommandPalette";
 import { GuardPanel } from "@/components/GuardPanel";
 import { TxLensPanel } from "@/components/TxLensPanel";
-import { WalletCardPanel } from "@/components/WalletCardPanel";
+import { OnchainScorePanel } from "@/components/OnchainScorePanel";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
 import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
 import { radarProjects, type RadarProject } from "@/lib/radarProjects";
@@ -207,7 +207,7 @@ function BaseOsShellInner() {
         {activeTab === "watch" ? <WatchlistPanel /> : null}
         {activeTab === "lens" ? <TxLensPanel /> : null}
         {activeTab === "guard" ? <GuardPanel /> : null}
-        {activeTab === "wallet" ? <WalletCardPanel /> : null}
+        {activeTab === "score" ? <OnchainScorePanel /> : null}
       </div>
     </section>
   );
@@ -258,10 +258,10 @@ function HomePanel({
       cta: "Open guard",
     },
     {
-      tab: "wallet",
-      title: "Your wallet",
-      text: "Your address, quick links, and disconnect.",
-      cta: "Open wallet",
+      tab: "score",
+      title: "Onchain score",
+      text: "Paste a Base address — txs, contracts, bridges, deployments, token moves.",
+      cta: "Check score",
     },
   ];
 

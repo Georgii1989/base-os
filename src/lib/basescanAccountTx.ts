@@ -4,10 +4,13 @@ const BASESCAN_API = "https://api.basescan.org/api";
 
 export type BasescanNormalTx = {
   blockNumber?: string;
+  timeStamp?: string;
   from?: string;
   to?: string;
   hash?: string;
   input?: string;
+  isError?: string;
+  txreceipt_status?: string;
   /** Present on some contract-creation rows */
   contractAddress?: string;
 };

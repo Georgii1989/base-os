@@ -56,7 +56,7 @@ function tabCommandIcon(tabId: OsTabId): string {
       return "⎔";
     case "guard":
       return "⎊";
-    case "wallet":
+    case "score":
       return "◇";
     case "tip":
     default:
@@ -73,8 +73,8 @@ function tabNavKeywords(tab: { id: OsTabId; label: string; eyebrow: string }): s
       return `${base} preview test simulate transaction calldata gas revert`;
     case "guard":
       return `${base} allowance permission token revoke access`;
-    case "wallet":
-      return `${base} connect identity`;
+    case "score":
+      return `${base} onchain activity txs bridge contracts score`;
     default:
       return base;
   }
