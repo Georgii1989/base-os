@@ -30,6 +30,21 @@ export function buildScoreSharePageUrl(address: string, appOrigin?: string): str
   return `${base}/?tab=score&address=${encodeURIComponent(address)}`;
 }
 
+export function buildScoreTweetText(input: ScoreShareCardInput, shareUrl: string): string {
+  return [
+    `My Base onchain score: ${input.score} (Grade ${input.grade})`,
+    `${formatCompactNumber(input.outgoingTxs)} outgoing txs · ${formatCompactNumber(input.uniqueContractsTouched)} contracts · ${formatCompactNumber(input.activeDays)} active days`,
+    "",
+    "Check any wallet on Base OS 👇",
+    shareUrl,
+  ].join("\n");
+}
+
+/** Opens X (Twitter) compose with pre-filled tweet. */
+export function buildTwitterIntentUrl(tweetText: string): string {
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+}
+
 function formatSince(ts: number | null): string {
   if (ts == null) return "—";
   return new Date(ts).toLocaleDateString("en-US", { month: "short", year: "numeric" });
