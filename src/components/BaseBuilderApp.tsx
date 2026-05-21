@@ -17,6 +17,7 @@ import {
   useWriteContract,
 } from "wagmi";
 import { SoulboundHoldersList } from "@/components/SoulboundHoldersList";
+import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
 
 /** Fallback sends tips through TipWithBadgeRouter → underlying TipJar + soulbound badge. */
 const DEFAULT_TIPJAR = "0xDd1090aFba3117953B892A6390B18abe5A979894";
@@ -96,8 +97,7 @@ export function BaseBuilderApp() {
   const [activityError, setActivityError] = useState<string | null>(null);
   const [activitySoftHint, setActivitySoftHint] = useState<string | null>(null);
   const [activityExpanded, setActivityExpanded] = useState(false);
-  const [networkStatus, setNetworkStatus] = useState<string | null>(null);
-  const autoSwitchTriedRef = useRef(false);
+  const [switchFeedback, setSwitchFeedback] = useState<string | null>(null);
   /** Monotonic gate so overlapping polls cannot regress lastScannedBlockRef or stale UI updates. */
   const activityLoadGenRef = useRef(0);
   const lastScannedBlockRef = useRef<bigint | null>(null);
@@ -120,25 +120,19 @@ export function BaseBuilderApp() {
     },
   });
 
+  const preferredConnector = useMemo(() => pickPreferredConnector(connectors), [connectors]);
+
   const shortAddress = useMemo(() => {
     if (!address) return "not connected";
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   }, [address]);
 
-  useEffect(() => {
-    if (!isConnected) {
-      autoSwitchTriedRef.current = false;
-      return;
-    }
-    if (isOnBase || autoSwitchTriedRef.current || isSwitchingChain) return;
-
-    autoSwitchTriedRef.current = true;
-    switchChainAsync({ chainId: base.id })
-      .then(() => setNetworkStatus("Switched to Base."))
-      .catch(() =>
-        setNetworkStatus("Could not switch automatically. Tap “Switch to Base”.")
-      );
-  }, [isConnected, isOnBase, isSwitchingChain, switchChainAsync]);
+  const networkStatus = useMemo(() => {
+    if (switchFeedback) return switchFeedback;
+    if (!isConnected) return null;
+    if (isOnBase) return "Connected on Base.";
+    return "Switching to Base… approve in your wallet if prompted.";
+  }, [switchFeedback, isConnected, isOnBase]);
 
   useEffect(() => {
     if (!publicClient) return;
@@ -339,12 +333,11 @@ export function BaseBuilderApp() {
   }
 
   async function handleSwitchToBase() {
-    setNetworkStatus(null);
+    setSwitchFeedback(null);
     try {
       await switchChainAsync({ chainId: base.id });
-      setNetworkStatus("Now on Base.");
     } catch {
-      setNetworkStatus("Approve the network change in your wallet.");
+      setSwitchFeedback("Approve the network change in your wallet.");
     }
   }
 
@@ -404,17 +397,17 @@ export function BaseBuilderApp() {
         ) : null}
 
         {!isConnected ? (
-          <div className="flex flex-wrap gap-2">
-            {connectors.map((connector) => (
-              <button
-                key={connector.uid}
-                onClick={() => connect({ connector })}
-                className="rounded-xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-500 px-4 py-2 text-sm font-black"
-              >
-                {isConnecting ? "Connecting..." : `Connect: ${connector.name}`}
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            disabled={isConnecting || !preferredConnector}
+            onClick={() =>
+              preferredConnector &&
+              connect({ connector: preferredConnector, chainId: base.id })
+            }
+            className="rounded-xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-500 px-4 py-2 text-sm font-black disabled:opacity-50"
+          >
+            {connectorButtonLabel(preferredConnector, isConnecting)}
+          </button>
         ) : (
           <div className="flex flex-wrap gap-2">
             {!isOnBase ? (

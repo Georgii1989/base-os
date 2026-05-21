@@ -1,7 +1,7 @@
 import { http, createConfig, createStorage, cookieStorage } from "wagmi";
 import { base } from "wagmi/chains";
-import { baseAccount, injected } from "wagmi/connectors";
 import { Attribution } from "ox/erc8021";
+import { createWalletConnectors } from "@/lib/walletConnectors";
 
 const DEFAULT_BUILDER_CODE = "bc_59omft8w";
 const builderCode =
@@ -14,12 +14,8 @@ const dataSuffix = builderCode
 
 export const wagmiConfig = createConfig({
   chains: [base],
-  connectors: [
-    injected(),
-    baseAccount({
-      appName: "Base OS",
-    }),
-  ],
+  connectors: createWalletConnectors(),
+  multiInjectedProviderDiscovery: true,
   storage: createStorage({ storage: cookieStorage }),
   ssr: true,
   transports: {

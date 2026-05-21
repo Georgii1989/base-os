@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { formatUnits, getAddress, isAddress } from "viem";
 import { base } from "wagmi/chains";
 import { useAccount, useChainId, useConnect, useReadContract, useSwitchChain } from "wagmi";
+import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
 
 const REVOKE_CASH_BASE = "https://revoke.cash/chain/8453";
 
@@ -46,6 +47,7 @@ export function GuardPanel() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnecting } = useConnect();
+  const preferredConnector = useMemo(() => pickPreferredConnector(connectors), [connectors]);
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
   const [tokenInput, setTokenInput] = useState<string>(PRESET_USDC);
   const [spenderInput, setSpenderInput] = useState("");
@@ -130,11 +132,14 @@ export function GuardPanel() {
             <p className="text-sm text-amber-100">Connect your wallet (Base) to check permissions.</p>
             <button
               type="button"
-              disabled={isConnecting || connectors.length === 0}
-              onClick={() => connect({ connector: connectors[0] })}
+              disabled={isConnecting || !preferredConnector}
+              onClick={() =>
+                preferredConnector &&
+                connect({ connector: preferredConnector, chainId: base.id })
+              }
               className="mt-3 rounded-xl border border-amber-200/40 bg-amber-500/20 px-4 py-2 text-sm font-bold text-amber-100 disabled:opacity-40"
             >
-              Connect
+              {connectorButtonLabel(preferredConnector, isConnecting)}
             </button>
           </div>
         ) : !isBase ? (

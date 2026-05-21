@@ -9,17 +9,10 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { shortenAddressDisplay } from "@/lib/knownBaseProtocols";
-
-function pickConnector(connectors: ReturnType<typeof useConnect>["connectors"]) {
-  return (
-    connectors.find(
-      (c) =>
-        c.id === "baseAccount" ||
-        c.name.toLowerCase().includes("base") ||
-        c.name.toLowerCase().includes("coinbase")
-    ) ?? connectors[0]
-  );
-}
+import {
+  connectorButtonLabel,
+  pickPreferredConnector,
+} from "@/lib/walletConnectors";
 
 export function WalletConnectControl() {
   const { address, isConnected, chainId } = useAccount();
@@ -28,17 +21,24 @@ export function WalletConnectControl() {
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
 
   const isOnBase = chainId === base.id;
-  const connector = useMemo(() => pickConnector(connectors), [connectors]);
+  const connector = useMemo(() => pickPreferredConnector(connectors), [connectors]);
+  const connectLabel = connectorButtonLabel(connector, isConnecting);
 
   if (!isConnected) {
     return (
       <button
         type="button"
         disabled={isConnecting || !connector}
-        onClick={() => connector && connect({ connector })}
+        onClick={() =>
+          connector &&
+          connect({
+            connector,
+            chainId: base.id,
+          })
+        }
         className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-500 px-4 py-3 text-sm font-black text-white shadow-[0_0_24px_rgba(217,70,239,0.25)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
-        {isConnecting ? "Connecting…" : "Connect wallet"}
+        {connectLabel}
       </button>
     );
   }
