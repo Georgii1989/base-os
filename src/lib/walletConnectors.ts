@@ -1,9 +1,18 @@
-import { injected } from "wagmi/connectors";
+import { baseAccount, injected } from "wagmi/connectors";
 import type { Connector } from "wagmi";
+import { isBaseAppEmbed } from "@/lib/isBaseAppEmbed";
 
-/** Rabby + MetaMask only — no Base Account / Coinbase Smart Wallet popup. */
+/**
+ * Web: Rabby / MetaMask. Base App mini-app: Base Account (embedded wallet).
+ */
 export function createWalletConnectors() {
-  return [injected({ target: "rabby" }), injected({ target: "metaMask" })];
+  return [
+    injected({ target: "rabby" }),
+    injected({ target: "metaMask" }),
+    baseAccount({
+      appName: "Base OS",
+    }),
+  ];
 }
 
 export function isCoinbaseLikeConnector(connector: Connector): boolean {
@@ -19,8 +28,17 @@ export function isCoinbaseLikeConnector(connector: Connector): boolean {
   );
 }
 
-/** Only Rabby or MetaMask — never Coinbase / Base Account. */
+/** Base App → Base Account; normal browser → Rabby / MetaMask (never Coinbase popup). */
 export function pickPreferredConnector(connectors: readonly Connector[]): Connector | undefined {
+  if (connectors.length === 0) return undefined;
+
+  if (isBaseAppEmbed()) {
+    return (
+      connectors.find((c) => c.id === "baseAccount" || c.type === "baseAccount") ??
+      connectors[0]
+    );
+  }
+
   const eligible = connectors.filter((c) => !isCoinbaseLikeConnector(c));
   if (eligible.length === 0) return undefined;
 
@@ -43,6 +61,6 @@ export function pickPreferredConnector(connectors: readonly Connector[]): Connec
 
 export function connectorButtonLabel(connector: Connector | undefined, isConnecting: boolean): string {
   if (isConnecting) return "Connecting…";
-  if (!connector) return "Install Rabby";
+  if (!connector) return isBaseAppEmbed() ? "Connect" : "Install Rabby";
   return "Connect";
 }

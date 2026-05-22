@@ -31,11 +31,12 @@ describe("pickPreferredConnector", () => {
     expect(picked?.name).toBe("MetaMask");
   });
 
-  it("returns undefined when only Coinbase-like connectors exist", () => {
+  it("ignores Base Account on normal web when Rabby exists", () => {
     const picked = pickPreferredConnector([
       mockConnector({ id: "baseAccount", name: "Base Account" }),
+      mockConnector({ id: "io.rabby", name: "Rabby Wallet" }),
     ]);
-    expect(picked).toBeUndefined();
+    expect(picked?.name).toBe("Rabby Wallet");
   });
 });
 
