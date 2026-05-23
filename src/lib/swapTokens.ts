@@ -1,44 +1,11 @@
 /** 0x native ETH sentinel (not WETH). */
 export const NATIVE_ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as const;
 
-export type SwapTokenPreset = {
-  id: string;
-  symbol: string;
-  name: string;
-  address: `0x${string}`;
-  decimals: number;
-};
+export type { SwapTokenPreset } from "@/lib/swapBaseTokens";
+export { BASE_TOP_SWAP_TOKENS as SWAP_TOKEN_PRESETS } from "@/lib/swapBaseTokens";
 
-export const SWAP_TOKEN_PRESETS: SwapTokenPreset[] = [
-  {
-    id: "eth",
-    symbol: "ETH",
-    name: "Ether",
-    address: NATIVE_ETH,
-    decimals: 18,
-  },
-  {
-    id: "usdc",
-    symbol: "USDC",
-    name: "USD Coin",
-    address: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-    decimals: 6,
-  },
-  {
-    id: "weth",
-    symbol: "WETH",
-    name: "Wrapped Ether",
-    address: "0x4200000000000000000000000000000000000006",
-    decimals: 18,
-  },
-  {
-    id: "degen",
-    symbol: "DEGEN",
-    name: "Degen",
-    address: "0x4ed4e862860bed51a9570b96d89af5e1b0efefed",
-    decimals: 18,
-  },
-];
+import { BASE_TOP_SWAP_TOKENS as SWAP_TOKEN_PRESETS } from "@/lib/swapBaseTokens";
+import type { SwapTokenPreset } from "@/lib/swapBaseTokens";
 
 export function isNativeEthToken(address: string): boolean {
   return address.toLowerCase() === NATIVE_ETH.toLowerCase();
@@ -64,7 +31,7 @@ export function resolveSwapToken(
     return {
       id: "custom",
       symbol: "TOKEN",
-      name: "Custom token",
+      name: "TOKEN",
       address: trimmed as `0x${string}`,
       decimals: 18,
     };
@@ -93,3 +60,36 @@ export type SwapQuoteError = {
   error: string;
   hint?: string;
 };
+
+export function tokenAccent(symbol: string): string {
+  const hues: Record<string, string> = {
+    ETH: "from-cyan-400/35 to-blue-600/25 text-cyan-50",
+    WETH: "from-cyan-400/35 to-blue-600/25 text-cyan-50",
+    LINK: "from-cyan-400/35 to-blue-600/25 text-cyan-50",
+    USDC: "from-sky-400/35 to-blue-500/25 text-sky-50",
+    USDT: "from-emerald-400/35 to-teal-600/25 text-emerald-50",
+    USDbC: "from-sky-400/35 to-indigo-500/25 text-sky-50",
+    DEGEN: "from-violet-400/35 to-purple-600/25 text-violet-50",
+    BRETT: "from-amber-400/35 to-orange-600/25 text-amber-50",
+    AERO: "from-indigo-400/35 to-violet-600/25 text-indigo-50",
+    MORPHO: "from-indigo-400/35 to-violet-600/25 text-indigo-50",
+    VIRTUAL: "from-emerald-400/30 to-cyan-600/20 text-emerald-50",
+    VVV: "from-rose-400/30 to-orange-600/20 text-rose-50",
+    ZRO: "from-sky-400/35 to-indigo-500/25 text-sky-50",
+    SHIB: "from-orange-400/30 to-amber-600/20 text-orange-50",
+    BONK: "from-yellow-400/30 to-orange-600/20 text-yellow-50",
+    KAITO: "from-blue-400/30 to-indigo-600/20 text-blue-50",
+    ZORA: "from-rose-400/30 to-fuchsia-600/20 text-rose-50",
+  };
+  return hues[symbol] ?? "from-fuchsia-400/30 to-purple-600/20 text-fuchsia-50";
+}
+
+export function formatSwapBalance(raw: string, symbol: string): string {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return raw;
+  if (n === 0) return `0 ${symbol}`;
+  if (n < 0.0001) return `<0.0001 ${symbol}`;
+  if (n < 1) return `${n.toFixed(4)} ${symbol}`;
+  if (n < 1000) return `${n.toFixed(3)} ${symbol}`;
+  return `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${symbol}`;
+}

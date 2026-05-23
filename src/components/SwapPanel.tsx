@@ -14,9 +14,11 @@ import {
 } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import {
+  formatSwapBalance,
   isNativeEthToken,
   resolveSwapToken,
   SWAP_TOKEN_PRESETS,
+  tokenAccent,
   type SwapQuoteResponse,
   type SwapTokenPreset,
 } from "@/lib/swapTokens";
@@ -65,44 +67,58 @@ const ERC20_ABI = [
   },
 ] as const;
 
-function TokenSelect({
-  label,
+function TokenPicker({
   value,
   customAddress,
   onChange,
   onCustomChange,
+  accent,
 }: {
-  label: string;
   value: string;
   customAddress: string;
   onChange: (id: string) => void;
   onCustomChange: (addr: string) => void;
+  accent: string;
 }) {
+  const symbol =
+    value === "custom"
+      ? "TOKEN"
+      : (SWAP_TOKEN_PRESETS.find((t) => t.id === value)?.symbol ?? "—");
+
   return (
-    <label className="block">
-      <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">{label}</span>
+    <div className="flex shrink-0 items-center gap-2">
+      <span
+        className={`hidden rounded-xl bg-gradient-to-br px-2.5 py-1.5 text-xs font-black sm:inline ${accent}`}
+      >
+        {symbol}
+      </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-2 w-full rounded-xl border border-white/12 bg-black/40 px-3 py-2.5 text-white outline-none focus:border-cyan-300/50"
+        className={`max-w-[7.5rem] cursor-pointer appearance-none rounded-xl border border-white/15 bg-black/50 bg-[length:12px] bg-[right_0.5rem_center] bg-no-repeat py-2.5 pl-3 pr-8 text-sm font-black text-white outline-none focus:border-cyan-400/50 sm:max-w-[9rem] ${accent.split(" ").slice(2).join(" ")}`}
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+        }}
       >
         {SWAP_TOKEN_PRESETS.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.symbol} — {t.name}
+          <option key={t.id} value={t.id} className="bg-slate-950 text-white">
+            {t.symbol}
           </option>
         ))}
-        <option value="custom">Custom address…</option>
+        <option value="custom" className="bg-slate-950 text-white">
+          0x…
+        </option>
       </select>
       {value === "custom" ? (
         <input
           type="text"
           value={customAddress}
           onChange={(e) => onCustomChange(e.target.value)}
-          placeholder="0x… token on Base"
-          className="mt-2 w-full rounded-xl border border-white/12 bg-black/40 px-3 py-2.5 font-mono text-sm text-white outline-none focus:border-cyan-300/50"
+          placeholder="0x…"
+          className="w-24 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 font-mono text-[10px] text-white outline-none focus:border-cyan-400/40 sm:w-32 sm:text-xs"
         />
       ) : null}
-    </label>
+    </div>
   );
 }
 
@@ -137,7 +153,7 @@ export function SwapPanel() {
   const isOnBase = chainId === base.id;
 
   const [sellPreset, setSellPreset] = useState("eth");
-  const [buyPreset, setBuyPreset] = useState("usdc");
+  const [buyPreset, setBuyPreset] = useState("aerodrome-finance");
   const [sellCustom, setSellCustom] = useState("");
   const [buyCustom, setBuyCustom] = useState("");
   const [sellAmount, setSellAmount] = useState("0.001");
@@ -246,19 +262,25 @@ export function SwapPanel() {
   const { isLoading: isSwapConfirming, isSuccess: swapConfirmed } =
     useWaitForTransactionReceipt({ hash: swapHash });
 
-  const balanceLabel = useMemo(() => {
+  const balanceRaw = useMemo(() => {
     if (!sellToken) return null;
     if (isNativeEthToken(sellToken.address)) {
-      return ethBalance ? `${formatUnits(ethBalance.value, 18)} ETH` : "—";
+      return ethBalance ? formatUnits(ethBalance.value, 18) : null;
     }
-    if (sellErc20Balance == null) return "…";
-    return `${formatUnits(sellErc20Balance, sellToken.decimals)} ${sellToken.symbol}`;
+    if (sellErc20Balance == null) return null;
+    return formatUnits(sellErc20Balance, sellToken.decimals);
   }, [sellToken, ethBalance, sellErc20Balance]);
+
+  const balanceLabel =
+    balanceRaw != null && sellToken
+      ? formatSwapBalance(balanceRaw, sellToken.symbol)
+      : null;
 
   const buyDisplay = useMemo(() => {
     if (!quote || !buyToken) return null;
     try {
-      return `${formatUnits(BigInt(quote.buyAmount), buyToken.decimals)} ${buyToken.symbol}`;
+      const raw = formatUnits(BigInt(quote.buyAmount), buyToken.decimals);
+      return formatSwapBalance(raw, buyToken.symbol);
     } catch {
       return null;
     }
@@ -270,6 +292,15 @@ export function SwapPanel() {
     setSellCustom(buyCustom);
     setBuyCustom(sellCustom);
   }, [buyPreset, sellPreset, buyCustom, sellCustom]);
+
+  function setMaxAmount() {
+    if (!balanceRaw || !sellToken) return;
+    const n = Number(balanceRaw);
+    if (!Number.isFinite(n) || n <= 0) return;
+    const max =
+      isNativeEthToken(sellToken.address) && n > 0.0005 ? Math.max(0, n - 0.0003) : n;
+    setSellAmount(max.toFixed(Math.min(6, sellToken.decimals)));
+  }
 
   function handleApprove() {
     setFormError(null);
@@ -304,161 +335,203 @@ export function SwapPanel() {
     (quoteQuery.error.message.includes("not configured") ||
       quoteQuery.error.message.includes("ZEROX"));
 
+  const sellAccent = tokenAccent(sellToken?.symbol ?? "ETH");
+  const buyAccent = tokenAccent(buyToken?.symbol ?? "USDC");
+
   return (
-    <div className="grid gap-5">
-      <section className="rounded-3xl border border-violet-300/25 bg-gradient-to-br from-violet-500/10 via-slate-950/60 to-cyan-500/10 p-6 md:p-8">
-        <p className="text-[11px] font-black uppercase tracking-[0.35em] text-violet-200/90">Swap</p>
-        <h2 className="mt-2 text-3xl font-black text-white">Trade on Base</h2>
-        <p className="mt-3 max-w-2xl text-sm text-slate-300">
-          Best route via 0x aggregator (Uniswap, Aerodrome & more). You sign and pay gas. Not
-          financial advice — verify token addresses.
-        </p>
-      </section>
+    <div className="mx-auto grid max-w-lg gap-4">
+      <div className="text-center">
+        <p className="text-[11px] font-black uppercase tracking-[0.4em] text-violet-300/80">Swap</p>
+        <h2 className="mt-1 text-2xl font-black text-white md:text-3xl">Trade on Base</h2>
+        <p className="mt-1 text-xs text-slate-500">0x · CMC Base top 30</p>
+      </div>
 
       {apiMissing ? (
-        <section className="rounded-3xl border border-amber-300/30 bg-amber-500/10 p-5 text-sm text-amber-100">
-          Swap quotes need <span className="font-mono">ZEROX_API_KEY</span> on the server (free key via{" "}
-          <a
-            href="https://docs.0x.org/docs/introduction/quickstart/getting-started"
-            className="underline"
-            target="_blank"
-            rel="noreferrer"
-          >
-            0x docs
-          </a>
-          ).
-        </section>
+        <div className="rounded-2xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-center text-xs text-amber-100">
+          Server needs <span className="font-mono">ZEROX_API_KEY</span>
+        </div>
       ) : null}
 
-      <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5 md:p-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <TokenSelect
-            label="You pay"
-            value={sellPreset}
-            customAddress={sellCustom}
-            onChange={setSellPreset}
-            onCustomChange={setSellCustom}
-          />
-          <TokenSelect
-            label="You receive"
-            value={buyPreset}
-            customAddress={buyCustom}
-            onChange={setBuyPreset}
-            onCustomChange={setBuyCustom}
-          />
-        </div>
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-b from-slate-900/90 to-black/95 p-1 shadow-[0_0_80px_rgba(139,92,246,0.15)]">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-600/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-cyan-500/15 blur-3xl" />
 
-        <div className="mt-4 flex flex-wrap items-end gap-3">
-          <label className="min-w-[10rem] flex-1">
-            <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
-              Amount
-            </span>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={sellAmount}
-              onChange={(e) => setSellAmount(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-white/12 bg-black/40 px-4 py-3 font-mono text-white outline-none focus:border-cyan-300/50"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={flip}
-            className="rounded-xl border border-white/15 px-4 py-3 text-sm font-bold text-slate-200 hover:border-cyan-300/40"
-          >
-            Flip ↕
-          </button>
-        </div>
+        <div className="relative rounded-[1.4rem] bg-black/40 p-4 backdrop-blur-sm md:p-5">
+          {/* Sell row */}
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 transition focus-within:border-cyan-400/30">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                You pay
+              </span>
+              {balanceLabel && isConnected ? (
+                <button
+                  type="button"
+                  onClick={setMaxAmount}
+                  className="text-[10px] font-bold text-cyan-400/90 hover:text-cyan-300"
+                >
+                  Max · {balanceLabel}
+                </button>
+              ) : null}
+            </div>
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={sellAmount}
+                onChange={(e) => setSellAmount(e.target.value)}
+                placeholder="0.0"
+                className="min-w-0 flex-1 bg-transparent text-3xl font-black tabular-nums text-white outline-none placeholder:text-slate-700"
+              />
+              <TokenPicker
+                value={sellPreset}
+                customAddress={sellCustom}
+                onChange={setSellPreset}
+                onCustomChange={setSellCustom}
+                accent={sellAccent}
+              />
+            </div>
+          </div>
 
-        {balanceLabel ? (
-          <p className="mt-2 text-xs text-slate-500">
-            Balance: <span className="font-mono text-slate-300">{balanceLabel}</span>
-          </p>
-        ) : null}
-
-        <div className="mt-4 rounded-2xl border border-white/8 bg-black/30 p-4">
-          <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">You receive ≈</p>
-          <p className="mt-1 text-2xl font-black text-cyan-100">
-            {quoteQuery.isLoading ? "Fetching route…" : buyDisplay ?? "—"}
-          </p>
-          {quoteQuery.isError && !apiMissing ? (
-            <p className="mt-2 text-sm text-rose-300">{quoteQuery.error.message}</p>
-          ) : null}
-          {quote?.estimatedGas ? (
-            <p className="mt-1 text-xs text-slate-500">Est. gas units: {quote.estimatedGas}</p>
-          ) : null}
-        </div>
-
-        {!isConnected ? (
-          <p className="mt-4 text-sm text-amber-200">Connect wallet in the header to swap.</p>
-        ) : !isOnBase ? (
-          <button
-            type="button"
-            disabled={isSwitchingChain}
-            onClick={() => switchChainAsync({ chainId: base.id })}
-            className="mt-4 rounded-xl border border-cyan-300/40 bg-cyan-500/15 px-4 py-2 text-sm font-bold text-cyan-100"
-          >
-            Switch to Base
-          </button>
-        ) : (
-          <div className="mt-5 flex flex-wrap gap-2">
-            {needsApproval && !approveConfirmed ? (
-              <button
-                type="button"
-                disabled={isApproving || isApproveConfirming || !allowanceTarget}
-                onClick={handleApprove}
-                className="rounded-xl border border-amber-300/40 bg-amber-500/15 px-4 py-2.5 text-sm font-black text-amber-100 disabled:opacity-50"
-              >
-                {isApproving || isApproveConfirming ? "Approving…" : `Approve ${sellToken?.symbol}`}
-              </button>
-            ) : null}
+          {/* Flip */}
+          <div className="relative z-10 -my-3 flex justify-center">
             <button
               type="button"
-              disabled={
-                !quote || quoteQuery.isLoading || needsApproval || isSwapping || isSwapConfirming
-              }
-              onClick={handleSwap}
-              className="rounded-xl bg-gradient-to-r from-violet-500/80 to-cyan-500/70 px-5 py-2.5 text-sm font-black text-white disabled:opacity-50"
+              onClick={flip}
+              aria-label="Flip tokens"
+              className="rounded-xl border border-violet-400/40 bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30 p-2.5 text-lg shadow-lg shadow-violet-900/40 transition hover:scale-105 hover:border-cyan-400/50"
             >
-              {isSwapping || isSwapConfirming ? "Confirm in wallet…" : "Swap"}
+              ⇅
             </button>
           </div>
-        )}
 
-        {formError ? <p className="mt-3 text-sm text-rose-300">{formError}</p> : null}
-        {approveError ? (
-          <p className="mt-3 text-sm text-rose-300">
-            {"shortMessage" in approveError && typeof approveError.shortMessage === "string"
-              ? approveError.shortMessage
-              : approveError.message}
-          </p>
-        ) : null}
-        {swapError ? (
-          <p className="mt-3 text-sm text-rose-300">
-            {"shortMessage" in swapError && typeof swapError.shortMessage === "string"
-              ? swapError.shortMessage
-              : swapError.message}
-          </p>
-        ) : null}
+          {/* Buy row */}
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+              You receive
+            </span>
+            <div className="mt-2 flex items-center gap-3">
+              <p className="min-w-0 flex-1 truncate text-3xl font-black tabular-nums text-cyan-100">
+                {quoteQuery.isLoading ? (
+                  <span className="animate-pulse text-xl text-slate-500">Routing…</span>
+                ) : (
+                  buyDisplay ?? "—"
+                )}
+              </p>
+              <TokenPicker
+                value={buyPreset}
+                customAddress={buyCustom}
+                onChange={setBuyPreset}
+                onCustomChange={setBuyCustom}
+                accent={buyAccent}
+              />
+            </div>
+            {quoteQuery.isError && !apiMissing ? (
+              <p className="mt-2 text-xs text-rose-400">{quoteQuery.error.message}</p>
+            ) : null}
+          </div>
 
-        {swapHash ? (
-          <p className="mt-3 text-sm text-slate-400">
-            Tx:{" "}
-            <a
-              href={`https://basescan.org/tx/${swapHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-cyan-300 hover:underline"
+          {/* Meta */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1 text-[10px] text-slate-500">
+            <span>Slippage 1%</span>
+            {quote?.estimatedGas ? <span>Gas ~{quote.estimatedGas}</span> : null}
+            <span className="text-violet-400/80">Powered by 0x</span>
+          </div>
+
+          {/* Actions */}
+          {!isConnected ? (
+            <p className="mt-4 text-center text-sm text-slate-400">Connect wallet to swap</p>
+          ) : !isOnBase ? (
+            <button
+              type="button"
+              disabled={isSwitchingChain}
+              onClick={() => switchChainAsync({ chainId: base.id })}
+              className="mt-4 w-full rounded-2xl border border-cyan-400/40 bg-cyan-500/15 py-3.5 text-sm font-black text-cyan-100"
             >
-              {swapHash.slice(0, 12)}…
-            </a>
-            {swapConfirmed ? " · confirmed" : " · confirming"}
-          </p>
-        ) : null}
-      </section>
+              Switch to Base
+            </button>
+          ) : (
+            <div className="mt-4 grid gap-2">
+              {needsApproval && !approveConfirmed ? (
+                <button
+                  type="button"
+                  disabled={isApproving || isApproveConfirming || !allowanceTarget}
+                  onClick={handleApprove}
+                  className="w-full rounded-2xl border border-amber-400/35 bg-amber-500/15 py-3.5 text-sm font-black text-amber-100 disabled:opacity-50"
+                >
+                  {isApproving || isApproveConfirming
+                    ? "Approving…"
+                    : `Approve ${sellToken?.symbol}`}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                disabled={
+                  !quote || quoteQuery.isLoading || needsApproval || isSwapping || isSwapConfirming
+                }
+                onClick={handleSwap}
+                className="w-full rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 py-4 text-base font-black text-white shadow-[0_8px_32px_rgba(168,85,247,0.35)] transition hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+              >
+                {isSwapping || isSwapConfirming
+                  ? "Confirm in wallet…"
+                  : !quote && quoteQuery.isLoading
+                    ? "Getting quote…"
+                    : "Swap"}
+              </button>
+            </div>
+          )}
 
-      <p className="text-xs text-slate-600">
-        Routes from 0x. Slippage 1%. Low-liquidity tokens can fail — verify the contract on BaseScan.
+          {formError ? <p className="mt-3 text-center text-sm text-rose-400">{formError}</p> : null}
+          {approveError ? (
+            <p className="mt-2 text-center text-xs text-rose-400">
+              {"shortMessage" in approveError && typeof approveError.shortMessage === "string"
+                ? approveError.shortMessage
+                : approveError.message}
+            </p>
+          ) : null}
+          {swapError ? (
+            <p className="mt-2 text-center text-xs text-rose-400">
+              {"shortMessage" in swapError && typeof swapError.shortMessage === "string"
+                ? swapError.shortMessage
+                : swapError.message}
+            </p>
+          ) : null}
+
+          {swapHash ? (
+            <p className="mt-3 text-center text-xs text-slate-400">
+              <a
+                href={`https://basescan.org/tx/${swapHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-cyan-400 hover:underline"
+              >
+                {swapHash.slice(0, 14)}…
+              </a>
+              {swapConfirmed ? " · done" : " · pending"}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Quick picks */}
+      <div className="flex flex-wrap justify-center gap-1.5 px-2">
+        {["eth", "chainlink", "aerodrome-finance", "virtual-protocol", "venice-token", "morpho"].map((id) => {
+          const t = SWAP_TOKEN_PRESETS.find((x) => x.id === id);
+          if (!t) return null;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setBuyPreset(id)}
+              className={`rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold transition hover:border-cyan-400/40 ${buyPreset === id ? "border-cyan-400/50 text-cyan-200" : "text-slate-400"}`}
+            >
+              {t.symbol}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-center text-[10px] text-slate-600">
+        Verify token contracts on BaseScan. Low liquidity pairs may fail.
       </p>
     </div>
   );
