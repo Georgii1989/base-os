@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error: "Swap quotes are not configured.",
-        hint: "Add ZEROX_API_KEY from 0x.org (free tier) to env.",
+        hint: "Add ZEROX_API_KEY from docs.0x.org (free tier) to env.",
       },
       { status: 503 }
     );

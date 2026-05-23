@@ -179,9 +179,9 @@ Until that env var is set, the Launch tab shows deploy instructions instead of t
 
 ## Swap (0x on Base)
 
-The **Swap** tab routes trades through the [0x aggregator](https://0x.org/docs/api) (Uniswap, Aerodrome, etc. on Base).
+The **Swap** tab routes trades through the [0x aggregator](https://docs.0x.org) (Uniswap, Aerodrome, etc. on Base).
 
-1) Get a free API key at [0x.org](https://0x.org/docs/api).
+1) Get a free API key — start at [0x Quickstart](https://docs.0x.org/docs/introduction/quickstart/getting-started).
 
 2) Add to `.env.local` / Vercel:
 

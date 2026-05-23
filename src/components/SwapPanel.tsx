@@ -317,9 +317,14 @@ export function SwapPanel() {
 
       {apiMissing ? (
         <section className="rounded-3xl border border-amber-300/30 bg-amber-500/10 p-5 text-sm text-amber-100">
-          Swap quotes need <span className="font-mono">ZEROX_API_KEY</span> on the server (free at{" "}
-          <a href="https://0x.org/docs/api" className="underline" target="_blank" rel="noreferrer">
-            0x.org
+          Swap quotes need <span className="font-mono">ZEROX_API_KEY</span> on the server (free key via{" "}
+          <a
+            href="https://docs.0x.org/docs/introduction/quickstart/getting-started"
+            className="underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            0x docs
           </a>
           ).
         </section>
