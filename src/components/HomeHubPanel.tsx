@@ -51,10 +51,17 @@ const MODULES: {
   },
   {
     tab: "launch",
-    title: "Launch token",
+    title: "Launch Token",
     text: "Deploy your ERC-20 on Base — you pay gas.",
     cta: "Create token",
     accent: "from-emerald-500/20 to-cyan-500/10",
+  },
+  {
+    tab: "swap",
+    title: "Swap",
+    text: "Trade tokens via 0x — Uniswap, Aerodrome & more.",
+    cta: "Open swap",
+    accent: "from-violet-500/20 to-indigo-500/10",
   },
   {
     tab: "tip",

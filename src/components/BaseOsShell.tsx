@@ -14,6 +14,7 @@ import { GuardPanel } from "@/components/GuardPanel";
 import { TxLensPanel } from "@/components/TxLensPanel";
 import { HomeHubPanel } from "@/components/HomeHubPanel";
 import { OnchainScorePanel } from "@/components/OnchainScorePanel";
+import { SwapPanel } from "@/components/SwapPanel";
 import { TokenLauncherPanel } from "@/components/TokenLauncherPanel";
 import { WalletConnectControl } from "@/components/WalletConnectControl";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
@@ -196,6 +197,7 @@ function BaseOsShellInner() {
           />
         ) : null}
         {activeTab === "launch" ? <TokenLauncherPanel /> : null}
+        {activeTab === "swap" ? <SwapPanel /> : null}
         {activeTab === "tip" ? (
           <div className="flex flex-col items-center gap-4">
             {address ? (

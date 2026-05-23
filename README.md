@@ -177,6 +177,20 @@ NEXT_PUBLIC_TOKEN_FACTORY_ADDRESS=0x...
 
 Until that env var is set, the Launch tab shows deploy instructions instead of the form.
 
+## Swap (0x on Base)
+
+The **Swap** tab routes trades through the [0x aggregator](https://0x.org/docs/api) (Uniswap, Aerodrome, etc. on Base).
+
+1) Get a free API key at [0x.org](https://0x.org/docs/api).
+
+2) Add to `.env.local` / Vercel:
+
+```env
+ZEROX_API_KEY=your_key_here
+```
+
+Users connect wallet, pick tokens (ETH, USDC, WETH, DEGEN, or custom address), approve if needed, then sign the swap. Builder Code applies via wagmi `dataSuffix`.
+
 ## Notes
 
 - This project is migrated away from Farcaster mini-app SDK flow.
