@@ -18,10 +18,11 @@ import {
   isNativeEthToken,
   resolveSwapToken,
   SWAP_TOKEN_PRESETS,
-  tokenAccent,
   type SwapQuoteResponse,
   type SwapTokenPreset,
 } from "@/lib/swapTokens";
+import { SwapTokenIcon } from "@/components/SwapTokenIcon";
+import { SwapTokenSelectModal } from "@/components/SwapTokenSelectModal";
 
 const ERC20_ABI = [
   {
@@ -67,58 +68,28 @@ const ERC20_ABI = [
   },
 ] as const;
 
-function TokenPicker({
-  value,
-  customAddress,
-  onChange,
-  onCustomChange,
-  accent,
+function TokenSelectButton({
+  token,
+  onClick,
 }: {
-  value: string;
-  customAddress: string;
-  onChange: (id: string) => void;
-  onCustomChange: (addr: string) => void;
-  accent: string;
+  token: SwapTokenPreset | null;
+  onClick: () => void;
 }) {
-  const symbol =
-    value === "custom"
-      ? "TOKEN"
-      : (SWAP_TOKEN_PRESETS.find((t) => t.id === value)?.symbol ?? "—");
-
+  const symbol = token?.symbol ?? "Select";
   return (
-    <div className="flex shrink-0 items-center gap-2">
-      <span
-        className={`hidden rounded-xl bg-gradient-to-br px-2.5 py-1.5 text-xs font-black sm:inline ${accent}`}
-      >
-        {symbol}
-      </span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`max-w-[7.5rem] cursor-pointer appearance-none rounded-xl border border-white/15 bg-black/50 bg-[length:12px] bg-[right_0.5rem_center] bg-no-repeat py-2.5 pl-3 pr-8 text-sm font-black text-white outline-none focus:border-cyan-400/50 sm:max-w-[9rem] ${accent.split(" ").slice(2).join(" ")}`}
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
-        }}
-      >
-        {SWAP_TOKEN_PRESETS.map((t) => (
-          <option key={t.id} value={t.id} className="bg-slate-950 text-white">
-            {t.symbol}
-          </option>
-        ))}
-        <option value="custom" className="bg-slate-950 text-white">
-          0x…
-        </option>
-      </select>
-      {value === "custom" ? (
-        <input
-          type="text"
-          value={customAddress}
-          onChange={(e) => onCustomChange(e.target.value)}
-          placeholder="0x…"
-          className="w-24 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 font-mono text-[10px] text-white outline-none focus:border-cyan-400/40 sm:w-32 sm:text-xs"
-        />
-      ) : null}
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.06] py-1.5 pl-1.5 pr-3 transition hover:border-cyan-400/40 hover:bg-white/[0.1]"
+    >
+      {token ? (
+        <SwapTokenIcon address={token.address} symbol={token.symbol} size={28} showBaseBadge={false} />
+      ) : (
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs">?</span>
+      )}
+      <span className="text-sm font-black text-white">{symbol}</span>
+      <span className="text-[10px] text-slate-500">▾</span>
+    </button>
   );
 }
 
@@ -158,6 +129,7 @@ export function SwapPanel() {
   const [buyCustom, setBuyCustom] = useState("");
   const [sellAmount, setSellAmount] = useState("0.001");
   const [formError, setFormError] = useState<string | null>(null);
+  const [tokenModal, setTokenModal] = useState<"sell" | "buy" | null>(null);
 
   const sellToken = useTokenMeta(resolveSwapToken(sellPreset, sellCustom));
   const buyToken = useTokenMeta(resolveSwapToken(buyPreset, buyCustom));
@@ -335,9 +307,6 @@ export function SwapPanel() {
     (quoteQuery.error.message.includes("not configured") ||
       quoteQuery.error.message.includes("ZEROX"));
 
-  const sellAccent = tokenAccent(sellToken?.symbol ?? "ETH");
-  const buyAccent = tokenAccent(buyToken?.symbol ?? "USDC");
-
   return (
     <div className="mx-auto grid max-w-lg gap-4">
       <div className="text-center">
@@ -382,13 +351,7 @@ export function SwapPanel() {
                 placeholder="0.0"
                 className="min-w-0 flex-1 bg-transparent text-3xl font-black tabular-nums text-white outline-none placeholder:text-slate-700"
               />
-              <TokenPicker
-                value={sellPreset}
-                customAddress={sellCustom}
-                onChange={setSellPreset}
-                onCustomChange={setSellCustom}
-                accent={sellAccent}
-              />
+              <TokenSelectButton token={sellToken} onClick={() => setTokenModal("sell")} />
             </div>
           </div>
 
@@ -417,13 +380,7 @@ export function SwapPanel() {
                   buyDisplay ?? "—"
                 )}
               </p>
-              <TokenPicker
-                value={buyPreset}
-                customAddress={buyCustom}
-                onChange={setBuyPreset}
-                onCustomChange={setBuyCustom}
-                accent={buyAccent}
-              />
+              <TokenSelectButton token={buyToken} onClick={() => setTokenModal("buy")} />
             </div>
             {quoteQuery.isError && !apiMissing ? (
               <p className="mt-2 text-xs text-rose-400">{quoteQuery.error.message}</p>
@@ -513,7 +470,7 @@ export function SwapPanel() {
       </div>
 
       {/* Quick picks */}
-      <div className="flex flex-wrap justify-center gap-1.5 px-2">
+      <div className="flex flex-wrap justify-center gap-2 px-2">
         {["eth", "chainlink", "aerodrome-finance", "virtual-protocol", "venice-token", "morpho"].map((id) => {
           const t = SWAP_TOKEN_PRESETS.find((x) => x.id === id);
           if (!t) return null;
@@ -522,13 +479,31 @@ export function SwapPanel() {
               key={id}
               type="button"
               onClick={() => setBuyPreset(id)}
-              className={`rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold transition hover:border-cyan-400/40 ${buyPreset === id ? "border-cyan-400/50 text-cyan-200" : "text-slate-400"}`}
+              className={`flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-3 text-[11px] font-bold transition hover:border-cyan-400/40 ${buyPreset === id ? "border-cyan-400/50 text-cyan-200" : "text-slate-400"}`}
             >
+              <SwapTokenIcon address={t.address} symbol={t.symbol} size={22} showBaseBadge={false} />
               {t.symbol}
             </button>
           );
         })}
       </div>
+
+      <SwapTokenSelectModal
+        open={tokenModal === "sell"}
+        onClose={() => setTokenModal(null)}
+        selectedId={sellPreset}
+        onSelect={setSellPreset}
+        walletAddress={address}
+        excludeAddress={buyToken?.address}
+      />
+      <SwapTokenSelectModal
+        open={tokenModal === "buy"}
+        onClose={() => setTokenModal(null)}
+        selectedId={buyPreset}
+        onSelect={setBuyPreset}
+        walletAddress={address}
+        excludeAddress={sellToken?.address}
+      />
 
       <p className="text-center text-[10px] text-slate-600">
         Verify token contracts on BaseScan. Low liquidity pairs may fail.
