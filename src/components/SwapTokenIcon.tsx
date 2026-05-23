@@ -16,13 +16,15 @@ export function SwapTokenIcon({
   symbol,
   size = 36,
   showBaseBadge = true,
+  logoURI,
 }: {
   address: string;
   symbol: string;
   size?: number;
   showBaseBadge?: boolean;
+  logoURI?: string | null;
 }) {
-  const logo = swapTokenLogo(address);
+  const logo = logoURI ?? swapTokenLogo(address);
   const accent = tokenAccent(symbol);
   const badgeSize = Math.max(14, Math.round(size * 0.38));
   const [imgFailed, setImgFailed] = useState(false);

@@ -25,6 +25,17 @@ const ERC20_BALANCE_ABI = [
 
 const POPULAR_IDS = ["eth", "chainlink", "aerodrome-finance", "virtual-protocol", "morpho"];
 
+type LookupToken = SwapTokenPreset & {
+  logoURI?: string | null;
+  priceUsd?: number | null;
+};
+
+type TokenRow = LookupToken & {
+  balanceRaw: string | null;
+  balanceUsd: number | null;
+  priceUsd: number | null;
+};
+
 function formatTokenPrice(usd: number): string {
   if (usd >= 1000) {
     return `$${usd.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
@@ -43,16 +54,24 @@ function formatTokenAmount(raw: string): string {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
-type TokenRow = SwapTokenPreset & {
-  balanceRaw: string | null;
-  balanceUsd: number | null;
-  priceUsd: number | null;
-};
+function pickToken(
+  token: TokenRow,
+  onPick: (id: string, customAddress?: string) => void,
+  onClose: () => void
+) {
+  if (token.id === "custom") {
+    onPick("custom", token.address);
+  } else {
+    onPick(token.id);
+  }
+  onClose();
+}
 
 export function SwapTokenSelectModal({
   open,
   onClose,
   selectedId,
+  selectedAddress,
   onSelect,
   walletAddress,
   excludeAddress,
@@ -60,11 +79,14 @@ export function SwapTokenSelectModal({
   open: boolean;
   onClose: () => void;
   selectedId: string;
-  onSelect: (id: string) => void;
+  selectedAddress?: string;
+  onSelect: (id: string, customAddress?: string) => void;
   walletAddress?: `0x${string}`;
   excludeAddress?: string;
 }) {
   const [query, setQuery] = useState("");
+  const trimmedQuery = query.trim();
+  const isSearching = trimmedQuery.length >= 2;
 
   useEffect(() => {
     if (!open) setQuery("");
@@ -96,6 +118,19 @@ export function SwapTokenSelectModal({
     enabled: open,
   });
 
+  const searchQuery = useQuery({
+    queryKey: ["swap-token-search", trimmedQuery],
+    queryFn: async (): Promise<LookupToken[]> => {
+      const res = await fetch(`/api/swap/lookup?q=${encodeURIComponent(trimmedQuery)}`);
+      if (res.status === 404) return [];
+      if (!res.ok) return [];
+      const json = (await res.json()) as { tokens?: LookupToken[] };
+      return json.tokens ?? [];
+    },
+    staleTime: 30_000,
+    enabled: open && isSearching,
+  });
+
   const { data: ethBalance } = useBalance({
     address: walletAddress,
     chainId: base.id,
@@ -115,62 +150,104 @@ export function SwapTokenSelectModal({
       args: [walletAddress!] as const,
       chainId: base.id,
     })),
-    query: { enabled: open && Boolean(walletAddress) },
+    query: { enabled: open && Boolean(walletAddress) && !isSearching },
   });
 
-  const rows = useMemo((): TokenRow[] => {
+  const enrich = useMemo(() => {
     const prices = marketQuery.data ?? {};
     const exclude = excludeAddress?.toLowerCase();
 
-    return SWAP_TOKEN_PRESETS.filter((t) => t.address.toLowerCase() !== exclude).map((token) => {
-      const priceUsd = prices[token.address.toLowerCase()] ?? null;
-      let balanceRaw: string | null = null;
+    return (tokens: LookupToken[]): TokenRow[] =>
+      tokens
+        .filter((t) => t.address.toLowerCase() !== exclude)
+        .map((token) => {
+          const priceUsd =
+            prices[token.address.toLowerCase()] ?? token.priceUsd ?? null;
+          let balanceRaw: string | null = null;
 
-      if (walletAddress) {
-        if (isNativeEthToken(token.address) && ethBalance) {
-          balanceRaw = formatUnits(ethBalance.value, ethBalance.decimals);
-        } else if (!isNativeEthToken(token.address)) {
-          const idx = erc20Tokens.findIndex(
-            (t) => t.address.toLowerCase() === token.address.toLowerCase()
-          );
-          const bal = idx >= 0 ? erc20Balances?.[idx]?.result : undefined;
-          if (typeof bal === "bigint") {
-            balanceRaw = formatUnits(bal, token.decimals);
+          if (walletAddress) {
+            if (isNativeEthToken(token.address) && ethBalance) {
+              balanceRaw = formatUnits(ethBalance.value, ethBalance.decimals);
+            } else if (!isNativeEthToken(token.address)) {
+              const idx = erc20Tokens.findIndex(
+                (t) => t.address.toLowerCase() === token.address.toLowerCase()
+              );
+              const bal = idx >= 0 ? erc20Balances?.[idx]?.result : undefined;
+              if (typeof bal === "bigint") {
+                balanceRaw = formatUnits(bal, token.decimals);
+              }
+            }
           }
-        }
-      }
 
-      const balanceUsd =
-        balanceRaw != null && priceUsd != null ? Number(balanceRaw) * priceUsd : null;
+          const balanceUsd =
+            balanceRaw != null && priceUsd != null ? Number(balanceRaw) * priceUsd : null;
 
-      return { ...token, balanceRaw, balanceUsd, priceUsd };
-    });
-  }, [marketQuery.data, excludeAddress, walletAddress, ethBalance, erc20Tokens, erc20Balances]);
+          return { ...token, balanceRaw, balanceUsd, priceUsd };
+        });
+  }, [
+    marketQuery.data,
+    excludeAddress,
+    walletAddress,
+    ethBalance,
+    erc20Tokens,
+    erc20Balances,
+  ]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
+  const presetRows = useMemo(() => enrich(SWAP_TOKEN_PRESETS), [enrich]);
+
+  const filteredPresets = useMemo(() => {
+    if (!isSearching) return presetRows;
+    const q = trimmedQuery.toLowerCase();
+    return presetRows.filter(
       (t) =>
         t.symbol.toLowerCase().includes(q) ||
         t.name.toLowerCase().includes(q) ||
-        t.id.toLowerCase().includes(q) ||
         t.address.toLowerCase().includes(q)
     );
-  }, [rows, query]);
+  }, [presetRows, isSearching, trimmedQuery]);
+
+  const searchRows = useMemo(() => {
+    if (!isSearching) return [];
+    return enrich(searchQuery.data ?? []);
+  }, [isSearching, searchQuery.data, enrich]);
+
+  const displayRows = useMemo(() => {
+    if (!isSearching) return presetRows;
+    const seen = new Set<string>();
+    const merged: TokenRow[] = [];
+    for (const t of [...searchRows, ...filteredPresets]) {
+      const key = t.address.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(t);
+    }
+    return merged;
+  }, [isSearching, presetRows, searchRows, filteredPresets]);
 
   const { owned, rest } = useMemo(() => {
-    const ownedRows = filtered.filter((t) => t.balanceRaw != null && Number(t.balanceRaw) > 0);
-    const ownedIds = new Set(ownedRows.map((t) => t.id));
+    const ownedRows = displayRows.filter((t) => t.balanceRaw != null && Number(t.balanceRaw) > 0);
+    const ownedIds = new Set(ownedRows.map((t) => t.address.toLowerCase()));
     return {
       owned: ownedRows.sort((a, b) => (b.balanceUsd ?? 0) - (a.balanceUsd ?? 0)),
-      rest: filtered
-        .filter((t) => !ownedIds.has(t.id))
+      rest: displayRows
+        .filter((t) => !ownedIds.has(t.address.toLowerCase()))
         .sort((a, b) => (a.cmcRank ?? 9999) - (b.cmcRank ?? 9999)),
     };
-  }, [filtered]);
+  }, [displayRows]);
+
+  const isSelected = (token: TokenRow) =>
+    token.id === "custom"
+      ? selectedId === "custom" &&
+        selectedAddress?.toLowerCase() === token.address.toLowerCase()
+      : selectedId === token.id;
 
   if (!open) return null;
+
+  const showEmpty =
+    isSearching &&
+    !searchQuery.isLoading &&
+    displayRows.length === 0 &&
+    searchQuery.isFetched;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
@@ -200,52 +277,65 @@ export function SwapTokenSelectModal({
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search tokens"
+              placeholder="Search name or paste address"
               className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
             />
           </div>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-            {POPULAR_IDS.map((id) => {
-              const t = SWAP_TOKEN_PRESETS.find((x) => x.id === id);
-              if (!t || t.address.toLowerCase() === excludeAddress?.toLowerCase()) return null;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => {
-                    onSelect(id);
-                    onClose();
-                  }}
-                  className="flex shrink-0 flex-col items-center gap-1.5 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2.5 transition hover:border-white/20 hover:bg-white/[0.06]"
-                >
-                  <SwapTokenIcon address={t.address} symbol={t.symbol} size={32} />
-                  <span className="text-[11px] font-bold text-slate-300">{t.symbol}</span>
-                </button>
-              );
-            })}
-          </div>
+          {!isSearching ? (
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+              {POPULAR_IDS.map((id) => {
+                const t = SWAP_TOKEN_PRESETS.find((x) => x.id === id);
+                if (!t || t.address.toLowerCase() === excludeAddress?.toLowerCase()) return null;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      onSelect(id);
+                      onClose();
+                    }}
+                    className="flex shrink-0 flex-col items-center gap-1.5 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2.5 transition hover:border-white/20 hover:bg-white/[0.06]"
+                  >
+                    <SwapTokenIcon address={t.address} symbol={t.symbol} size={32} />
+                    <span className="text-[11px] font-bold text-slate-300">{t.symbol}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-3 flex-1 overflow-y-auto px-2 pb-4">
+          {searchQuery.isLoading && isSearching ? (
+            <p className="px-4 py-8 text-center text-sm text-slate-500">Searching…</p>
+          ) : null}
           {owned.length > 0 ? (
             <TokenSection
               title="Your tokens"
               tokens={owned}
-              selectedId={selectedId}
+              isSelected={isSelected}
               onPick={onSelect}
               onClose={onClose}
             />
           ) : null}
           <TokenSection
-            title={owned.length > 0 ? "Tokens on Base" : "Popular tokens"}
+            title={
+              isSearching
+                ? "Search results"
+                : owned.length > 0
+                  ? "Tokens on Base"
+                  : "Popular tokens"
+            }
             tokens={rest}
-            selectedId={selectedId}
+            isSelected={isSelected}
             onPick={onSelect}
             onClose={onClose}
           />
-          {filtered.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-slate-500">No tokens found</p>
+          {showEmpty ? (
+            <p className="px-4 py-8 text-center text-sm text-slate-500">
+              No token found. Paste a valid Base contract address.
+            </p>
           ) : null}
         </div>
       </div>
@@ -256,14 +346,14 @@ export function SwapTokenSelectModal({
 function TokenSection({
   title,
   tokens,
-  selectedId,
+  isSelected,
   onPick,
   onClose,
 }: {
   title: string;
   tokens: TokenRow[];
-  selectedId: string;
-  onPick: (id: string) => void;
+  isSelected: (token: TokenRow) => boolean;
+  onPick: (id: string, customAddress?: string) => void;
   onClose: () => void;
 }) {
   if (tokens.length === 0) return null;
@@ -275,22 +365,25 @@ function TokenSection({
         {tokens.map((token) => {
           const hasBalance = token.balanceRaw != null && Number(token.balanceRaw) > 0;
           return (
-            <li key={token.id}>
+            <li key={token.address}>
               <button
                 type="button"
-                onClick={() => {
-                  onPick(token.id);
-                  onClose();
-                }}
+                onClick={() => pickToken(token, onPick, onClose)}
                 className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/[0.06] ${
-                  selectedId === token.id ? "bg-white/[0.08]" : ""
+                  isSelected(token) ? "bg-white/[0.08]" : ""
                 }`}
               >
-                <SwapTokenIcon address={token.address} symbol={token.symbol} size={40} />
+                <SwapTokenIcon
+                  address={token.address}
+                  symbol={token.symbol}
+                  size={40}
+                  logoURI={token.logoURI}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-white">{token.symbol}</p>
                   <p className="truncate text-xs text-slate-500">
-                    {token.symbol} · {shortenAddress(token.address)}
+                    {token.name !== token.symbol ? `${token.name} · ` : ""}
+                    {shortenAddress(token.address)}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">

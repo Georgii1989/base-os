@@ -131,6 +131,26 @@ export function SwapPanel() {
   const [formError, setFormError] = useState<string | null>(null);
   const [tokenModal, setTokenModal] = useState<"sell" | "buy" | null>(null);
 
+  function selectSellToken(id: string, customAddress?: string) {
+    if (id === "custom" && customAddress) {
+      setSellPreset("custom");
+      setSellCustom(customAddress);
+    } else {
+      setSellPreset(id);
+      setSellCustom("");
+    }
+  }
+
+  function selectBuyToken(id: string, customAddress?: string) {
+    if (id === "custom" && customAddress) {
+      setBuyPreset("custom");
+      setBuyCustom(customAddress);
+    } else {
+      setBuyPreset(id);
+      setBuyCustom("");
+    }
+  }
+
   const sellToken = useTokenMeta(resolveSwapToken(sellPreset, sellCustom));
   const buyToken = useTokenMeta(resolveSwapToken(buyPreset, buyCustom));
 
@@ -312,7 +332,6 @@ export function SwapPanel() {
       <div className="text-center">
         <p className="text-[11px] font-black uppercase tracking-[0.4em] text-violet-300/80">Swap</p>
         <h2 className="mt-1 text-2xl font-black text-white md:text-3xl">Trade on Base</h2>
-        <p className="mt-1 text-xs text-slate-500">0x · CMC Base top 30</p>
       </div>
 
       {apiMissing ? (
@@ -492,7 +511,8 @@ export function SwapPanel() {
         open={tokenModal === "sell"}
         onClose={() => setTokenModal(null)}
         selectedId={sellPreset}
-        onSelect={setSellPreset}
+        selectedAddress={sellCustom || undefined}
+        onSelect={selectSellToken}
         walletAddress={address}
         excludeAddress={buyToken?.address}
       />
@@ -500,7 +520,8 @@ export function SwapPanel() {
         open={tokenModal === "buy"}
         onClose={() => setTokenModal(null)}
         selectedId={buyPreset}
-        onSelect={setBuyPreset}
+        selectedAddress={buyCustom || undefined}
+        onSelect={selectBuyToken}
         walletAddress={address}
         excludeAddress={sellToken?.address}
       />
