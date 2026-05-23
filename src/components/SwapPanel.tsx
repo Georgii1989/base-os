@@ -118,7 +118,9 @@ function useTokenMeta(token: SwapTokenPreset | null) {
   }, [token, onChainDecimals, onChainSymbol]);
 }
 
-export function SwapPanel() {
+type SwapPanelProps = { embedded?: boolean };
+
+export function SwapPanel({ embedded = false }: SwapPanelProps) {
   const { address, isConnected, chainId } = useAccount();
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
   const isOnBase = chainId === base.id;
@@ -328,11 +330,13 @@ export function SwapPanel() {
       quoteQuery.error.message.includes("ZEROX"));
 
   return (
-    <div className="mx-auto grid max-w-lg gap-4">
-      <div className="text-center">
-        <p className="text-[11px] font-black uppercase tracking-[0.4em] text-violet-300/80">Swap</p>
-        <h2 className="mt-1 text-2xl font-black text-white md:text-3xl">Trade on Base</h2>
-      </div>
+    <div className={embedded ? "grid gap-4" : "mx-auto grid max-w-lg gap-4"}>
+      {!embedded ? (
+        <div className="text-center">
+          <p className="text-[11px] font-black uppercase tracking-[0.4em] text-violet-300/80">Swap</p>
+          <h2 className="mt-1 text-2xl font-black text-white md:text-3xl">Trade on Base</h2>
+        </div>
+      ) : null}
 
       {apiMissing ? (
         <div className="rounded-2xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-center text-xs text-amber-100">

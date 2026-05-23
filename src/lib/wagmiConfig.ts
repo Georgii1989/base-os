@@ -1,5 +1,5 @@
 import { http, createConfig, createStorage, cookieStorage } from "wagmi";
-import { base } from "wagmi/chains";
+import { arbitrum, base, bsc, linea, mainnet, zkSync } from "wagmi/chains";
 import { Attribution } from "ox/erc8021";
 import { createWalletConnectors } from "@/lib/walletConnectors";
 
@@ -13,7 +13,7 @@ const dataSuffix = builderCode
   : undefined;
 
 export const wagmiConfig = createConfig({
-  chains: [base],
+  chains: [base, mainnet, arbitrum, bsc, linea, zkSync],
   connectors: createWalletConnectors(),
   /** Avoid auto-adding Coinbase / other EIP-6963 wallets that hijack connect. */
   multiInjectedProviderDiscovery: false,
@@ -21,6 +21,11 @@ export const wagmiConfig = createConfig({
   ssr: true,
   transports: {
     [base.id]: http(),
+    [mainnet.id]: http(),
+    [arbitrum.id]: http(),
+    [bsc.id]: http(),
+    [linea.id]: http(),
+    [zkSync.id]: http(),
   },
   ...(dataSuffix ? { dataSuffix } : {}),
 });

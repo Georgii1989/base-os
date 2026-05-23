@@ -58,9 +58,9 @@ const MODULES: {
   },
   {
     tab: "swap",
-    title: "Swap",
-    text: "Trade tokens via 0x — Uniswap, Aerodrome & more.",
-    cta: "Open swap",
+    title: "Swap and Bridge",
+    text: "Swap on Base via 0x, or bridge ETH/USDC with Relay and official routes.",
+    cta: "Open swap & bridge",
     accent: "from-violet-500/20 to-indigo-500/10",
   },
   {

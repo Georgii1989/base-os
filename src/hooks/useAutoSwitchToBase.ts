@@ -5,6 +5,8 @@ import { base } from "wagmi/chains";
 import { useAccount, useSwitchChain } from "wagmi";
 
 type Options = {
+  /** When false, skip auto-switch (e.g. Swap and Bridge tab needs Ethereum for bridging). */
+  enabled?: boolean;
   onSuccess?: () => void;
   onError?: () => void;
 };
@@ -16,10 +18,12 @@ export function useAutoSwitchToBase(options?: Options) {
   const { isConnected, chainId } = useAccount();
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
   const triedRef = useRef(false);
+  const enabled = options?.enabled ?? true;
   const onSuccess = options?.onSuccess;
   const onError = options?.onError;
 
   useEffect(() => {
+    if (!enabled) return;
     if (!isConnected) {
       triedRef.current = false;
       return;
@@ -33,5 +37,5 @@ export function useAutoSwitchToBase(options?: Options) {
         triedRef.current = false;
         onError?.();
       });
-  }, [isConnected, chainId, isSwitchingChain, switchChainAsync, onSuccess, onError]);
+  }, [enabled, isConnected, chainId, isSwitchingChain, switchChainAsync, onSuccess, onError]);
 }

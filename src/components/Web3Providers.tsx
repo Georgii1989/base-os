@@ -1,7 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { WagmiProvider } from "wagmi";
 import { BaseChainAutoSwitch } from "@/components/BaseChainAutoSwitch";
 import { CommandPaletteProvider } from "@/components/CommandPalette";
@@ -13,7 +13,9 @@ export function Web3Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
       <QueryClientProvider client={queryClient}>
-        <BaseChainAutoSwitch />
+        <Suspense fallback={null}>
+          <BaseChainAutoSwitch />
+        </Suspense>
         <CommandPaletteProvider>{children}</CommandPaletteProvider>
       </QueryClientProvider>
     </WagmiProvider>
