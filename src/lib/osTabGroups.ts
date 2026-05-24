@@ -13,7 +13,7 @@ export const OS_TAB_GROUPS: OsTabGroup[] = [
   { id: "hub", label: "Hub", tabIds: ["home"] },
   { id: "trade", label: "Trade", tabIds: ["swap"] },
   { id: "build", label: "Build", tabIds: ["launch", "tip"] },
-  { id: "you", label: "You", tabIds: ["score", "guard", "watch"] },
+  { id: "you", label: "You", tabIds: ["score", "portfolio", "guard", "watch"] },
   { id: "explore", label: "Explore", tabIds: ["analytics", "radar"] },
 ];
 

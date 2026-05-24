@@ -52,6 +52,13 @@ const MODULES: {
     accent: "from-emerald-500/10 to-teal-500/10",
   },
   {
+    tab: "portfolio",
+    title: "Portfolio",
+    text: "ETH + ERC-20 on Base — valued via Blockscout.",
+    cta: "View holdings",
+    accent: "from-cyan-500/15 to-indigo-500/10",
+  },
+  {
     tab: "launch",
     title: "Launch Token",
     text: "Deploy your ERC-20 on Base — you pay gas.",

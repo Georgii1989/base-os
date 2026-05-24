@@ -7,6 +7,7 @@ export type OsTabId =
   | "radar"
   | "guard"
   | "score"
+  | "portfolio"
   | "watch"
   | "lens";
 
@@ -24,6 +25,7 @@ export const OS_TAB_META: readonly OsTabMeta[] = [
   { id: "launch", label: "Launch", eyebrow: "Token" },
   { id: "tip", label: "Tips", eyebrow: "Support" },
   { id: "score", label: "Score", eyebrow: "Identity" },
+  { id: "portfolio", label: "Portfolio", eyebrow: "Balances" },
   { id: "guard", label: "Guard", eyebrow: "Revoke" },
   { id: "watch", label: "Tracked", eyebrow: "Wallets" },
   { id: "analytics", label: "Analytics", eyebrow: "Base TVL" },

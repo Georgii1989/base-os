@@ -18,6 +18,7 @@ import { OnchainScorePanel } from "@/components/OnchainScorePanel";
 import { SwapBridgePanel } from "@/components/SwapBridgePanel";
 import { TokenLauncherPanel } from "@/components/TokenLauncherPanel";
 import { WalletConnectControl } from "@/components/WalletConnectControl";
+import { WalletPortfolioPanel } from "@/components/WalletPortfolioPanel";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
 import { OsGroupedNav } from "@/components/OsGroupedNav";
 import { OS_PRIMARY_TAB_IDS } from "@/lib/osTabGroups";
@@ -197,6 +198,7 @@ function BaseOsShellInner() {
         {activeTab === "lens" ? <TxLensPanel /> : null}
         {activeTab === "guard" ? <GuardPanel /> : null}
         {activeTab === "score" ? <OnchainScorePanel /> : null}
+        {activeTab === "portfolio" ? <WalletPortfolioPanel /> : null}
       </div>
     </section>
   );
