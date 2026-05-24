@@ -23,6 +23,8 @@ import {
 } from "@/lib/swapTokens";
 import { SwapTokenIcon } from "@/components/SwapTokenIcon";
 import { SwapTokenSelectModal } from "@/components/SwapTokenSelectModal";
+import { WalletAssetBalance } from "@/components/WalletAssetBalance";
+import { formatAssetBalance, maxSpendAmount } from "@/lib/assetBalance";
 
 const ERC20_ABI = [
   {
@@ -166,15 +168,48 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
     }
   }, [sellAmount, sellToken]);
 
-  const { data: ethBalance } = useBalance({ address, chainId: base.id });
-  const { data: sellErc20Balance } = useReadContract({
+  const { data: ethBalance, isLoading: ethLoading, isError: ethError } = useBalance({
+    address,
+    chainId: base.id,
+    query: { enabled: Boolean(address), refetchInterval: 12_000 },
+  });
+  const {
+    data: sellErc20Balance,
+    isLoading: sellErc20Loading,
+    isError: sellErc20Error,
+  } = useReadContract({
     address:
       sellToken && !isNativeEthToken(sellToken.address) ? sellToken.address : undefined,
     abi: ERC20_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
+    chainId: base.id,
     query: {
       enabled: Boolean(address && sellToken && !isNativeEthToken(sellToken.address)),
+      refetchInterval: 12_000,
+    },
+  });
+
+  const {
+    data: buyErc20Balance,
+    isLoading: buyErc20Loading,
+  } = useReadContract({
+    address: buyToken && !isNativeEthToken(buyToken.address) ? buyToken.address : undefined,
+    abi: ERC20_ABI,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    chainId: base.id,
+    query: {
+      enabled: Boolean(address && buyToken && !isNativeEthToken(buyToken.address)),
+      refetchInterval: 12_000,
+    },
+  });
+  const { data: buyEthBalance, isLoading: buyEthLoading } = useBalance({
+    address,
+    chainId: base.id,
+    query: {
+      enabled: Boolean(address && buyToken && isNativeEthToken(buyToken.address)),
+      refetchInterval: 12_000,
     },
   });
 
@@ -222,6 +257,7 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
     abi: ERC20_ABI,
     functionName: "allowance",
     args: address && allowanceTarget ? [address, allowanceTarget] : undefined,
+    chainId: base.id,
     query: {
       enabled: Boolean(
         address && sellToken && allowanceTarget && !isNativeEthToken(sellToken.address)
@@ -256,19 +292,37 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
   const { isLoading: isSwapConfirming, isSuccess: swapConfirmed } =
     useWaitForTransactionReceipt({ hash: swapHash });
 
-  const balanceRaw = useMemo(() => {
+  const sellBalanceLoading =
+    sellToken && isNativeEthToken(sellToken.address) ? ethLoading : sellErc20Loading;
+  const sellBalanceError =
+    sellToken && isNativeEthToken(sellToken.address) ? ethError : sellErc20Error;
+
+  const sellBalanceValue = useMemo(() => {
     if (!sellToken) return null;
     if (isNativeEthToken(sellToken.address)) {
-      return ethBalance ? formatUnits(ethBalance.value, 18) : null;
+      return ethBalance?.value ?? null;
     }
-    if (sellErc20Balance == null) return null;
-    return formatUnits(sellErc20Balance, sellToken.decimals);
+    return sellErc20Balance != null ? (sellErc20Balance as bigint) : null;
   }, [sellToken, ethBalance, sellErc20Balance]);
 
   const balanceLabel =
-    balanceRaw != null && sellToken
-      ? formatSwapBalance(balanceRaw, sellToken.symbol)
-      : null;
+    sellBalanceValue != null && sellToken
+      ? formatAssetBalance(sellBalanceValue, sellToken.decimals, sellToken.symbol)
+      : isConnected && !sellBalanceLoading && sellToken
+        ? `0 ${sellToken.symbol}`
+        : null;
+
+  const buyBalanceLabel = useMemo(() => {
+    if (!buyToken || !isConnected) return null;
+    if (isNativeEthToken(buyToken.address)) {
+      if (buyEthLoading) return null;
+      const v = buyEthBalance?.value ?? BigInt(0);
+      return formatAssetBalance(v, 18, buyToken.symbol);
+    }
+    if (buyErc20Loading) return null;
+    const v = buyErc20Balance != null ? (buyErc20Balance as bigint) : BigInt(0);
+    return formatAssetBalance(v, buyToken.decimals, buyToken.symbol);
+  }, [buyToken, isConnected, buyEthBalance, buyErc20Balance, buyEthLoading, buyErc20Loading]);
 
   const buyDisplay = useMemo(() => {
     if (!quote || !buyToken) return null;
@@ -288,12 +342,14 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
   }, [buyPreset, sellPreset, buyCustom, sellCustom]);
 
   function setMaxAmount() {
-    if (!balanceRaw || !sellToken) return;
-    const n = Number(balanceRaw);
-    if (!Number.isFinite(n) || n <= 0) return;
-    const max =
-      isNativeEthToken(sellToken.address) && n > 0.0005 ? Math.max(0, n - 0.0003) : n;
-    setSellAmount(max.toFixed(Math.min(6, sellToken.decimals)));
+    if (!sellToken || sellBalanceValue == null || sellBalanceValue <= BigInt(0)) return;
+    setSellAmount(
+      maxSpendAmount(
+        sellBalanceValue,
+        sellToken.decimals,
+        isNativeEthToken(sellToken.address)
+      )
+    );
   }
 
   function handleApprove() {
@@ -355,17 +411,22 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
                 You pay
               </span>
-              {balanceLabel && isConnected ? (
-                <button
-                  type="button"
-                  onClick={setMaxAmount}
-                  className="text-[10px] font-bold text-cyan-400/90 hover:text-cyan-300"
-                >
-                  Max · {balanceLabel}
-                </button>
-              ) : null}
             </div>
-            <div className="mt-2 flex items-center gap-3">
+            <WalletAssetBalance
+              chainLabel="Base"
+              assetLabel={sellToken?.symbol ?? "token"}
+              balanceLabel={balanceLabel}
+              isConnected={isConnected}
+              isLoading={Boolean(sellToken && sellBalanceLoading)}
+              isError={sellBalanceError}
+              onMax={
+                sellBalanceValue != null && sellBalanceValue > BigInt(0)
+                  ? setMaxAmount
+                  : undefined
+              }
+              maxDisabled={!sellBalanceValue || sellBalanceValue <= BigInt(0)}
+            />
+            <div className="mt-3 flex items-center gap-3">
               <input
                 type="text"
                 inputMode="decimal"
@@ -395,6 +456,14 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
               You receive
             </span>
+            {isConnected && buyToken ? (
+              <p className="mt-1 text-xs font-bold text-slate-500">
+                Balance on Base:{" "}
+                <span className="tabular-nums text-slate-300">
+                  {buyBalanceLabel ?? (buyEthLoading || buyErc20Loading ? "…" : `0 ${buyToken.symbol}`)}
+                </span>
+              </p>
+            ) : null}
             <div className="mt-2 flex items-center gap-3">
               <p className="min-w-0 flex-1 truncate text-3xl font-black tabular-nums text-cyan-100">
                 {quoteQuery.isLoading ? (

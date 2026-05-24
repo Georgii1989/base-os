@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { formatUnits, parseUnits } from "viem";
+import { parseUnits } from "viem";
 import {
   useAccount,
   useBalance,
@@ -20,6 +20,8 @@ import {
 } from "@/lib/bridgeChains";
 import type { RelayQuoteResponse, RelayStatusResponse } from "@/lib/relayBridge";
 import { BridgeChainSelect } from "@/components/BridgeChainSelect";
+import { WalletAssetBalance } from "@/components/WalletAssetBalance";
+import { formatAssetBalance, maxSpendAmount } from "@/lib/assetBalance";
 
 const ERC20_BALANCE_ABI = [
   {
@@ -69,18 +71,28 @@ export function BridgeRelayPanel() {
     }
   }, [amount, token.decimals]);
 
-  const { data: nativeBalance } = useBalance({
+  const { data: nativeBalance, isLoading: nativeLoading, isError: nativeError } = useBalance({
     address,
     chainId: fromChainId,
-    query: { enabled: tokenId === "eth" && Boolean(address) },
+    query: {
+      enabled: tokenId === "eth" && Boolean(address),
+      refetchInterval: 12_000,
+    },
   });
-  const { data: usdcBalance } = useReadContract({
+  const {
+    data: usdcBalance,
+    isLoading: usdcLoading,
+    isError: usdcError,
+  } = useReadContract({
     address: tokenId === "usdc" ? token.address : undefined,
     abi: ERC20_BALANCE_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
     chainId: fromChainId,
-    query: { enabled: tokenId === "usdc" && Boolean(address) },
+    query: {
+      enabled: tokenId === "usdc" && Boolean(address),
+      refetchInterval: 12_000,
+    },
   });
 
   const balance =
@@ -179,10 +191,21 @@ export function BridgeRelayPanel() {
     if (id === 56) setTokenId((t) => (t === "eth" ? "eth" : t));
   }
 
+  const balanceLoading = tokenId === "eth" ? nativeLoading : usdcLoading;
+  const balanceError = tokenId === "eth" ? nativeError : usdcError;
+  const assetSymbol = tokenId === "eth" ? fromChain.nativeSymbol : token.symbol;
+
+  function setMaxAmount() {
+    if (!balance || balance.value <= BigInt(0)) return;
+    setAmount(maxSpendAmount(balance.value, balance.decimals, tokenId === "eth"));
+  }
+
   const balanceLabel =
     balance != null
-      ? `${Number(formatUnits(balance.value, balance.decimals)).toFixed(4)} ${balance.symbol}`
-      : null;
+      ? formatAssetBalance(balance.value, balance.decimals, balance.symbol)
+      : isConnected && !balanceLoading
+        ? `0 ${assetSymbol}`
+        : null;
 
   const outAmount = quoteQuery.data?.details?.currencyOut?.amountFormatted;
   const timeEst = quoteQuery.data?.details?.timeEstimate;
@@ -233,20 +256,27 @@ export function BridgeRelayPanel() {
             ))}
           </div>
 
+          <WalletAssetBalance
+            chainLabel={fromChain.name}
+            assetLabel={assetSymbol}
+            balanceLabel={balanceLabel}
+            isConnected={isConnected}
+            isLoading={balanceLoading}
+            isError={balanceError}
+            onMax={balance && balance.value > BigInt(0) ? setMaxAmount : undefined}
+            maxDisabled={!balance || balance.value <= BigInt(0)}
+          />
+
           <div>
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                Amount
-              </span>
-              {balanceLabel ? (
-                <span className="text-[10px] text-slate-500">Balance {balanceLabel}</span>
-              ) : null}
-            </div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+              Amount
+            </span>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-2xl font-black tabular-nums text-white outline-none"
+              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-2xl font-black tabular-nums text-white outline-none focus:border-cyan-400/40"
               inputMode="decimal"
+              placeholder="0.0"
             />
           </div>
 
