@@ -1,7 +1,7 @@
 "use client";
 
 import type { KeyboardEvent as ReactKeyboardEvent, MutableRefObject } from "react";
-import { OS_TAB_GROUPS, tabMeta } from "@/lib/osTabGroups";
+import { OS_TAB_GROUPS, tabMeta, type OsTabGroupId } from "@/lib/osTabGroups";
 import type { OsTabId } from "@/lib/osTabs";
 
 const ACCENT_ACTIVE: Record<string, string> = {
@@ -10,6 +10,17 @@ const ACCENT_ACTIVE: Record<string, string> = {
   build: "border-fuchsia-400/60 bg-fuchsia-500/15 text-fuchsia-100",
   you: "border-emerald-400/60 bg-emerald-500/15 text-emerald-100",
   explore: "border-amber-400/60 bg-amber-500/15 text-amber-100",
+};
+
+const GROUP_LABEL: Record<OsTabGroupId, string> = {
+  hub: "border-cyan-400/60 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.2)]",
+  trade:
+    "border-violet-400/60 bg-gradient-to-br from-violet-500/30 to-violet-400/10 text-violet-50 shadow-[0_0_14px_rgba(167,139,250,0.18)]",
+  build:
+    "border-fuchsia-400/60 bg-gradient-to-br from-fuchsia-500/30 to-fuchsia-400/10 text-fuchsia-50 shadow-[0_0_14px_rgba(232,121,249,0.18)]",
+  you: "border-emerald-400/60 bg-gradient-to-br from-emerald-500/30 to-emerald-400/10 text-emerald-50 shadow-[0_0_14px_rgba(52,211,153,0.18)]",
+  explore:
+    "border-amber-400/55 bg-gradient-to-br from-amber-500/28 to-amber-400/10 text-amber-50 shadow-[0_0_14px_rgba(251,191,36,0.16)]",
 };
 
 type Props = {
@@ -26,15 +37,20 @@ export function OsGroupedNav({ activeTab, onSelect, onKeyDown, tabButtonRefs }: 
     <nav
       role="tablist"
       aria-label="Base OS modules"
-      className="mt-4 space-y-3 border-b border-[#6b2248]/70 pb-3"
+      className="space-y-2.5"
       onKeyDown={onKeyDown}
     >
       {OS_TAB_GROUPS.map((group) => (
-        <div key={group.id} className="flex flex-wrap items-center gap-2">
-          <span className="shrink-0 px-1 text-[9px] font-black uppercase tracking-[0.25em] text-slate-600">
+        <div
+          key={group.id}
+          className="flex flex-wrap items-center gap-2 rounded-xl border border-white/[0.06] bg-black/20 px-2 py-2 sm:gap-3 sm:px-3"
+        >
+          <span
+            className={`inline-flex min-w-[4.75rem] shrink-0 items-center justify-center rounded-lg border px-2.5 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] ${GROUP_LABEL[group.id]}`}
+          >
             {group.label}
           </span>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
             {group.tabIds.map((tabId) => {
               const tab = tabMeta(tabId);
               const idx = flatIndex++;

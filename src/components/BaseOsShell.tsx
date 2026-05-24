@@ -20,6 +20,7 @@ import { TokenLauncherPanel } from "@/components/TokenLauncherPanel";
 import { WalletConnectControl } from "@/components/WalletConnectControl";
 import { WalletPortfolioPanel } from "@/components/WalletPortfolioPanel";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
+import { BaseOsNavPulse } from "@/components/BaseOsNavPulse";
 import { OsGroupedNav } from "@/components/OsGroupedNav";
 import { OS_PRIMARY_TAB_IDS } from "@/lib/osTabGroups";
 import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
@@ -154,12 +155,15 @@ function BaseOsShellInner() {
         </div>
       </header>
 
-      <OsGroupedNav
-        activeTab={activeTab}
-        onSelect={setActiveTab}
-        onKeyDown={handleTabKeyDown}
-        tabButtonRefs={tabButtonRefs}
-      />
+      <div className="mt-4 grid gap-4 border-b border-[#6b2248]/70 pb-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start">
+        <OsGroupedNav
+          activeTab={activeTab}
+          onSelect={setActiveTab}
+          onKeyDown={handleTabKeyDown}
+          tabButtonRefs={tabButtonRefs}
+        />
+        <BaseOsNavPulse activeTab={activeTab} onSelect={setActiveTab} />
+      </div>
 
       <div
         id={`base-os-panel-${activeTab}`}
