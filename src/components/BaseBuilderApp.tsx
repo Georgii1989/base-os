@@ -17,10 +17,12 @@ import {
   useWriteContract,
 } from "wagmi";
 import { SoulboundHoldersList } from "@/components/SoulboundHoldersList";
+import { OSSupporterMintCard } from "@/components/OSSupporterMintCard";
 import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
+import { resolveTipJarAddress } from "@/lib/tipContracts";
 
 /** Fallback sends tips through TipWithBadgeRouter → underlying TipJar + soulbound badge. */
-const DEFAULT_TIPJAR = "0xDd1090aFba3117953B892A6390B18abe5A979894";
+const DEFAULT_TIPJAR = resolveTipJarAddress();
 const TIPJAR_ABI = [
   {
     type: "event",
@@ -586,9 +588,9 @@ export function BaseBuilderApp() {
         ) : null}
       </div>
 
-      <div className="mt-4 grid gap-3 rounded-2xl border border-amber-300/30 bg-slate-950/50 p-4">
+          <div className="mt-4 grid gap-3 rounded-2xl border border-amber-300/30 bg-slate-950/50 p-4">
         <h2 className="text-xl font-black text-amber-200">Supporter badge</h2>
-        <p className="text-sm text-amber-100/90">You get this after your first confirmed tip.</p>
+        <p className="text-sm text-amber-100/90">Soulbound badge from your first tip on Base.</p>
         <div
           className={`rounded-xl border p-3 ${
             badgeUnlocked
@@ -599,6 +601,8 @@ export function BaseBuilderApp() {
           {badgeUnlocked ? "🏅 Base Supporter unlocked" : "🔒 Base Supporter locked"}
         </div>
       </div>
+
+      <OSSupporterMintCard isOnBase={isOnBase} />
 
       <SoulboundHoldersList
         key={`${process.env.NEXT_PUBLIC_SBT_ADDRESS ?? ""}-${process.env.NEXT_PUBLIC_SBT_FROM_BLOCK ?? ""}`}

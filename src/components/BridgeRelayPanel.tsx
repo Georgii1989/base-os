@@ -15,9 +15,11 @@ import {
   BRIDGE_CHAINS,
   defaultBridgePair,
   getBridgeChain,
+  officialBridgeUrl,
   type BridgeChainId,
   type BridgeTokenId,
 } from "@/lib/bridgeChains";
+import { BridgeChainIcon } from "@/components/BridgeChainIcon";
 import type { RelayQuoteResponse, RelayStatusResponse } from "@/lib/relayBridge";
 import { BridgeChainSelect } from "@/components/BridgeChainSelect";
 import { WalletAssetBalance } from "@/components/WalletAssetBalance";
@@ -329,6 +331,30 @@ export function BridgeRelayPanel() {
       <p className="text-center text-[10px] text-slate-600">
         Powered by Relay · fast routes across ETH, BNB, Arbitrum, Linea, zkSync & Base
       </p>
+
+      {fromChain.officialBridge && toChain.officialBridge && fromChainId !== 56 ? (
+        <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Prefer canonical route?
+          </p>
+          <p className="mt-1 text-sm text-slate-400">
+            Official OP Stack bridge for {fromChain.name} ↔ {toChain.name}
+          </p>
+          <div className="mt-3 flex items-center justify-center gap-3">
+            <BridgeChainIcon chainId={fromChainId} size={32} />
+            <span className="text-slate-500">→</span>
+            <BridgeChainIcon chainId={toChainId} size={32} />
+          </div>
+          <a
+            href={officialBridgeUrl(fromChainId, toChainId)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 block w-full rounded-xl border border-cyan-400/35 bg-cyan-500/10 py-3 text-center text-sm font-black text-cyan-100"
+          >
+            Open official bridge ↗
+          </a>
+        </div>
+      ) : null}
     </div>
   );
 }

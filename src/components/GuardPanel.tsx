@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { formatUnits, getAddress, isAddress } from "viem";
 import { base } from "wagmi/chains";
-import { useAccount, useChainId, useConnect, useReadContract, useSwitchChain } from "wagmi";
+import { useAccount, useChainId, useConnect, useReadContract, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
 
 const REVOKE_CASH_BASE = "https://revoke.cash/chain/8453";
@@ -38,6 +38,16 @@ const ERC20_ABI = [
     inputs: [],
     outputs: [{ name: "", type: "string" }],
   },
+  {
+    name: "approve",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
 ] as const;
 
 /** Treat huge allowances as practically unlimited approvals. */
@@ -49,6 +59,15 @@ export function GuardPanel() {
   const { connect, connectors, isPending: isConnecting } = useConnect();
   const preferredConnector = useMemo(() => pickPreferredConnector(connectors), [connectors]);
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
+  const {
+    writeContract: revoke,
+    data: revokeHash,
+    isPending: isRevoking,
+    error: revokeError,
+    reset: resetRevoke,
+  } = useWriteContract();
+  const { isLoading: isRevokeConfirming, isSuccess: revokeConfirmed } =
+    useWaitForTransactionReceipt({ hash: revokeHash });
   const [tokenInput, setTokenInput] = useState<string>(PRESET_USDC);
   const [spenderInput, setSpenderInput] = useState("");
 
@@ -121,10 +140,10 @@ export function GuardPanel() {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
       <div className="rounded-3xl border border-white/15 bg-slate-950/55 p-6">
         <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-200/90">Safety</p>
-        <h2 className="mt-2 text-3xl font-black text-white">Token access</h2>
+        <h2 className="mt-2 text-3xl font-black text-white">Wallet guard</h2>
         <p className="mt-3 max-w-2xl text-sm text-slate-200/85">
-          Apps sometimes ask permission to move your tokens. Here you can <span className="text-emerald-200">see</span> how
-          much a site is allowed to use — not change it. To clean up, use a revoke tool linked on the right.
+          See how much a contract can spend — and <span className="text-emerald-200">revoke</span> access
+          in one click. Stay safe on Base without leaving Base OS.
         </p>
 
         {!isConnected ? (
@@ -199,6 +218,33 @@ export function GuardPanel() {
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <p className="text-xs font-bold uppercase text-slate-400">Allowed amount</p>
               <p className="mt-2 break-all font-mono text-sm font-bold text-white">{allowanceText}</p>
+              {validInputs &&
+              allowanceQuery.data !== undefined &&
+              (allowanceQuery.data as bigint) > BigInt(0) ? (
+                <button
+                  type="button"
+                  disabled={isRevoking || isRevokeConfirming}
+                  onClick={() => {
+                    resetRevoke();
+                    revoke({
+                      address: checksumToken!,
+                      abi: ERC20_ABI,
+                      functionName: "approve",
+                      args: [checksumSpender!, BigInt(0)],
+                      chainId: base.id,
+                    });
+                  }}
+                  className="mt-3 w-full rounded-xl border border-rose-400/40 bg-rose-500/15 py-2.5 text-sm font-black text-rose-100 disabled:opacity-40"
+                >
+                  {isRevoking || isRevokeConfirming ? "Revoking…" : "Revoke access (set to 0)"}
+                </button>
+              ) : null}
+              {revokeConfirmed ? (
+                <p className="mt-2 text-xs font-bold text-emerald-300">Revoked — refresh to confirm.</p>
+              ) : null}
+              {revokeError ? (
+                <p className="mt-2 text-xs text-rose-400">{revokeError.message}</p>
+              ) : null}
             </div>
           </div>
         )}
@@ -206,8 +252,8 @@ export function GuardPanel() {
 
       <aside className="grid content-start gap-4">
         <div className="rounded-3xl border border-emerald-300/25 bg-emerald-500/10 p-5">
-          <h3 className="font-black text-emerald-100">Revoke access</h3>
-          <p className="mt-2 text-sm text-emerald-100/90">Turn off old permissions in one place (external site).</p>
+          <h3 className="font-black text-emerald-100">Advanced revoke</h3>
+          <p className="mt-2 text-sm text-emerald-100/90">Bulk review on revoke.cash for all tokens.</p>
           <a
             href={REVOKE_CASH_BASE}
             target="_blank"
@@ -221,8 +267,8 @@ export function GuardPanel() {
           <p className="font-bold text-white">Hints</p>
           <ul className="mt-2 list-disc space-y-2 pl-4">
             <li>The “app” address often comes from your approve transaction on BaseScan.</li>
-            <li>When an app allows it, prefer a limited amount instead of “max”.</li>
-            <li>This screen only reads data — it never sends transactions.</li>
+            <li>Revoke sets allowance to zero — the app can no longer pull tokens.</li>
+            <li>For unlimited approvals, prefer revoking then re-approve a limited amount.</li>
           </ul>
         </div>
       </aside>

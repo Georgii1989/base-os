@@ -10,27 +10,37 @@ export type OsTabId =
   | "watch"
   | "lens";
 
-export const OS_TAB_META: readonly { id: OsTabId; label: string; eyebrow: string }[] = [
-  { id: "home", label: "Home", eyebrow: "Start here" },
-  { id: "tip", label: "Tip", eyebrow: "Give tips" },
-  { id: "launch", label: "Launch Token", eyebrow: "ERC-20" },
-  { id: "swap", label: "Swap and Bridge", eyebrow: "Trade & bridge" },
+export type OsTabMeta = {
+  id: OsTabId;
+  label: string;
+  eyebrow: string;
+  /** Hidden from primary nav — reachable via ⌘K or ?tab= */
+  hidden?: boolean;
+};
+
+export const OS_TAB_META: readonly OsTabMeta[] = [
+  { id: "home", label: "Home", eyebrow: "Briefing" },
+  { id: "swap", label: "Swap & Bridge", eyebrow: "Trade" },
+  { id: "launch", label: "Launch", eyebrow: "Token" },
+  { id: "tip", label: "Tips", eyebrow: "Support" },
+  { id: "score", label: "Score", eyebrow: "Identity" },
+  { id: "guard", label: "Guard", eyebrow: "Revoke" },
+  { id: "watch", label: "Tracked", eyebrow: "Wallets" },
   { id: "analytics", label: "Analytics", eyebrow: "Base TVL" },
-  { id: "radar", label: "Radar", eyebrow: "Explore" },
-  { id: "watch", label: "Tracked", eyebrow: "Addresses" },
-  { id: "lens", label: "Txn preview", eyebrow: "Test only" },
-  { id: "guard", label: "Guard", eyebrow: "Token access" },
-  { id: "score", label: "Onchain score", eyebrow: "Your wallet" },
+  { id: "radar", label: "Radar", eyebrow: "Apps" },
+  { id: "lens", label: "Simulate tx", eyebrow: "Advanced", hidden: true },
 ] as const;
 
 const TAB_SET = new Set<OsTabId>(OS_TAB_META.map((tab) => tab.id));
+
+export const OS_VISIBLE_TABS = OS_TAB_META.filter((t) => !t.hidden);
 
 export function isOsTabId(value: string | null | undefined): value is OsTabId {
   return typeof value === "string" && TAB_SET.has(value as OsTabId);
 }
 
-/** Default Tip — primary daily surface. */
+/** Default Home — personal briefing surface. */
 export function tabFromSearchParam(tab: string | null | undefined): OsTabId {
   if (tab === "wallet") return "score";
-  return isOsTabId(tab) ? tab : "tip";
+  return isOsTabId(tab) ? tab : "home";
 }

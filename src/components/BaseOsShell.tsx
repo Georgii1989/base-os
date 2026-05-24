@@ -19,6 +19,8 @@ import { SwapBridgePanel } from "@/components/SwapBridgePanel";
 import { TokenLauncherPanel } from "@/components/TokenLauncherPanel";
 import { WalletConnectControl } from "@/components/WalletConnectControl";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
+import { OsGroupedNav } from "@/components/OsGroupedNav";
+import { OS_PRIMARY_TAB_IDS } from "@/lib/osTabGroups";
 import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
 import { radarProjects, type RadarProject } from "@/lib/radarProjects";
 
@@ -81,12 +83,12 @@ function BaseOsShellInner() {
     }
   }
 
-  const activeIndex = OS_TAB_META.findIndex((tab) => tab.id === activeTab);
+  const activeIndex = OS_PRIMARY_TAB_IDS.indexOf(activeTab);
 
   function focusTabAt(rawIndex: number) {
-    const len = OS_TAB_META.length;
+    const len = OS_PRIMARY_TAB_IDS.length;
     const next = ((rawIndex % len) + len) % len;
-    const id = OS_TAB_META[next].id;
+    const id = OS_PRIMARY_TAB_IDS[next];
     setActiveTab(id);
     requestAnimationFrame(() => {
       tabButtonRefs.current[next]?.focus();
@@ -108,7 +110,7 @@ function BaseOsShellInner() {
     }
     if (event.key === "End") {
       event.preventDefault();
-      focusTabAt(OS_TAB_META.length - 1);
+      focusTabAt(OS_PRIMARY_TAB_IDS.length - 1);
     }
   }
 
@@ -125,7 +127,7 @@ function BaseOsShellInner() {
           </p>
           <h1 className="mt-1 text-3xl font-black text-fuchsia-100 md:text-5xl">Base OS</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-200/80">
-            Tips, app picks, wallet checks — all in one place.
+            One system for Base — briefing, trade, build, and protect your wallet.
           </p>
         </div>
 
@@ -151,44 +153,12 @@ function BaseOsShellInner() {
         </div>
       </header>
 
-      <nav
-        role="tablist"
-        aria-label="Base OS modules"
-        className="mt-4 flex gap-2 overflow-x-auto border-b border-[#6b2248]/70 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      <OsGroupedNav
+        activeTab={activeTab}
+        onSelect={setActiveTab}
         onKeyDown={handleTabKeyDown}
-      >
-        {OS_TAB_META.map((tab, index) => (
-          <button
-            key={tab.id}
-            ref={(element) => {
-              tabButtonRefs.current[index] = element;
-            }}
-            id={`base-os-tab-${tab.id}`}
-            role="tab"
-            type="button"
-            aria-selected={activeTab === tab.id}
-            aria-controls={`base-os-panel-${tab.id}`}
-            tabIndex={activeTab === tab.id ? 0 : -1}
-            onClick={() => setActiveTab(tab.id)}
-            className={`relative shrink-0 rounded-lg border px-3 py-2.5 text-left transition sm:min-w-[5.5rem] sm:px-4 ${
-              activeTab === tab.id
-                ? "border-[#b64072] bg-[#3a0d26]/70 text-[#ffd3e6] shadow-[0_0_16px_rgba(182,64,114,0.35)]"
-                : "border-[#5c1d3f]/70 bg-[#210818]/45 text-slate-300 hover:border-[#8b2f58] hover:text-[#ffd3e6]"
-            }`}
-          >
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-              {tab.eyebrow}
-            </span>
-            <span className="mt-0.5 block text-sm font-bold">{tab.label}</span>
-            {activeTab === tab.id ? (
-              <span
-                className="absolute bottom-0 left-1 right-1 h-[2px] rounded-t-sm bg-gradient-to-r from-[#f08ab4] to-[#b64072]"
-                aria-hidden
-              />
-            ) : null}
-          </button>
-        ))}
-      </nav>
+        tabButtonRefs={tabButtonRefs}
+      />
 
       <div
         id={`base-os-panel-${activeTab}`}
@@ -529,41 +499,6 @@ function formatChange(value: number | null | undefined) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
-function Sparkline({ values, positive }: { values?: number[]; positive: boolean }) {
-  if (!values || values.length < 2) {
-    return <div className="h-8 rounded-xl bg-white/5" />;
-  }
-
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const points = values.map((value, index) => ({
-    x: (index / (values.length - 1)) * 100,
-    y: 28 - ((value - min) / range) * 24,
-  }));
-  const path = points.reduce((d, point, index) => {
-    if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-
-    const prev = points[index - 1];
-    const controlX1 = prev.x + (point.x - prev.x) / 2;
-    const controlX2 = point.x - (point.x - prev.x) / 2;
-    return `${d} C ${controlX1.toFixed(2)} ${prev.y.toFixed(2)}, ${controlX2.toFixed(2)} ${point.y.toFixed(2)}, ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-  }, "");
-
-  return (
-    <svg viewBox="0 0 100 32" className="h-8 w-full overflow-visible rounded-xl bg-white/5">
-      <path
-        d={path}
-        fill="none"
-        stroke={positive ? "#34d399" : "#fb7185"}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="3"
-      />
-    </svg>
-  );
-}
-
 function ProjectCard({ project, market }: { project: RadarProject; market?: RadarMarketData }) {
   const change24h = market?.change24h ?? null;
   const positive = (change24h ?? 0) >= 0;
@@ -622,28 +557,24 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
       {hasLiveMarket ? (
         <>
           <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-md bg-white/[0.06] text-xs">
+            <div className="bg-black/30 p-2.5 col-span-2">
+              <p className="text-slate-500">24h change</p>
+              <p className={`text-lg font-black ${positive ? "text-emerald-300" : "text-rose-300"}`}>
+                {formatChange(change24h)}
+              </p>
+            </div>
             <div className="bg-black/30 p-2.5">
               <p className="text-slate-500">Price</p>
               <p className="font-bold text-white">{formatUsd(market?.priceUsd)}</p>
             </div>
             <div className="bg-black/30 p-2.5">
-              <p className="text-slate-500">24h</p>
-              <p className={`font-bold ${positive ? "text-emerald-300" : "text-rose-300"}`}>
-                {formatChange(change24h)}
-              </p>
-            </div>
-            <div className="bg-black/30 p-2.5">
               <p className="text-slate-500">Liquidity</p>
               <p className="font-bold text-white">{formatUsd(market?.liquidityUsd)}</p>
             </div>
-            <div className="bg-black/30 p-2.5">
+            <div className="bg-black/30 p-2.5 col-span-2">
               <p className="text-slate-500">24h volume</p>
               <p className="font-bold text-white">{formatUsd(market?.volume24h)}</p>
             </div>
-          </div>
-          <div className="mt-4">
-            <Sparkline values={market?.sparkline} positive={positive} />
-            <p className="mt-1 text-[10px] text-slate-500">Simple trend line · not live trading data.</p>
           </div>
         </>
       ) : (

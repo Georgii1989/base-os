@@ -13,7 +13,7 @@ type TipEntry = {
   blockNumber: bigint;
 };
 
-const DEFAULT_TIPJAR = "0x47ad142c4f04431164737cACD601796932b7357A";
+import { resolveTipJarAddress } from "@/lib/tipContracts";
 /** Narrower window keeps public RPCs from failing on huge eth_getLogs ranges. Override with NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK. */
 const DEFAULT_PROFILE_LOOKBACK = BigInt(25_000);
 const LOGS_CHUNK_SIZE = BigInt(1_500);
@@ -50,13 +50,13 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
   const [historyHint, setHistoryHint] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const tipSourceAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
+  const tipSourceAddress = resolveTipJarAddress();
   const profileFromBlockEnvRaw = process.env.NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK;
   const extraContractsRaw = process.env.NEXT_PUBLIC_TIP_PROFILE_CONTRACTS;
 
   const sourceContracts = useMemo(() => {
     const lower = new Set<string>();
-    const candidates = [tipSourceAddress, DEFAULT_TIPJAR, ...parseCommaAddresses(extraContractsRaw)];
+    const candidates = [tipSourceAddress, resolveTipJarAddress(), ...parseCommaAddresses(extraContractsRaw)];
     for (const candidate of candidates) {
       const t = candidate?.trim();
       if (!t) continue;

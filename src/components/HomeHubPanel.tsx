@@ -8,6 +8,7 @@ import type { OnchainScorePayload } from "@/lib/onchainScoreFetch";
 import type { OsTabId } from "@/lib/osTabs";
 import { shortenAddressDisplay } from "@/lib/knownBaseProtocols";
 import { HomePulseCard } from "@/components/HomePulseCard";
+import { BaseOsBriefing } from "@/components/BaseOsBriefing";
 
 type Props = {
   setActiveTab: (tab: OsTabId) => void;
@@ -114,51 +115,7 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
 
   return (
     <div className="grid gap-5">
-      <section className="os-animate-fade-up relative overflow-hidden rounded-3xl border border-cyan-300/30 bg-gradient-to-br from-cyan-500/12 via-slate-950/60 to-fuchsia-500/12 p-6 shadow-[0_0_40px_rgba(34,211,238,0.12)] md:p-8">
-        <div
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-          aria-hidden
-        >
-          <div className="absolute -inset-full top-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent os-animate-shimmer" />
-        </div>
-        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-cyan-400/15 blur-2xl os-animate-glow" />
-        <div className="pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-fuchsia-500/15 blur-2xl os-animate-glow [animation-delay:1.2s]" />
-        <p className="relative text-[11px] font-black uppercase tracking-[0.35em] text-cyan-200/90">
-          Home
-        </p>
-        <h2 className="relative mt-2 text-3xl font-black text-white md:text-4xl">
-          Your Base command center
-        </h2>
-        <p className="relative mt-3 max-w-2xl text-sm text-slate-300">
-          Network pulse, your onchain score, and one-click jumps to every module. Press{" "}
-          <kbd className="rounded border border-white/15 bg-black/50 px-1.5 py-0.5 font-mono text-xs">
-            ⌘K
-          </kbd>{" "}
-          for quick search.
-        </p>
-        <div className="relative mt-5 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onOpenCommandPalette}
-            className="rounded-xl border border-cyan-300/40 bg-cyan-500/15 px-4 py-2 text-sm font-bold text-cyan-100"
-          >
-            Quick menu ⌘K
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("score")}
-            className="rounded-xl border border-white/12 px-4 py-2 text-sm font-bold text-slate-200 hover:border-white/30"
-          >
-            Check any score
-          </button>
-          <Link
-            href="/safety"
-            className="rounded-xl border border-teal-300/35 bg-teal-500/10 px-4 py-2 text-sm font-bold text-teal-100"
-          >
-            Address lookup ↗
-          </Link>
-        </div>
-      </section>
+      <BaseOsBriefing setActiveTab={setActiveTab} />
 
       <section
         className="os-animate-fade-up rounded-3xl border border-white/10 bg-slate-950/50 p-5 [animation-delay:80ms]"
