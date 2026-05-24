@@ -46,6 +46,11 @@ yarn-error.log*
 # other local secrets
 contracts.local.env
 
+# QA fleet (standalone scripts — private keys)
+scripts/qa-fleet/wallets.json
+scripts/qa-fleet/qa-fleet.local.env
+scripts/qa-fleet/*.local.json
+
 # vercel
 .vercel
 

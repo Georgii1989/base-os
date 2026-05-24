@@ -15,7 +15,10 @@
     "contract:deploy:factory": "node scripts/deploy-token-factory.js",
     "contract:deploy:os-supporter": "node scripts/deploy-os-supporter-nft.js",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install chromium"
+    "test:e2e:install": "playwright install chromium",
+    "qa-fleet:generate": "node scripts/qa-fleet/generate-wallets.js",
+    "qa-fleet:fund": "node scripts/qa-fleet/fund-wallets.js",
+    "qa-fleet:run": "node scripts/qa-fleet/run-scenarios.js"
   },
   "dependencies": {
     "@base-org/account": "^2.5.5",
