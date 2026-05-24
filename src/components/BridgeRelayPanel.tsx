@@ -19,6 +19,7 @@ import {
   type BridgeTokenId,
 } from "@/lib/bridgeChains";
 import type { RelayQuoteResponse, RelayStatusResponse } from "@/lib/relayBridge";
+import { BridgeChainSelect } from "@/components/BridgeChainSelect";
 
 const ERC20_BALANCE_ABI = [
   {
@@ -190,20 +191,12 @@ export function BridgeRelayPanel() {
     <div className="grid gap-4">
       <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
         <div className="grid gap-3">
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">From</span>
-            <select
-              value={fromChainId}
-              onChange={(e) => onFromChange(Number(e.target.value) as BridgeChainId)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm font-bold text-white outline-none"
-            >
-              {BRIDGE_CHAINS.map((c) => (
-                <option key={c.id} value={c.id} className="bg-slate-950">
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <BridgeChainSelect
+            label="From"
+            value={fromChainId}
+            onChange={onFromChange}
+            chains={BRIDGE_CHAINS}
+          />
 
           <div className="flex justify-center">
             <button
@@ -216,20 +209,12 @@ export function BridgeRelayPanel() {
             </button>
           </div>
 
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">To</span>
-            <select
-              value={toChainId}
-              onChange={(e) => setToChainId(Number(e.target.value) as BridgeChainId)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm font-bold text-white outline-none"
-            >
-              {BRIDGE_CHAINS.filter((c) => c.id !== fromChainId).map((c) => (
-                <option key={c.id} value={c.id} className="bg-slate-950">
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <BridgeChainSelect
+            label="To"
+            value={toChainId}
+            onChange={setToChainId}
+            chains={BRIDGE_CHAINS.filter((c) => c.id !== fromChainId)}
+          />
 
           <div className="flex gap-2">
             {(["eth", "usdc"] as const).map((id) => (
