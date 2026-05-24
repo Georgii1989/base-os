@@ -7,6 +7,7 @@ import type { BaseAnalyticsPayload } from "@/lib/baseAnalyticsTypes";
 import type { OnchainScorePayload } from "@/lib/onchainScoreFetch";
 import type { OsTabId } from "@/lib/osTabs";
 import { shortenAddressDisplay } from "@/lib/knownBaseProtocols";
+import { HomePulseCard } from "@/components/HomePulseCard";
 
 type Props = {
   setActiveTab: (tab: OsTabId) => void;
@@ -166,28 +167,22 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
         {analyticsLoading ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-20 animate-pulse rounded-2xl bg-white/5" />
+              <div key={i} className="h-36 animate-pulse rounded-2xl bg-white/5" />
             ))}
           </div>
-        ) : (
+        ) : analytics ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {pulse.map((card, i) => (
-              <button
+              <HomePulseCard
                 key={card.label}
-                type="button"
+                card={card}
+                analytics={analytics}
                 onClick={() => setActiveTab("analytics")}
-                className="os-animate-fade-up rounded-2xl border border-white/8 bg-black/30 p-4 text-left transition hover:border-cyan-300/40 hover:shadow-[0_0_24px_rgba(34,211,238,0.12)]"
                 style={{ animationDelay: `${120 + i * 70}ms` }}
-              >
-                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">
-                  {card.label}
-                </p>
-                <p className="mt-1 text-xl font-black text-white">{card.value}</p>
-                {card.hint ? <p className="mt-1 text-xs text-slate-500">{card.hint}</p> : null}
-              </button>
+              />
             ))}
           </div>
-        )}
+        ) : null}
       </section>
 
       {connectedAddress ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { BaseOsAppIcon } from "@/components/BaseOsAppIcon";
 
 const ORBIT_MODULES = [
   { label: "Swap", symbol: "⇄", angle: 0, delay: "0s" },
@@ -147,14 +147,7 @@ export function BaseOsHeroVisual({ className = "" }: { className?: string }) {
           <div className="absolute -inset-4 rounded-[1.6rem] bg-gradient-to-br from-cyan-400/50 via-violet-500/40 to-fuchsia-500/50 blur-md os-animate-glow" />
           <div className="absolute -inset-1 rounded-[1.35rem] border border-cyan-300/30 os-animate-ring" />
           <div className="relative overflow-hidden rounded-[1.15rem] border border-white/25 bg-[#070313] p-0.5 shadow-[0_0_48px_rgba(168,85,247,0.55),0_0_80px_rgba(34,211,238,0.2)]">
-            <Image
-              src="/app-icon-base-os.png"
-              alt=""
-              width={56}
-              height={56}
-              className="rounded-[1rem]"
-              priority
-            />
+            <BaseOsAppIcon size={56} className="rounded-[1rem]" />
           </div>
         </div>
       </div>
