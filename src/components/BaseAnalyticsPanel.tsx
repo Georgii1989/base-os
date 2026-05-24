@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatPct, formatUsd } from "@/lib/baseAnalyticsFormat";
+import { barWidthPct } from "@/lib/barScale";
 import { buildMetricCards } from "@/lib/analyticsMetricCards";
 import {
   ANALYTICS_SOURCES,
@@ -73,9 +74,9 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
     data.source === "l2beat"
       ? (v: number) => v.toLocaleString("en-US")
       : (v: number) => formatUsd(v);
-  const maxChainTvl = Math.max(...data.chainRanks.map((c) => c.tvl), 1);
-  const maxProtocolTvl = Math.max(...data.protocols.map((p) => p.tvlUsd ?? 0), 1);
-  const maxDexVol = Math.max(...(data.dexVolume?.byProtocol.map((p) => p.volume24h) ?? [1]), 1);
+  const dexVolumes = data.dexVolume?.byProtocol.map((p) => p.volume24h) ?? [];
+  const chainTvls = data.chainRanks.map((c) => c.tvl);
+  const protocolTvls = data.protocols.map((p) => p.tvlUsd ?? 0);
   const metricCards = buildMetricCards(data);
 
   return (
@@ -225,7 +226,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
                     <div
                       className="h-full rounded-full bg-fuchsia-500/80"
-                      style={{ width: `${Math.max(4, (row.volume24h / maxDexVol) * 100)}%` }}
+                      style={{ width: `${barWidthPct(row.volume24h, dexVolumes)}%` }}
                     />
                   </div>
                   <span className="w-20 text-right text-xs font-bold text-white">
@@ -276,7 +277,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
                     <div className="h-2 overflow-hidden rounded-full bg-white/5">
                       <div
                         className={`h-full rounded-full ${row.isBase ? "bg-gradient-to-r from-cyan-400 to-fuchsia-500" : "bg-slate-600"}`}
-                        style={{ width: `${Math.max(4, (row.tvl / maxChainTvl) * 100)}%` }}
+                        style={{ width: `${barWidthPct(row.tvl, chainTvls)}%` }}
                       />
                     </div>
                   </li>
@@ -308,7 +309,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
                         <div
                           className="h-full rounded-full bg-cyan-500/80"
                           style={{
-                            width: `${Math.max(4, ((row.tvlUsd ?? 0) / maxProtocolTvl) * 100)}%`,
+                            width: `${barWidthPct(row.tvlUsd ?? 0, protocolTvls)}%`,
                           }}
                         />
                       </div>

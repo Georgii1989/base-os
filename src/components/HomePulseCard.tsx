@@ -9,6 +9,7 @@ import {
   type PulseAccent,
 } from "@/lib/homePulseVisuals";
 import type { BaseAnalyticsPayload } from "@/lib/baseAnalyticsTypes";
+import { barWidthPct } from "@/lib/barScale";
 
 function PulseIcon({ label, accent }: { label: string; accent: PulseAccent }) {
   const cls = pulseAccentStyles(accent).icon;
@@ -147,7 +148,7 @@ function MiniBars({
   accent: PulseAccent;
 }) {
   const styles = pulseAccentStyles(accent);
-  const max = Math.max(...items.map((i) => i.value), 1);
+  const values = items.map((i) => i.value);
 
   return (
     <div className="flex h-12 items-end gap-1.5">
@@ -156,7 +157,7 @@ function MiniBars({
           <div
             className="w-full rounded-t-md"
             style={{
-              height: `${Math.max(12, (item.value / max) * 44)}px`,
+              height: `${Math.max(4, (barWidthPct(item.value, values) / 100) * 44)}px`,
               background: `linear-gradient(to top, ${styles.fill}, ${styles.stroke})`,
             }}
             title={`${item.label}: ${item.value}`}
