@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
+import { BaseOsHeroVisual } from "@/components/BaseOsHeroVisual";
 import { BaseAnalyticsPanel } from "@/components/BaseAnalyticsPanel";
 import { BaseBuilderApp } from "@/components/BaseBuilderApp";
 import { useCommandPalette } from "@/components/CommandPalette";
@@ -112,9 +113,13 @@ function BaseOsShellInner() {
   }
 
   return (
-    <section className="relative z-10 w-full max-w-7xl rounded-3xl border border-white/15 bg-black/35 p-4 text-white shadow-[0_0_60px_rgba(76,29,149,0.45)] backdrop-blur-xl md:p-6">
-      <header className="flex flex-col gap-4 border-b border-white/10 pb-4 md:flex-row md:items-center md:justify-between">
-        <div>
+    <section className="relative z-10 w-full max-w-7xl overflow-hidden rounded-3xl border border-white/15 bg-black/35 p-4 text-white shadow-[0_0_80px_rgba(76,29,149,0.55),0_0_120px_rgba(34,211,238,0.08)] backdrop-blur-xl md:p-6">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"
+        aria-hidden
+      />
+      <header className="relative flex flex-col gap-4 border-b border-white/10 pb-4 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-6">
+        <div className="md:justify-self-start">
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-200/80">
             Base OS
           </p>
@@ -123,7 +128,10 @@ function BaseOsShellInner() {
             Tips, app picks, wallet checks — all in one place.
           </p>
         </div>
-        <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:min-w-[12rem] sm:items-end">
+
+        <BaseOsHeroVisual className="h-28 w-48 sm:h-32 sm:w-56 lg:h-36 lg:w-64" />
+
+        <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:min-w-[12rem] sm:items-end md:justify-self-end">
           <WalletConnectControl />
           <button
             type="button"

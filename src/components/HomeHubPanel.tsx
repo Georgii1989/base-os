@@ -113,17 +113,29 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
 
   return (
     <div className="grid gap-5">
-      <section className="rounded-3xl border border-cyan-300/25 bg-gradient-to-br from-cyan-500/10 via-slate-950/60 to-fuchsia-500/10 p-6 md:p-8">
-        <p className="text-[11px] font-black uppercase tracking-[0.35em] text-cyan-200/90">Home</p>
-        <h2 className="mt-2 text-3xl font-black text-white md:text-4xl">Your Base command center</h2>
-        <p className="mt-3 max-w-2xl text-sm text-slate-300">
+      <section className="os-animate-fade-up relative overflow-hidden rounded-3xl border border-cyan-300/30 bg-gradient-to-br from-cyan-500/12 via-slate-950/60 to-fuchsia-500/12 p-6 shadow-[0_0_40px_rgba(34,211,238,0.12)] md:p-8">
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          aria-hidden
+        >
+          <div className="absolute -inset-full top-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent os-animate-shimmer" />
+        </div>
+        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-cyan-400/15 blur-2xl os-animate-glow" />
+        <div className="pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-fuchsia-500/15 blur-2xl os-animate-glow [animation-delay:1.2s]" />
+        <p className="relative text-[11px] font-black uppercase tracking-[0.35em] text-cyan-200/90">
+          Home
+        </p>
+        <h2 className="relative mt-2 text-3xl font-black text-white md:text-4xl">
+          Your Base command center
+        </h2>
+        <p className="relative mt-3 max-w-2xl text-sm text-slate-300">
           Network pulse, your onchain score, and one-click jumps to every module. Press{" "}
           <kbd className="rounded border border-white/15 bg-black/50 px-1.5 py-0.5 font-mono text-xs">
             ⌘K
           </kbd>{" "}
           for quick search.
         </p>
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="relative mt-5 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={onOpenCommandPalette}
@@ -147,7 +159,9 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+      <section
+        className="os-animate-fade-up rounded-3xl border border-white/10 bg-slate-950/50 p-5 [animation-delay:80ms]"
+      >
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Base pulse</p>
         {analyticsLoading ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -157,12 +171,13 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
           </div>
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {pulse.map((card) => (
+            {pulse.map((card, i) => (
               <button
                 key={card.label}
                 type="button"
                 onClick={() => setActiveTab("analytics")}
-                className="rounded-2xl border border-white/8 bg-black/30 p-4 text-left transition hover:border-cyan-300/40"
+                className="os-animate-fade-up rounded-2xl border border-white/8 bg-black/30 p-4 text-left transition hover:border-cyan-300/40 hover:shadow-[0_0_24px_rgba(34,211,238,0.12)]"
+                style={{ animationDelay: `${120 + i * 70}ms` }}
               >
                 <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">
                   {card.label}
@@ -176,7 +191,7 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
       </section>
 
       {connectedAddress ? (
-        <section className="rounded-3xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-5">
+        <section className="os-animate-fade-up rounded-3xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-5 [animation-delay:160ms]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/80">
@@ -220,7 +235,7 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
           ) : null}
         </section>
       ) : (
-        <section className="rounded-3xl border border-dashed border-white/15 bg-black/25 p-5 text-center">
+        <section className="os-animate-fade-up rounded-3xl border border-dashed border-white/15 bg-black/25 p-5 text-center [animation-delay:160ms]">
           <p className="text-sm text-slate-400">
             Connect a wallet to see your score here, or paste any address on the{" "}
             <button
@@ -235,15 +250,16 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
         </section>
       )}
 
-      <section>
+      <section className="os-animate-fade-up [animation-delay:220ms]">
         <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Modules</p>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {MODULES.map((card) => (
+          {MODULES.map((card, i) => (
             <button
               key={card.tab}
               type="button"
               onClick={() => setActiveTab(card.tab)}
-              className={`rounded-3xl border border-white/12 bg-gradient-to-br ${card.accent} p-5 text-left transition hover:border-cyan-200/40`}
+              className={`os-animate-fade-up rounded-3xl border border-white/12 bg-gradient-to-br ${card.accent} p-5 text-left transition hover:border-cyan-200/40 hover:shadow-[0_0_28px_rgba(168,85,247,0.15)] hover:-translate-y-0.5`}
+              style={{ animationDelay: `${260 + i * 55}ms` }}
             >
               <h3 className="text-lg font-black text-white">{card.title}</h3>
               <p className="mt-2 text-sm text-slate-300">{card.text}</p>
