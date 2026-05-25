@@ -19,6 +19,7 @@
     "qa-fleet:generate": "node scripts/qa-fleet/generate-wallets.js",
     "qa-fleet:fund": "node scripts/qa-fleet/fund-wallets.js",
     "qa-fleet:run": "node scripts/qa-fleet/run-scenarios.js",
+    "qa-fleet:run-alt": "node scripts/qa-fleet/run-alternate-scenarios.js",
     "qa-fleet:mint-badges": "node scripts/qa-fleet/mint-badges.js"
   },
   "dependencies": {
