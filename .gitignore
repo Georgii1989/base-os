@@ -50,6 +50,8 @@ contracts.local.env
 scripts/qa-fleet/wallets.json
 scripts/qa-fleet/qa-fleet.local.env
 scripts/qa-fleet/*.local.json
+scripts/qa-fleet/wallets.backup.*.json
+scripts/qa-fleet/wallets.fleet-*.json
 
 # vercel
 .vercel
