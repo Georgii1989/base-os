@@ -73,6 +73,13 @@ const MODULES: {
     accent: "from-violet-500/20 to-indigo-500/10",
   },
   {
+    tab: "game",
+    title: "Grid 6×6",
+    text: "1v1 four-in-a-row onchain — stake ETH, each move is a tx.",
+    cta: "Play",
+    accent: "from-emerald-500/20 to-teal-500/10",
+  },
+  {
     tab: "tip",
     title: "Tips & badge",
     text: "Send tips, mint supporter badge.",

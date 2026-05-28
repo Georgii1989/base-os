@@ -64,6 +64,8 @@ function tabCommandIcon(tabId: OsTabId): string {
       return "⬡";
     case "swap":
       return "⇄";
+    case "game":
+      return "▦";
     case "tip":
     default:
       return "✦";
@@ -87,6 +89,8 @@ function tabNavKeywords(tab: { id: OsTabId; label: string; eyebrow: string }): s
       return `${base} token erc20 deploy create launch mint supply`;
     case "swap":
       return `${base} trade swap bridge relay superbridge ethereum arbitrum linea zksync bnb 0x buy sell`;
+    case "game":
+      return `${base} grid 646 four row tic tac toe stake bet 1v1 play`;
     default:
       return base;
   }

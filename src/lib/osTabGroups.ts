@@ -11,7 +11,7 @@ export type OsTabGroup = {
 /** Primary navigation — lens is command-palette only (?tab=lens). */
 export const OS_TAB_GROUPS: OsTabGroup[] = [
   { id: "hub", label: "Hub", tabIds: ["home"] },
-  { id: "trade", label: "Trade", tabIds: ["swap"] },
+  { id: "trade", label: "Trade", tabIds: ["swap", "game"] },
   { id: "build", label: "Build", tabIds: ["launch", "tip"] },
   { id: "you", label: "You", tabIds: ["score", "portfolio", "guard", "watch"] },
   { id: "explore", label: "Explore", tabIds: ["analytics", "radar"] },

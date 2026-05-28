@@ -14,6 +14,7 @@
     "contract:deploy:soulbound": "node scripts/deploy-soulbound-system.js",
     "contract:deploy:factory": "node scripts/deploy-token-factory.js",
     "contract:deploy:os-supporter": "node scripts/deploy-os-supporter-nft.js",
+    "contract:deploy:grid646": "node scripts/deploy-grid646.js",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
     "qa-fleet:generate": "node scripts/qa-fleet/generate-wallets.js",

@@ -191,6 +191,27 @@ ZEROX_API_KEY=your_key_here
 
 Users connect wallet, pick tokens (ETH, USDC, WETH, DEGEN, or custom address), approve if needed, then sign the swap. Builder Code applies via wagmi `dataSuffix`.
 
+## Game — Grid 6×6 (1v1, onchain)
+
+**Game** tab: 6×6 board, **four in a row** to win (free placement — extended tic-tac-toe / m,n,k-game). No game server; each move is a Base transaction. Winner takes both stakes (draw = refund).
+
+1) Compile and deploy:
+
+```bash
+npm run contract:compile:hardhat
+npm run contract:deploy:grid646
+```
+
+2) Add to `.env.local` / Vercel:
+
+```env
+NEXT_PUBLIC_GRID646_ADDRESS=0x...
+```
+
+3) Flow: **Create game** (stake ETH, you are X) → share **Game ID** → opponent **Join** (O) → tap cells to `play(row,col)`.
+
+Stakes: `MIN_STAKE`–`MAX_STAKE` on contract (default 0.00001–0.05 ETH). Open games can be cancelled after `JOIN_TIMEOUT` if nobody joins.
+
 ## Notes
 
 - This project is migrated away from Farcaster mini-app SDK flow.

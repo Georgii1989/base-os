@@ -1,0 +1,107 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+const fs = require("node:fs");
+const path = require("node:path");
+const { ContractFactory, Wallet, JsonRpcProvider } = require("ethers");
+
+function loadEnvFile(filePath) {
+  const text = fs.readFileSync(filePath, "utf8");
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const eq = line.indexOf("=");
+    if (eq === -1) continue;
+    const key = line.slice(0, eq).trim();
+    let value = line.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    process.env[key] = value;
+  }
+}
+
+loadEnvFile(path.join(__dirname, "..", "contracts.local.env"));
+
+function normalizePrivateKey(value) {
+  const trimmed = String(value).trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("0x") ? trimmed : `0x${trimmed}`;
+}
+
+function isValidPrivateKey(value) {
+  const pk = normalizePrivateKey(value);
+  return /^0x[0-9a-fA-F]{64}$/.test(pk);
+}
+
+function readArtifact(sourceName, contractName) {
+  const artifactPath = path.join(
+    __dirname,
+    "..",
+    "artifacts",
+    "contracts",
+    sourceName,
+    `${contractName}.json`
+  );
+  if (!fs.existsSync(artifactPath)) {
+    throw new Error(`Missing artifact: ${artifactPath}. Run: npm run contract:compile:hardhat`);
+  }
+  return JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+}
+
+async function sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function deployWithRetries(factory, args, overrides) {
+  const maxAttempts = 6;
+  let lastErr;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const contract = await factory.deploy(...args, overrides);
+      await contract.waitForDeployment();
+      return contract;
+    } catch (err) {
+      lastErr = err;
+      const msg = String(err?.message ?? err);
+      if (
+        !msg.includes("ECONNRESET") &&
+        !msg.includes("ETIMEDOUT") &&
+        !msg.includes("ECONNREFUSED")
+      ) {
+        throw err;
+      }
+      if (attempt === maxAttempts) throw err;
+      await sleep(1500 * attempt);
+    }
+  }
+  throw lastErr;
+}
+
+async function main() {
+  const deployerPkRaw = process.env.DEPLOYER_PRIVATE_KEY;
+  const rpcUrl = process.env.BASE_RPC_URL || "https://mainnet.base.org";
+
+  if (!isValidPrivateKey(deployerPkRaw)) {
+    throw new Error("DEPLOYER_PRIVATE_KEY missing or invalid in contracts.local.env");
+  }
+
+  const artifact = readArtifact("Grid646.sol", "Grid646");
+  const provider = new JsonRpcProvider(rpcUrl);
+  const signer = new Wallet(normalizePrivateKey(deployerPkRaw), provider);
+  const factory = new ContractFactory(artifact.abi, artifact.bytecode, signer);
+
+  console.log("Deploying Grid646 to Base…");
+  const deployed = await deployWithRetries(factory, [], {});
+  const address = await deployed.getAddress();
+  console.log(`Grid646 deployed at: ${address}`);
+  console.log("");
+  console.log("Add to .env.local and Vercel:");
+  console.log(`NEXT_PUBLIC_GRID646_ADDRESS=${address}`);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
