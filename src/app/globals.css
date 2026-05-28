@@ -26,6 +26,25 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  @keyframes grid646-win-pop {
+    0% {
+      transform: scale(0.4);
+      opacity: 0;
+    }
+    55% {
+      transform: scale(1.12);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .animate-grid646-win {
+    animation: grid646-win-pop 0.85s ease-out forwards;
+  }
+
   @keyframes os-fade-up {
     from {
       opacity: 0;

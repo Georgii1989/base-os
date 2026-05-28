@@ -70,6 +70,23 @@ export function sortLobbyRooms(a: Grid646GameView, b: Grid646GameView): number {
   return Number(b.gameId - a.gameId);
 }
 
+export function isZeroAddress(addr: string): boolean {
+  return addr.toLowerCase() === ZERO_ADDRESS;
+}
+
+export function isGameDraw(game: Pick<Grid646GameView, "status" | "winner">): boolean {
+  return game.status === "finished" && isZeroAddress(game.winner);
+}
+
+export function winnerMark(
+  game: Pick<Grid646GameView, "playerX" | "playerO" | "winner">
+): "X" | "O" | null {
+  if (isZeroAddress(game.winner)) return null;
+  if (game.winner.toLowerCase() === game.playerX.toLowerCase()) return "X";
+  if (hasPlayerO(game.playerO) && game.winner.toLowerCase() === game.playerO.toLowerCase()) return "O";
+  return null;
+}
+
 export function statusLabel(status: Grid646Status): string {
   if (status === "open") return "waiting";
   if (status === "active") return "in play";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyBoard, hasWin, playLocalMove } from "@/lib/grid646Logic";
+import { emptyBoard, findWinningCells, playLocalMove } from "@/lib/grid646Logic";
 
 describe("grid646Logic", () => {
   it("detects horizontal win on 4th stone", () => {
@@ -13,6 +13,9 @@ describe("grid646Logic", () => {
     const last = playLocalMove(b, 0, 3, "X");
     if ("error" in last) throw new Error(last.error);
     expect(last.winner).toBe("X");
+    const line = findWinningCells(last.board.xMask, last.board.oMask, "X");
+    expect(line).toHaveLength(4);
+    expect(line!.map((c) => c.col)).toEqual([0, 1, 2, 3]);
   });
 
   it("rejects taken cell", () => {

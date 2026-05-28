@@ -13,20 +13,26 @@ import {
 } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { GRID646_ABI, resolveGrid646Address } from "@/lib/grid646Abi";
+import { Grid646Board } from "@/components/Grid646Board";
+import { Grid646GameEndPanel } from "@/components/Grid646GameEndPanel";
+import { Grid646WinOverlay } from "@/components/Grid646WinOverlay";
 import { useGrid646Rooms } from "@/hooks/useGrid646Rooms";
 import {
   buildBoard,
   formatGameStake,
   isFreeStake,
   shortenAddr,
-  type CellMark,
   type Grid646GameView,
 } from "@/lib/grid646";
+import { findWinningCells, winningCellKeys } from "@/lib/grid646Logic";
 import {
   hasPlayerO,
+  isGameDraw,
+  isZeroAddress,
   parseGetGameResult,
   roomOccupancy,
   statusLabel,
+  winnerMark,
   type Grid646RawGame,
 } from "@/lib/grid646Rooms";
 
@@ -112,6 +118,21 @@ export function Grid646GamePanel() {
     () => (game ? buildBoard(game.xMask, game.oMask) : null),
     [game]
   );
+
+  const gameEnded = game?.status === "finished" || game?.status === "cancelled";
+  const isDraw = game != null && isGameDraw(game);
+  const winMark = game ? winnerMark(game) : null;
+  const winningKeys = useMemo(() => {
+    if (!game || !winMark) return new Set<string>();
+    const cells = findWinningCells(game.xMask, game.oMask, winMark);
+    return winningCellKeys(cells);
+  }, [game, winMark]);
+
+  function leaveRoom() {
+    setActiveGameId(null);
+    setHighlightRoom(null);
+    setTxNote(null);
+  }
 
   const { writeContractAsync, error: writeError } = useWriteContract();
 
@@ -203,7 +224,7 @@ export function Grid646GamePanel() {
     }
   }
 
-  function handleCreate() {
+  function createRoom(afterCreate?: (id: bigint) => void) {
     if (!contract) return;
     let value: bigint = BigInt(0);
     if (playStyle === "money") {
@@ -225,9 +246,17 @@ export function Grid646GamePanel() {
           setActiveGameId(id);
           setRoomInput(String(id));
           setHighlightRoom(id);
+          afterCreate?.(id);
         }
       }
     );
+  }
+
+  function handleCreateRematch() {
+    leaveRoom();
+    createRoom((id) => {
+      setTxNote(`Rematch room #${String(id)} — share this number with your opponent.`);
+    });
   }
 
   function handleConnect() {
@@ -348,7 +377,7 @@ export function Grid646GamePanel() {
             <button
               type="button"
               disabled={isBusy}
-              onClick={handleCreate}
+              onClick={() => createRoom()}
               className={`mt-3 w-full rounded-xl py-3 text-sm font-black text-white disabled:opacity-50 ${
                 playStyle === "money" ? "bg-emerald-500/80" : "bg-slate-500/60"
               }`}
@@ -502,36 +531,61 @@ export function Grid646GamePanel() {
                 {isMyTurn ? " · your move (tx required)" : myRole ? " · wait for opponent" : ""}
               </p>
             ) : null}
-            {game.status === "finished" && game.winner !== "0x0000000000000000000000000000000000000000" ? (
+            {game.status === "finished" && !isZeroAddress(game.winner) ? (
               <p className="mt-2 text-sm font-bold text-fuchsia-200">
                 Winner: {shortenAddr(game.winner)}
+                {winMark ? ` (${winMark})` : ""}
               </p>
+            ) : null}
+            {isDraw ? (
+              <p className="mt-2 text-sm font-bold text-slate-300">Draw — board full</p>
+            ) : null}
+
+            {!gameEnded ? (
+              <button
+                type="button"
+                onClick={leaveRoom}
+                className="mt-3 w-full rounded-xl border border-white/15 py-2.5 text-xs font-bold text-slate-400 hover:bg-white/5 hover:text-slate-200"
+              >
+                Leave room (clears this screen)
+              </button>
+            ) : null}
+
+            {gameEnded ? (
+              <Grid646GameEndPanel
+                game={game}
+                myRole={myRole}
+                address={address}
+                isBusy={isBusy}
+                onLeave={leaveRoom}
+                onCreateRematch={handleCreateRematch}
+              />
             ) : null}
           </section>
 
           {board ? (
-            <section className="relative rounded-3xl border border-white/10 bg-black/40 p-4">
-              {game.status === "open" ? (
-                <p className="mb-3 text-center text-xs text-slate-400">
-                  Board locked until opponent connects (1/1)
-                </p>
+            <div className="relative">
+              <Grid646Board
+                board={board}
+                winningKeys={winningKeys}
+                disabled={!isMyTurn || gameEnded}
+                isBusy={isBusy}
+                onPlay={handlePlay}
+                showLockedHint={game.status === "open"}
+              />
+              {game.status === "finished" ? (
+                <Grid646WinOverlay
+                  label={isDraw ? "DRAW" : "WIN"}
+                  sublabel={
+                    isDraw
+                      ? "No winner — board full"
+                      : winMark
+                        ? `${winMark} wins · ${shortenAddr(game.winner)}`
+                        : shortenAddr(game.winner)
+                  }
+                />
               ) : null}
-              <div
-                className="mx-auto grid gap-1.5"
-                style={{ gridTemplateColumns: `repeat(6, minmax(0, 1fr))`, maxWidth: "22rem" }}
-              >
-                {board.map((row, r) =>
-                  row.map((cell, c) => (
-                    <CellButton
-                      key={`${r}-${c}`}
-                      cell={cell}
-                      disabled={!isMyTurn || cell !== "empty" || isBusy}
-                      onClick={() => handlePlay(r, c)}
-                    />
-                  ))
-                )}
-              </div>
-            </section>
+            </div>
           ) : null}
         </>
       ) : null}
@@ -559,31 +613,3 @@ export function Grid646GamePanel() {
   );
 }
 
-function CellButton({
-  cell,
-  disabled,
-  onClick,
-}: {
-  cell: CellMark;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  const filled =
-    cell === "X"
-      ? "bg-fuchsia-500/35 border-fuchsia-300/50 text-fuchsia-100"
-      : cell === "O"
-        ? "bg-cyan-500/35 border-cyan-300/50 text-cyan-100"
-        : "bg-white/[0.03] border-white/10 text-slate-600 hover:border-emerald-400/40 hover:bg-emerald-500/10";
-
-  return (
-    <button
-      type="button"
-      disabled={disabled || cell !== "empty"}
-      onClick={onClick}
-      className={`aspect-square rounded-lg border text-lg font-black transition ${filled} disabled:cursor-default`}
-      aria-label={cell === "empty" ? "Play here" : cell}
-    >
-      {cell === "empty" ? "" : cell}
-    </button>
-  );
-}
