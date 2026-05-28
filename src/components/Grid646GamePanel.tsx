@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { formatEther, parseEther } from "viem";
 import { base } from "wagmi/chains";
 import {
@@ -16,6 +17,7 @@ import { Grid646LocalPanel } from "@/components/Grid646LocalPanel";
 import {
   buildBoard,
   formatGameStake,
+  grid646JoinUrl,
   GRID646_STATUS,
   isFreeStake,
   shortenAddr,
@@ -26,6 +28,7 @@ import {
 const DEFAULT_STAKE = "0.0001";
 
 type PlayStyle = "fun" | "money";
+type FunChannel = "local" | "onchain";
 
 function parseGameIdInput(raw: string): bigint | null {
   const t = raw.trim();
@@ -40,12 +43,15 @@ function parseGameIdInput(raw: string): bigint | null {
 
 export function Grid646GamePanel() {
   const contract = resolveGrid646Address();
+  const searchParams = useSearchParams();
   const wagmiConfig = useConfig();
   const { address, isConnected, chainId } = useAccount();
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
   const isOnBase = chainId === base.id;
 
   const [playStyle, setPlayStyle] = useState<PlayStyle>("fun");
+  const [funChannel, setFunChannel] = useState<FunChannel>("onchain");
+  const [inviteCopied, setInviteCopied] = useState(false);
   const [stakeEth, setStakeEth] = useState(DEFAULT_STAKE);
   const [gameIdInput, setGameIdInput] = useState("");
   const [activeGameId, setActiveGameId] = useState<bigint | null>(null);
@@ -85,8 +91,24 @@ export function Grid646GamePanel() {
     functionName: "getGame",
     args: gameId != null ? [gameId] : undefined,
     chainId: base.id,
-    query: { enabled: Boolean(contract && gameId != null), refetchInterval: 8_000 },
+    query: {
+      enabled: Boolean(contract && gameId != null),
+      refetchInterval: 4_000,
+    },
   });
+
+  const showOnchain = playStyle === "money" || (playStyle === "fun" && funChannel === "onchain");
+
+  useEffect(() => {
+    const joinRaw = searchParams.get("join");
+    if (!joinRaw) return;
+    const id = parseGameIdInput(joinRaw);
+    if (id == null) return;
+    setPlayStyle("fun");
+    setFunChannel("onchain");
+    setActiveGameId(id);
+    setGameIdInput(String(id));
+  }, [searchParams]);
 
   const game: Grid646GameView | null = useMemo(() => {
     if (!rawGame || gameId == null) return null;
@@ -178,6 +200,7 @@ export function Grid646GamePanel() {
         value,
       },
       async () => {
+        if (playStyle === "fun") setFunChannel("onchain");
         const fresh = await refetchNextId();
         const nid = (fresh.data ?? nextId) as bigint | undefined;
         if (nid != null && nid > BigInt(0)) {
@@ -188,6 +211,38 @@ export function Grid646GamePanel() {
       }
     );
   }
+
+  async function copyInviteLink() {
+    if (gameId == null || typeof window === "undefined") return;
+    const url = grid646JoinUrl(window.location.origin, gameId);
+    try {
+      await navigator.clipboard.writeText(url);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2500);
+    } catch {
+      setTxNote(url);
+    }
+  }
+
+  function handleJoin() {
+    if (gameId == null || !game) return;
+    void runTx("Joining as O…", {
+      functionName: "joinGame",
+      args: [gameId],
+      value: game.stakeWei,
+    });
+  }
+
+  const canJoin =
+    game?.status === "open" &&
+    game.playerO === "0x0000000000000000000000000000000000000000" &&
+    address != null &&
+    address.toLowerCase() !== game.playerX.toLowerCase();
+
+  const waitingForOpponent =
+    game?.status === "open" &&
+    game.playerO === "0x0000000000000000000000000000000000000000" &&
+    myRole === "X";
 
   function handlePlay(row: number, col: number) {
     if (!contract || gameId == null || !isMyTurn) return;
@@ -256,17 +311,43 @@ export function Grid646GamePanel() {
         </button>
       </div>
 
-      {playStyle === "fun" ? <Grid646LocalPanel /> : null}
-
       {playStyle === "fun" ? (
-        <p className="text-center text-xs text-slate-500">
-          Ниже — 1v1 onchain без ставки (нужен кошелёк, платится только gas за ходы).
-        </p>
+        <div className="flex rounded-2xl border border-cyan-400/20 bg-cyan-950/30 p-1">
+          <button
+            type="button"
+            onClick={() => setFunChannel("local")}
+            className={`flex-1 rounded-xl px-2 py-2 text-[11px] font-black leading-tight transition ${
+              funChannel === "local"
+                ? "bg-cyan-600/40 text-white"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            Один экран
+            <span className="mt-0.5 block font-normal text-[10px] opacity-80">без кошелька</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFunChannel("onchain")}
+            className={`flex-1 rounded-xl px-2 py-2 text-[11px] font-black leading-tight transition ${
+              funChannel === "onchain"
+                ? "bg-cyan-600/40 text-white"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            Онлайн 1v1
+            <span className="mt-0.5 block font-normal text-[10px] opacity-80">2 кошелька</span>
+          </button>
+        </div>
       ) : null}
 
-      {!isConnected && playStyle === "money" ? (
-        <p className="text-center text-sm text-slate-400">Connect wallet on Base to play for ETH.</p>
-      ) : !isConnected && playStyle === "fun" ? null : !isOnBase ? (
+      {playStyle === "fun" && funChannel === "local" ? <Grid646LocalPanel /> : null}
+
+      {!isConnected && showOnchain ? (
+        <p className="rounded-2xl border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-center text-sm text-amber-100">
+          Для онлайн-игры подключите кошелёк на <strong>Base</strong> (на телефоне — в Base app откройте
+          ссылку-приглашение).
+        </p>
+      ) : !isOnBase && showOnchain && isConnected ? (
         <button
           type="button"
           disabled={isSwitching}
@@ -277,7 +358,7 @@ export function Grid646GamePanel() {
         </button>
       ) : null}
 
-      {(playStyle === "money" || playStyle === "fun") && isConnected && isOnBase ? (
+      {showOnchain && isConnected && isOnBase ? (
       <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
         <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-400">
           {playStyle === "money" ? "Lobby · ranked" : "Lobby · casual onchain"}
@@ -333,29 +414,20 @@ export function Grid646GamePanel() {
             Load
           </button>
         </div>
-        {game?.status === "open" &&
-        game.playerO === "0x0000000000000000000000000000000000000000" &&
-        address?.toLowerCase() !== game.playerX.toLowerCase() ? (
+        {canJoin ? (
           <button
             type="button"
-            disabled={!isConnected || !isOnBase || isBusy || gameId == null}
-            onClick={() => {
-              if (gameId == null) return;
-              void runTx("Joining…", {
-                functionName: "joinGame",
-                args: [gameId],
-                value: game.stakeWei,
-              });
-            }}
-            className="mt-3 w-full rounded-xl border border-cyan-300/40 bg-cyan-500/15 py-3 text-sm font-black text-cyan-100 disabled:opacity-50"
+            disabled={isBusy || gameId == null}
+            onClick={handleJoin}
+            className="mt-3 w-full rounded-xl border-2 border-cyan-300/60 bg-cyan-500/25 py-3.5 text-sm font-black text-cyan-50 disabled:opacity-50"
           >
-            Join as O · {formatGameStake(game.stakeWei)}
+            Войти в игру #{gameId != null ? String(gameId) : "?"} как O · {formatGameStake(game!.stakeWei)}
           </button>
         ) : null}
       </section>
       ) : null}
 
-      {game ? (
+      {game && showOnchain ? (
         <>
           <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -385,10 +457,48 @@ export function Grid646GamePanel() {
                 ? formatGameStake(game.stakeWei * BigInt(2))
                 : formatGameStake(game.stakeWei)}
             </p>
+            {myRole ? (
+              <p className="mt-2 text-sm font-bold text-white">
+                Вы играете за <span className={myRole === "X" ? "text-fuchsia-300" : "text-cyan-300"}>{myRole}</span>
+              </p>
+            ) : isConnected ? (
+              <p className="mt-2 text-sm text-amber-200/90">
+                Этот кошелёк не в партии — нажмите «Войти как O» выше (другой адрес, чем у создателя).
+              </p>
+            ) : null}
+            {waitingForOpponent ? (
+              <div className="mt-3 space-y-2 rounded-xl border border-amber-300/35 bg-amber-500/10 p-3 text-sm text-amber-100">
+                <p className="font-bold">Ждём второго игрока</p>
+                <p className="text-xs text-amber-200/85">
+                  Пока O не нажал Join, ходы на блокчейне недоступны. Отправьте ссылку в Base app — друг
+                  подтвердит одну транзакцию, затем ходы по очереди (X, потом O).
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void copyInviteLink()}
+                  className="w-full rounded-lg bg-amber-500/25 py-2 text-xs font-black text-amber-50"
+                >
+                  {inviteCopied ? "Ссылка скопирована" : `Скопировать ссылку · game #${String(game.gameId)}`}
+                </button>
+                <p className="font-mono text-[10px] text-amber-200/70">
+                  или ID: {String(game.gameId)} → Load на втором устройстве
+                </p>
+              </div>
+            ) : null}
+            {canJoin ? (
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={handleJoin}
+                className="mt-3 w-full rounded-xl border-2 border-cyan-300/60 bg-cyan-500/25 py-3.5 text-sm font-black text-cyan-50 disabled:opacity-50"
+              >
+                Войти как O (обязательно перед ходами)
+              </button>
+            ) : null}
             {game.status === "active" ? (
               <p className="mt-1 text-xs text-emerald-300/90">
-                Turn: {game.turn === 0 ? "X" : "O"}
-                {isMyTurn ? " · your move" : ""}
+                Ход: {game.turn === 0 ? "X" : "O"}
+                {isMyTurn ? " · ваш ход (нужна tx)" : myRole ? " · ждите соперника" : ""}
               </p>
             ) : null}
             {game.status === "finished" && game.winner !== "0x0000000000000000000000000000000000000000" ? (
@@ -399,7 +509,12 @@ export function Grid646GamePanel() {
           </section>
 
           {board ? (
-            <section className="rounded-3xl border border-white/10 bg-black/40 p-4">
+            <section className="relative rounded-3xl border border-white/10 bg-black/40 p-4">
+              {game.status === "open" ? (
+                <p className="mb-3 text-center text-xs text-slate-400">
+                  Поле заблокировано до Join второго игрока
+                </p>
+              ) : null}
               <div
                 className="mx-auto grid gap-1.5"
                 style={{ gridTemplateColumns: `repeat(6, minmax(0, 1fr))`, maxWidth: "22rem" }}

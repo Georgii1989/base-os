@@ -63,6 +63,11 @@ export function formatStakeEth(wei: bigint): string {
 }
 
 /** Stake label for lobby and buttons */
+export function grid646JoinUrl(origin: string, gameId: bigint | number): string {
+  const base = origin.replace(/\/$/, "");
+  return `${base}/?tab=game&join=${String(gameId)}`;
+}
+
 export function formatGameStake(wei: bigint): string {
   if (isFreeStake(wei)) return "Free · на интерес";
   return `${formatStakeEth(wei)} ETH`;
