@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { formatUnits } from "viem";
 import { base } from "wagmi/chains";
 import { useBalance, useReadContracts } from "wagmi";
@@ -85,8 +86,13 @@ export function SwapTokenSelectModal({
   excludeAddress?: string;
 }) {
   const [query, setQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
   const trimmedQuery = query.trim();
   const isSearching = trimmedQuery.length >= 2;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) setQuery("");
@@ -241,7 +247,7 @@ export function SwapTokenSelectModal({
         selectedAddress?.toLowerCase() === token.address.toLowerCase()
       : selectedId === token.id;
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   const showEmpty =
     isSearching &&
@@ -249,17 +255,30 @@ export function SwapTokenSelectModal({
     displayRows.length === 0 &&
     searchQuery.isFetched;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto overscroll-contain p-3 sm:p-6"
+      style={{
+        paddingTop: "max(0.75rem, env(safe-area-inset-top))",
+        paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+      }}
+    >
       <button
         type="button"
         aria-label="Close"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative flex max-h-[88vh] w-full max-w-md flex-col overflow-hidden rounded-t-[1.75rem] border border-white/10 bg-[#131313] shadow-2xl sm:rounded-[1.75rem]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="swap-token-modal-title"
+        className="relative my-auto flex w-full max-w-md min-h-0 max-h-[min(85dvh,calc(100dvh-1.5rem))] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#131313] shadow-2xl"
+      >
         <div className="flex items-center justify-between border-b border-white/8 px-5 py-4">
-          <h3 className="text-lg font-bold text-white">Select a token</h3>
+          <h3 id="swap-token-modal-title" className="text-lg font-bold text-white">
+            Select a token
+          </h3>
           <button
             type="button"
             onClick={onClose}
@@ -306,7 +325,7 @@ export function SwapTokenSelectModal({
           ) : null}
         </div>
 
-        <div className="mt-3 flex-1 overflow-y-auto px-2 pb-4">
+        <div className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-4">
           {searchQuery.isLoading && isSearching ? (
             <p className="px-4 py-8 text-center text-sm text-slate-500">Searching…</p>
           ) : null}
@@ -339,7 +358,8 @@ export function SwapTokenSelectModal({
           ) : null}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
