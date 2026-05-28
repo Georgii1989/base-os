@@ -45,6 +45,26 @@ body {
     animation: grid646-win-pop 0.85s ease-out forwards;
   }
 
+  @keyframes grid646-rainbow-bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  .grid646-rainbow-char {
+    animation: grid646-rainbow-bob 2.4s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grid646-rainbow-char {
+      animation: none;
+    }
+  }
+
   @keyframes os-fade-up {
     from {
       opacity: 0;

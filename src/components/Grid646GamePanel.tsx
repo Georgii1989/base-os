@@ -13,6 +13,7 @@ import {
 } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { GRID646_ABI, resolveGrid646Address } from "@/lib/grid646Abi";
+import { Grid646GameBanner } from "@/components/Grid646GameBanner";
 import { Grid646Board } from "@/components/Grid646Board";
 import { Grid646GameEndPanel } from "@/components/Grid646GameEndPanel";
 import { Grid646WinOverlay } from "@/components/Grid646WinOverlay";
@@ -295,23 +296,15 @@ export function Grid646GamePanel() {
 
   return (
     <div className="mx-auto grid max-w-lg gap-5">
-      <section className="rounded-3xl border border-emerald-300/25 bg-gradient-to-br from-emerald-500/10 via-slate-950/60 to-cyan-500/10 p-6">
-        <p className="text-[11px] font-black uppercase tracking-[0.35em] text-emerald-200/90">Game</p>
-        <h2 className="mt-2 text-2xl font-black text-white">Grid 6×6 · Four in a row</h2>
-        <p className="mt-3 text-sm text-slate-300">
-          Create a <strong className="text-white">room</strong>, share the number, or pick one from the
-          list. <strong className="text-white">1/0</strong> = waiting · <strong className="text-white">1/1</strong>{" "}
-          = full.
-        </p>
-      </section>
+      <Grid646GameBanner />
 
-      <div className="flex rounded-2xl border border-white/10 bg-black/40 p-1">
+      <div className="flex rounded-2xl border border-violet-400/25 bg-violet-950/40 p-1 shadow-inner">
         <button
           type="button"
           onClick={() => setPlayStyle("fun")}
           className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-black transition ${
             playStyle === "fun"
-              ? "bg-slate-500/40 text-white"
+              ? "bg-gradient-to-r from-cyan-500/50 to-fuchsia-500/50 text-white shadow-sm"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
@@ -322,7 +315,7 @@ export function Grid646GamePanel() {
           onClick={() => setPlayStyle("money")}
           className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-black transition ${
             playStyle === "money"
-              ? "bg-emerald-600/50 text-white"
+              ? "bg-gradient-to-r from-emerald-500/60 to-yellow-500/40 text-white shadow-sm"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
