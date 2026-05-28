@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { formatUnits, parseUnits } from "viem";
 import { base } from "wagmi/chains";
 import {
@@ -25,6 +26,7 @@ import { SwapTokenIcon } from "@/components/SwapTokenIcon";
 import { SwapTokenSelectModal } from "@/components/SwapTokenSelectModal";
 import { WalletAssetBalance } from "@/components/WalletAssetBalance";
 import { formatAssetBalance, maxSpendAmount } from "@/lib/assetBalance";
+import { parseSwapPrefillParams, swapPrefillToState } from "@/lib/swapPrefill";
 
 const ERC20_ABI = [
   {
@@ -123,6 +125,7 @@ function useTokenMeta(token: SwapTokenPreset | null) {
 type SwapPanelProps = { embedded?: boolean };
 
 export function SwapPanel({ embedded = false }: SwapPanelProps) {
+  const searchParams = useSearchParams();
   const { address, isConnected, chainId } = useAccount();
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
   const isOnBase = chainId === base.id;
@@ -134,6 +137,41 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
   const [sellAmount, setSellAmount] = useState("0.001");
   const [formError, setFormError] = useState<string | null>(null);
   const [tokenModal, setTokenModal] = useState<"sell" | "buy" | null>(null);
+  const [prefillBanner, setPrefillBanner] = useState<string | null>(null);
+  const appliedPrefillKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const prefill = parseSwapPrefillParams(searchParams);
+    if (!prefill) {
+      appliedPrefillKeyRef.current = null;
+      setPrefillBanner(null);
+      return;
+    }
+    const key = `${prefill.sell ?? ""}|${prefill.buy ?? ""}`;
+    if (appliedPrefillKeyRef.current === key) return;
+    const state = swapPrefillToState(prefill);
+    if (!state) return;
+    appliedPrefillKeyRef.current = key;
+    if (state.sellPreset != null) {
+      setSellPreset(state.sellPreset);
+      setSellCustom(state.sellCustom ?? "");
+    }
+    if (state.buyPreset != null) {
+      setBuyPreset(state.buyPreset);
+      setBuyCustom(state.buyCustom ?? "");
+    }
+    const sellToken = state.sellPreset
+      ? resolveSwapToken(state.sellPreset, state.sellCustom)
+      : null;
+    const buyToken = state.buyPreset ? resolveSwapToken(state.buyPreset, state.buyCustom) : null;
+    if (sellToken && buyToken) {
+      setPrefillBanner(`Swapping ${sellToken.symbol} → ${buyToken.symbol}`);
+    } else if (sellToken) {
+      setPrefillBanner(`Selling ${sellToken.symbol}`);
+    } else if (buyToken) {
+      setPrefillBanner(`Buying ${buyToken.symbol}`);
+    }
+  }, [searchParams]);
 
   function selectSellToken(id: string, customAddress?: string) {
     if (id === "custom" && customAddress) {
@@ -398,6 +436,13 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
         <div className="rounded-2xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-center text-xs text-amber-100">
           Server needs <span className="font-mono">ZEROX_API_KEY</span>
         </div>
+      ) : null}
+
+      {prefillBanner ? (
+        <p className="rounded-2xl border border-violet-300/25 bg-violet-500/10 px-4 py-2.5 text-center text-xs font-bold text-violet-100">
+          {prefillBanner}
+          <span className="font-normal text-violet-200/70"> · from portfolio</span>
+        </p>
       ) : null}
 
       <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-b from-slate-900/90 to-black/95 p-1 shadow-[0_0_80px_rgba(139,92,246,0.15)]">

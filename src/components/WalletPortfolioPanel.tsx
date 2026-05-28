@@ -10,6 +10,11 @@ import { useAccount, useBalance, useConnect, useSwitchChain } from "wagmi";
 import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
 import type { PortfolioToken, WalletPortfolioPayload } from "@/lib/walletPortfolioFetch";
 import { shortenAddressDisplay } from "@/lib/knownBaseProtocols";
+import {
+  buildPortfolioSwapBuyHref,
+  buildPortfolioSwapSellHref,
+  buildSwapTabHref,
+} from "@/lib/swapPrefill";
 
 function formatUsd(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return "—";
@@ -20,7 +25,18 @@ function formatUsd(value: number | null | undefined): string {
   return "<$0.01";
 }
 
+function actionBtnClass(accent: "sell" | "buy"): string {
+  const base =
+    "rounded-lg border px-2 py-1 text-[10px] font-black uppercase tracking-wide transition";
+  if (accent === "buy") {
+    return `${base} border-cyan-300/40 bg-cyan-500/15 text-cyan-100 hover:border-cyan-200/60 hover:bg-cyan-500/25`;
+  }
+  return `${base} border-violet-300/40 bg-violet-500/15 text-violet-100 hover:border-violet-200/60 hover:bg-violet-500/25`;
+}
+
 function TokenRow({ token }: { token: PortfolioToken }) {
+  const sellHref = buildPortfolioSwapSellHref(token.address);
+  const buyHref = buildPortfolioSwapBuyHref(token.address);
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-black/30 px-3 py-2.5">
       <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-white/10">
@@ -42,14 +58,24 @@ function TokenRow({ token }: { token: PortfolioToken }) {
           <p className="shrink-0 text-xs tabular-nums text-slate-400">{token.balanceFormatted}</p>
         </div>
       </div>
-      <a
-        href={`https://basescan.org/token/${token.address}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-slate-500 hover:text-cyan-300"
-      >
-        ↗
-      </a>
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        <div className="flex gap-1">
+          <Link href={sellHref} className={actionBtnClass("sell")}>
+            Sell
+          </Link>
+          <Link href={buyHref} className={actionBtnClass("buy")}>
+            Buy
+          </Link>
+        </div>
+        <a
+          href={`https://basescan.org/token/${token.address}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] font-bold uppercase tracking-wide text-slate-500 hover:text-cyan-300"
+        >
+          Scan ↗
+        </a>
+      </div>
     </div>
   );
 }
@@ -183,8 +209,8 @@ export function WalletPortfolioPanel() {
 
           <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
             <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-400">Native</h3>
-            <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/8 bg-black/30 px-4 py-3">
-              <div>
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-black/30 px-4 py-3">
+              <div className="min-w-0 flex-1">
                 <p className="font-bold text-white">ETH</p>
                 <p className="text-xs text-slate-500">Base mainnet</p>
               </div>
@@ -192,6 +218,12 @@ export function WalletPortfolioPanel() {
                 <p className="font-black tabular-nums text-cyan-100">{ethDisplay} ETH</p>
                 <p className="text-xs tabular-nums text-slate-400">{formatUsd(data.ethValueUsd)}</p>
               </div>
+              <Link
+                href={buildSwapTabHref({ sell: "eth" })}
+                className={`shrink-0 ${actionBtnClass("sell")}`}
+              >
+                Sell
+              </Link>
             </div>
             {liveEth && data ? (
               <p className="mt-2 text-[10px] text-slate-600">
@@ -225,10 +257,10 @@ export function WalletPortfolioPanel() {
 
           <div className="flex flex-wrap gap-2">
             <Link
-              href={`/?tab=swap`}
+              href={buildSwapTabHref()}
               className="rounded-xl border border-violet-300/35 px-4 py-2 text-sm font-bold text-violet-100"
             >
-              Swap tokens
+              Open swap
             </Link>
             <Link
               href={`/?tab=guard`}
