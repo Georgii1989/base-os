@@ -55,47 +55,102 @@ async function sleep(ms) {
 }
 
 async function deployWithRetries(factory, args, overrides) {
-  const maxAttempts = 6;
+  const maxAttempts = 10;
   let lastErr;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      const contract = await factory.deploy(...args, overrides);
-      await contract.waitForDeployment();
-      return contract;
+      const contract = await factory.deploy(...args, {
+        gasLimit: 2_800_000n,
+        ...overrides,
+      });
+      const tx = contract.deploymentTransaction();
+      if (!tx) throw new Error("No deployment transaction");
+      console.log(`Deploy tx: ${tx.hash}`);
+      const receipt = await tx.wait(2);
+      if (!receipt || receipt.status !== 1) {
+        throw new Error(`Deploy tx failed: ${tx.hash}`);
+      }
+      const address = await contract.getAddress();
+      return { contract, address, hash: tx.hash };
     } catch (err) {
       lastErr = err;
       const msg = String(err?.message ?? err);
       if (
         !msg.includes("ECONNRESET") &&
         !msg.includes("ETIMEDOUT") &&
-        !msg.includes("ECONNREFUSED")
+        !msg.includes("ECONNREFUSED") &&
+        !msg.includes("socket hang up")
       ) {
         throw err;
       }
       if (attempt === maxAttempts) throw err;
-      await sleep(1500 * attempt);
+      const backoff = 2000 * attempt;
+      console.log(`Deploy attempt ${attempt} failed. Retrying in ${backoff}ms…`);
+      await sleep(backoff);
     }
   }
   throw lastErr;
 }
 
+const RPC_FALLBACKS = [
+  process.env.BASE_RPC_URL,
+  "https://mainnet.base.org",
+  "https://base.llamarpc.com",
+  "https://1rpc.io/base",
+].filter(Boolean);
+
 async function main() {
   const deployerPkRaw = process.env.DEPLOYER_PRIVATE_KEY;
-  const rpcUrl = process.env.BASE_RPC_URL || "https://mainnet.base.org";
 
   if (!isValidPrivateKey(deployerPkRaw)) {
     throw new Error("DEPLOYER_PRIVATE_KEY missing or invalid in contracts.local.env");
   }
 
   const artifact = readArtifact("Grid646.sol", "Grid646");
-  const provider = new JsonRpcProvider(rpcUrl);
+  let provider;
+  let lastRpcErr;
+  for (const rpcUrl of RPC_FALLBACKS) {
+    try {
+      provider = new JsonRpcProvider(rpcUrl, undefined, { staticNetwork: true });
+      await provider.getBlockNumber();
+      console.log(`RPC: ${rpcUrl}`);
+      lastRpcErr = null;
+      break;
+    } catch (err) {
+      lastRpcErr = err;
+      console.log(`RPC failed (${rpcUrl}): ${err.message ?? err}`);
+    }
+  }
+  if (!provider) {
+    throw lastRpcErr ?? new Error("No working Base RPC");
+  }
   const signer = new Wallet(normalizePrivateKey(deployerPkRaw), provider);
   const factory = new ContractFactory(artifact.abi, artifact.bytecode, signer);
 
+  const balance = await provider.getBalance(signer.address);
+  console.log(`Deployer ${signer.address} balance: ${balance} wei`);
+  const estGas = await provider.estimateGas({
+    ...(await factory.getDeployTransaction()),
+    from: signer.address,
+  });
+  const feeData = await provider.getFeeData();
+  const defaultMax = feeData.maxFeePerGas ?? 10_000_000n;
+  let maxFeePerGas = defaultMax;
+  const needed = estGas * defaultMax;
+  if (balance < needed && estGas > 0n) {
+    maxFeePerGas = (balance * 88n) / 100n / estGas;
+    console.log(`Low balance — using maxFeePerGas ${maxFeePerGas}`);
+  }
+
   console.log("Deploying Grid646 to Base…");
-  const deployed = await deployWithRetries(factory, [], {});
-  const address = await deployed.getAddress();
+  const deployed = await deployWithRetries(factory, [], {
+    gasLimit: estGas + 80_000n,
+    maxFeePerGas,
+    maxPriorityFeePerGas: 1n,
+  });
+  const address = deployed.address;
   console.log(`Grid646 deployed at: ${address}`);
+  console.log(`https://basescan.org/address/${address}`);
   console.log("");
   console.log("Add to .env.local and Vercel:");
   console.log(`NEXT_PUBLIC_GRID646_ADDRESS=${address}`);
