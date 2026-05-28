@@ -12,16 +12,20 @@ import {
 } from "wagmi";
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { GRID646_ABI, resolveGrid646Address } from "@/lib/grid646Abi";
+import { Grid646LocalPanel } from "@/components/Grid646LocalPanel";
 import {
   buildBoard,
-  formatStakeEth,
+  formatGameStake,
   GRID646_STATUS,
+  isFreeStake,
   shortenAddr,
   type CellMark,
   type Grid646GameView,
 } from "@/lib/grid646";
 
 const DEFAULT_STAKE = "0.0001";
+
+type PlayStyle = "fun" | "money";
 
 function parseGameIdInput(raw: string): bigint | null {
   const t = raw.trim();
@@ -41,6 +45,7 @@ export function Grid646GamePanel() {
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
   const isOnBase = chainId === base.id;
 
+  const [playStyle, setPlayStyle] = useState<PlayStyle>("fun");
   const [stakeEth, setStakeEth] = useState(DEFAULT_STAKE);
   const [gameIdInput, setGameIdInput] = useState("");
   const [activeGameId, setActiveGameId] = useState<bigint | null>(null);
@@ -157,15 +162,17 @@ export function Grid646GamePanel() {
 
   function handleCreate() {
     if (!contract) return;
-    let value: bigint;
-    try {
-      value = parseEther(stakeEth.trim() || DEFAULT_STAKE);
-    } catch {
-      setTxNote("Invalid stake amount");
-      return;
+    let value: bigint = BigInt(0);
+    if (playStyle === "money") {
+      try {
+        value = parseEther(stakeEth.trim() || DEFAULT_STAKE);
+      } catch {
+        setTxNote("Invalid stake amount");
+        return;
+      }
     }
     void runTx(
-      "Creating game…",
+      playStyle === "money" ? "Creating ranked game…" : "Creating casual game (0 ETH)…",
       {
         functionName: "createGame",
         value,
@@ -218,18 +225,48 @@ export function Grid646GamePanel() {
         <p className="text-[11px] font-black uppercase tracking-[0.35em] text-emerald-200/90">Game</p>
         <h2 className="mt-2 text-2xl font-black text-white">Grid 6×6 · Four in a row</h2>
         <p className="mt-3 text-sm text-slate-300">
-          1v1 on Base — free placement (как крестики-нолики на поле 6×6). Победа:{" "}
-          <strong className="text-white">4 в ряд</strong> по горизонтали, вертикали или диагонали.
-          Каждый ход — отдельная транзакция. Победитель забирает обе ставки.
-        </p>
-        <p className="mt-2 text-xs text-slate-500">
-          Ничья — возврат ставок. Без game-server: логика в смарт-контракте.
+          6×6, победа — <strong className="text-white">4 в ряд</strong>. Выбери режим:{" "}
+          <strong className="text-white">на интерес</strong> (без ставки) или{" "}
+          <strong className="text-white">на деньги</strong> (ETH в контракте).
         </p>
       </section>
 
-      {!isConnected ? (
-        <p className="text-center text-sm text-slate-400">Connect wallet on Base to play.</p>
-      ) : !isOnBase ? (
+      <div className="flex rounded-2xl border border-white/10 bg-black/40 p-1">
+        <button
+          type="button"
+          onClick={() => setPlayStyle("fun")}
+          className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-black transition ${
+            playStyle === "fun"
+              ? "bg-slate-500/40 text-white"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          На интерес
+        </button>
+        <button
+          type="button"
+          onClick={() => setPlayStyle("money")}
+          className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-black transition ${
+            playStyle === "money"
+              ? "bg-emerald-600/50 text-white"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          На деньги
+        </button>
+      </div>
+
+      {playStyle === "fun" ? <Grid646LocalPanel /> : null}
+
+      {playStyle === "fun" ? (
+        <p className="text-center text-xs text-slate-500">
+          Ниже — 1v1 onchain без ставки (нужен кошелёк, платится только gas за ходы).
+        </p>
+      ) : null}
+
+      {!isConnected && playStyle === "money" ? (
+        <p className="text-center text-sm text-slate-400">Connect wallet on Base to play for ETH.</p>
+      ) : !isConnected && playStyle === "fun" ? null : !isOnBase ? (
         <button
           type="button"
           disabled={isSwitching}
@@ -240,31 +277,44 @@ export function Grid646GamePanel() {
         </button>
       ) : null}
 
+      {(playStyle === "money" || playStyle === "fun") && isConnected && isOnBase ? (
       <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
-        <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-400">Lobby</h3>
+        <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-400">
+          {playStyle === "money" ? "Lobby · ranked" : "Lobby · casual onchain"}
+        </h3>
         <p className="mt-1 text-xs text-slate-500">
           Next game ID: {nextId != null ? String(nextId) : "…"}
-          {minStake != null && maxStake != null
+          {playStyle === "money" && minStake != null && maxStake != null
             ? ` · stake ${formatEther(minStake as bigint)}–${formatEther(maxStake as bigint)} ETH`
-            : null}
+            : " · stake 0 ETH (на интерес)"}
         </p>
 
-        <label className="mt-4 block">
-          <span className="text-xs font-bold text-slate-500">Stake (ETH)</span>
-          <input
-            type="text"
-            value={stakeEth}
-            onChange={(e) => setStakeEth(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-white/12 bg-black/40 px-4 py-3 font-mono text-sm text-white outline-none focus:border-emerald-300/50"
-          />
-        </label>
+        {playStyle === "money" ? (
+          <label className="mt-4 block">
+            <span className="text-xs font-bold text-slate-500">Stake (ETH)</span>
+            <input
+              type="text"
+              value={stakeEth}
+              onChange={(e) => setStakeEth(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-white/12 bg-black/40 px-4 py-3 font-mono text-sm text-white outline-none focus:border-emerald-300/50"
+            />
+          </label>
+        ) : (
+          <p className="mt-4 rounded-xl border border-slate-400/20 bg-slate-500/10 px-4 py-3 text-sm text-slate-300">
+            Ставка <strong className="text-white">0 ETH</strong> — играйте ради счёта, без банка.
+          </p>
+        )}
         <button
           type="button"
           disabled={!isConnected || !isOnBase || isBusy}
           onClick={handleCreate}
-          className="mt-3 w-full rounded-xl bg-emerald-500/80 py-3 text-sm font-black text-white disabled:opacity-50"
+          className={`mt-3 w-full rounded-xl py-3 text-sm font-black text-white disabled:opacity-50 ${
+            playStyle === "money" ? "bg-emerald-500/80" : "bg-slate-500/60"
+          }`}
         >
-          Create game (you play X)
+          {playStyle === "money"
+            ? "Create ranked game (you play X)"
+            : "Create casual game · 0 ETH (you play X)"}
         </button>
 
         <div className="mt-4 flex gap-2">
@@ -299,10 +349,11 @@ export function Grid646GamePanel() {
             }}
             className="mt-3 w-full rounded-xl border border-cyan-300/40 bg-cyan-500/15 py-3 text-sm font-black text-cyan-100 disabled:opacity-50"
           >
-            Join as O · stake {formatStakeEth(game.stakeWei)} ETH
+            Join as O · {formatGameStake(game.stakeWei)}
           </button>
         ) : null}
       </section>
+      ) : null}
 
       {game ? (
         <>
@@ -312,16 +363,27 @@ export function Grid646GamePanel() {
               <span className="rounded-lg border border-white/10 px-2 py-1 text-xs uppercase text-slate-400">
                 {game.status}
               </span>
+              {isFreeStake(game.stakeWei) ? (
+                <span className="rounded-lg border border-slate-400/30 bg-slate-500/15 px-2 py-1 text-xs text-slate-300">
+                  на интерес
+                </span>
+              ) : (
+                <span className="rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-2 py-1 text-xs text-emerald-200">
+                  ranked
+                </span>
+              )}
             </div>
             <p className="mt-2 text-xs text-slate-500">
               X {shortenAddr(game.playerX)} · O{" "}
               {game.playerO === "0x0000000000000000000000000000000000000000"
                 ? "waiting…"
                 : shortenAddr(game.playerO)}{" "}
-              · pot {(game.status === "active" || game.status === "open") && game.playerO
-                ? formatStakeEth(game.stakeWei * BigInt(2))
-                : formatStakeEth(game.stakeWei)}{" "}
-              ETH
+              · pot{" "}
+              {(game.status === "active" || game.status === "open") &&
+              game.playerO &&
+              !isFreeStake(game.stakeWei)
+                ? formatGameStake(game.stakeWei * BigInt(2))
+                : formatGameStake(game.stakeWei)}
             </p>
             {game.status === "active" ? (
               <p className="mt-1 text-xs text-emerald-300/90">

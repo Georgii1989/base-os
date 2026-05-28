@@ -2,7 +2,8 @@
 pragma solidity ^0.8.24;
 
 /**
- * @title Grid646 — 6×6, four in a row, 1v1 with ETH stakes (no game server).
+ * @title Grid646 — 6×6, four in a row, 1v1 (no game server).
+ * @notice Paid games: MIN_STAKE–MAX_STAKE ETH. Casual (на интерес): stake 0, same rules, no payout.
  * @notice Free placement (крестики-нолики на большом поле), not gravity/Connect-Four columns.
  *         Player X (host) vs Player O (joiner). Each move is an onchain transaction.
  */
@@ -65,7 +66,11 @@ contract Grid646 {
     error NothingToCancel();
 
     function createGame() external payable returns (uint256 gameId) {
-        if (msg.value < MIN_STAKE || msg.value > MAX_STAKE) revert InvalidStake();
+        if (msg.value == 0) {
+            // casual / free — no ETH at risk
+        } else if (msg.value < MIN_STAKE || msg.value > MAX_STAKE) {
+            revert InvalidStake();
+        }
 
         gameId = nextGameId++;
         games[gameId] = Game({

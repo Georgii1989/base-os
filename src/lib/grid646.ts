@@ -52,10 +52,20 @@ export function buildBoard(xMask: bigint, oMask: bigint): CellMark[][] {
   return rows;
 }
 
+export function isFreeStake(wei: bigint): boolean {
+  return wei === BigInt(0);
+}
+
 export function formatStakeEth(wei: bigint): string {
   const eth = Number(wei) / 1e18;
   if (eth >= 0.001) return eth.toFixed(4);
   return eth.toFixed(6);
+}
+
+/** Stake label for lobby and buttons */
+export function formatGameStake(wei: bigint): string {
+  if (isFreeStake(wei)) return "Free · на интерес";
+  return `${formatStakeEth(wei)} ETH`;
 }
 
 export function shortenAddr(addr: string): string {
