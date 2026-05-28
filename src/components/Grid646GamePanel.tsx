@@ -280,9 +280,9 @@ export function Grid646GamePanel() {
         <p className="text-[11px] font-black uppercase tracking-[0.35em] text-emerald-200/90">Game</p>
         <h2 className="mt-2 text-2xl font-black text-white">Grid 6×6 · Four in a row</h2>
         <p className="mt-3 text-sm text-slate-300">
-          6×6, победа — <strong className="text-white">4 в ряд</strong>. Выбери режим:{" "}
-          <strong className="text-white">на интерес</strong> (без ставки) или{" "}
-          <strong className="text-white">на деньги</strong> (ETH в контракте).
+          6×6, win with <strong className="text-white">four in a row</strong>. Pick{" "}
+          <strong className="text-white">casual</strong> (no stake) or{" "}
+          <strong className="text-white">ranked</strong> (ETH in the contract).
         </p>
       </section>
 
@@ -296,7 +296,7 @@ export function Grid646GamePanel() {
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          На интерес
+          Casual
         </button>
         <button
           type="button"
@@ -307,7 +307,7 @@ export function Grid646GamePanel() {
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          На деньги
+          Ranked
         </button>
       </div>
 
@@ -322,8 +322,8 @@ export function Grid646GamePanel() {
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Один экран
-            <span className="mt-0.5 block font-normal text-[10px] opacity-80">без кошелька</span>
+            Same screen
+            <span className="mt-0.5 block font-normal text-[10px] opacity-80">no wallet</span>
           </button>
           <button
             type="button"
@@ -334,8 +334,8 @@ export function Grid646GamePanel() {
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Онлайн 1v1
-            <span className="mt-0.5 block font-normal text-[10px] opacity-80">2 кошелька</span>
+            Online 1v1
+            <span className="mt-0.5 block font-normal text-[10px] opacity-80">2 wallets</span>
           </button>
         </div>
       ) : null}
@@ -344,8 +344,8 @@ export function Grid646GamePanel() {
 
       {!isConnected && showOnchain ? (
         <p className="rounded-2xl border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-center text-sm text-amber-100">
-          Для онлайн-игры подключите кошелёк на <strong>Base</strong> (на телефоне — в Base app откройте
-          ссылку-приглашение).
+          Connect a wallet on <strong>Base</strong> for online play (on mobile, open the invite link in
+          Base app).
         </p>
       ) : !isOnBase && showOnchain && isConnected ? (
         <button
@@ -367,7 +367,7 @@ export function Grid646GamePanel() {
           Next game ID: {nextId != null ? String(nextId) : "…"}
           {playStyle === "money" && minStake != null && maxStake != null
             ? ` · stake ${formatEther(minStake as bigint)}–${formatEther(maxStake as bigint)} ETH`
-            : " · stake 0 ETH (на интерес)"}
+            : " · stake 0 ETH (casual)"}
         </p>
 
         {playStyle === "money" ? (
@@ -382,7 +382,7 @@ export function Grid646GamePanel() {
           </label>
         ) : (
           <p className="mt-4 rounded-xl border border-slate-400/20 bg-slate-500/10 px-4 py-3 text-sm text-slate-300">
-            Ставка <strong className="text-white">0 ETH</strong> — играйте ради счёта, без банка.
+            Stake <strong className="text-white">0 ETH</strong> — play for bragging rights, no pot.
           </p>
         )}
         <button
@@ -421,7 +421,7 @@ export function Grid646GamePanel() {
             onClick={handleJoin}
             className="mt-3 w-full rounded-xl border-2 border-cyan-300/60 bg-cyan-500/25 py-3.5 text-sm font-black text-cyan-50 disabled:opacity-50"
           >
-            Войти в игру #{gameId != null ? String(gameId) : "?"} как O · {formatGameStake(game!.stakeWei)}
+            Join game #{gameId != null ? String(gameId) : "?"} as O · {formatGameStake(game!.stakeWei)}
           </button>
         ) : null}
       </section>
@@ -437,7 +437,7 @@ export function Grid646GamePanel() {
               </span>
               {isFreeStake(game.stakeWei) ? (
                 <span className="rounded-lg border border-slate-400/30 bg-slate-500/15 px-2 py-1 text-xs text-slate-300">
-                  на интерес
+                  casual
                 </span>
               ) : (
                 <span className="rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-2 py-1 text-xs text-emerald-200">
@@ -459,29 +459,32 @@ export function Grid646GamePanel() {
             </p>
             {myRole ? (
               <p className="mt-2 text-sm font-bold text-white">
-                Вы играете за <span className={myRole === "X" ? "text-fuchsia-300" : "text-cyan-300"}>{myRole}</span>
+                You are playing as{" "}
+                <span className={myRole === "X" ? "text-fuchsia-300" : "text-cyan-300"}>{myRole}</span>
               </p>
             ) : isConnected ? (
               <p className="mt-2 text-sm text-amber-200/90">
-                Этот кошелёк не в партии — нажмите «Войти как O» выше (другой адрес, чем у создателя).
+                This wallet is not in the game — tap Join as O above (must differ from the host address).
               </p>
             ) : null}
             {waitingForOpponent ? (
               <div className="mt-3 space-y-2 rounded-xl border border-amber-300/35 bg-amber-500/10 p-3 text-sm text-amber-100">
-                <p className="font-bold">Ждём второго игрока</p>
+                <p className="font-bold">Waiting for opponent</p>
                 <p className="text-xs text-amber-200/85">
-                  Пока O не нажал Join, ходы на блокчейне недоступны. Отправьте ссылку в Base app — друг
-                  подтвердит одну транзакцию, затем ходы по очереди (X, потом O).
+                  Until O joins, onchain moves are disabled. Share the link in Base app — they confirm one
+                  transaction, then you alternate (X, then O).
                 </p>
                 <button
                   type="button"
                   onClick={() => void copyInviteLink()}
                   className="w-full rounded-lg bg-amber-500/25 py-2 text-xs font-black text-amber-50"
                 >
-                  {inviteCopied ? "Ссылка скопирована" : `Скопировать ссылку · game #${String(game.gameId)}`}
+                  {inviteCopied
+                    ? "Link copied"
+                    : `Copy invite link · game #${String(game.gameId)}`}
                 </button>
                 <p className="font-mono text-[10px] text-amber-200/70">
-                  или ID: {String(game.gameId)} → Load на втором устройстве
+                  or ID: {String(game.gameId)} → Load on the other device
                 </p>
               </div>
             ) : null}
@@ -492,13 +495,13 @@ export function Grid646GamePanel() {
                 onClick={handleJoin}
                 className="mt-3 w-full rounded-xl border-2 border-cyan-300/60 bg-cyan-500/25 py-3.5 text-sm font-black text-cyan-50 disabled:opacity-50"
               >
-                Войти как O (обязательно перед ходами)
+                Join as O (required before moves)
               </button>
             ) : null}
             {game.status === "active" ? (
               <p className="mt-1 text-xs text-emerald-300/90">
-                Ход: {game.turn === 0 ? "X" : "O"}
-                {isMyTurn ? " · ваш ход (нужна tx)" : myRole ? " · ждите соперника" : ""}
+                Turn: {game.turn === 0 ? "X" : "O"}
+                {isMyTurn ? " · your move (tx required)" : myRole ? " · wait for opponent" : ""}
               </p>
             ) : null}
             {game.status === "finished" && game.winner !== "0x0000000000000000000000000000000000000000" ? (
@@ -512,7 +515,7 @@ export function Grid646GamePanel() {
             <section className="relative rounded-3xl border border-white/10 bg-black/40 p-4">
               {game.status === "open" ? (
                 <p className="mb-3 text-center text-xs text-slate-400">
-                  Поле заблокировано до Join второго игрока
+                  Board locked until opponent joins
                 </p>
               ) : null}
               <div

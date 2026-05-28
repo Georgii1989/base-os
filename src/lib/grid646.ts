@@ -69,7 +69,7 @@ export function grid646JoinUrl(origin: string, gameId: bigint | number): string 
 }
 
 export function formatGameStake(wei: bigint): string {
-  if (isFreeStake(wei)) return "Free · на интерес";
+  if (isFreeStake(wei)) return "Free · casual";
   return `${formatStakeEth(wei)} ETH`;
 }
 

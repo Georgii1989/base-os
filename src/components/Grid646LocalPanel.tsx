@@ -67,25 +67,25 @@ export function Grid646LocalPanel() {
 
   return (
     <section className="rounded-3xl border border-slate-400/25 bg-slate-500/10 p-5">
-      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">На интерес</p>
+      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">Casual</p>
       <p className="mt-2 text-sm text-slate-300">
-        Два человека за одним экраном — без кошелька и без gas. X ходит первым.
+        Two players, one screen — no wallet, no gas. X moves first.
       </p>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm">
         <p className="font-bold text-white">
           {gameOver
             ? draw
-              ? "Ничья"
-              : `Победил ${winner}`
-            : `Ход: ${currentMark}`}
+              ? "Draw"
+              : `${winner} wins`
+            : `Turn: ${currentMark}`}
         </p>
         <button
           type="button"
           onClick={reset}
           className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-white/10"
         >
-          Новая партия
+          New game
         </button>
       </div>
 
