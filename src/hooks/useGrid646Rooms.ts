@@ -6,11 +6,13 @@ import { useReadContract, useReadContracts } from "wagmi";
 import { GRID646_ABI } from "@/lib/grid646Abi";
 import type { Grid646GameView } from "@/lib/grid646";
 import {
-  isLobbyRoom,
+  isLiveRoom,
+  isPastRoom,
   matchesPlayStyle,
   parseGetGameResult,
   recentRoomIds,
   sortLobbyRooms,
+  sortPastRooms,
   type Grid646RawGame,
 } from "@/lib/grid646Rooms";
 
@@ -47,26 +49,32 @@ export function useGrid646Rooms(
     },
   });
 
-  const rooms = useMemo(() => {
-    if (!rawGames) return [];
-    const list: Grid646GameView[] = [];
+  const { liveRooms, pastRooms } = useMemo(() => {
+    const live: Grid646GameView[] = [];
+    const past: Grid646GameView[] = [];
+    if (!rawGames) return { liveRooms: live, pastRooms: past };
     for (let i = 0; i < roomIds.length; i++) {
       const raw = rawGames[i]?.result;
       if (!raw || rawGames[i]?.status !== "success") continue;
       try {
         const game = parseGetGameResult(roomIds[i]!, raw as Grid646RawGame);
-        if (!isLobbyRoom(game) || !matchesPlayStyle(game, playStyle)) continue;
-        list.push(game);
+        if (!matchesPlayStyle(game, playStyle)) continue;
+        if (isLiveRoom(game)) live.push(game);
+        else if (isPastRoom(game)) past.push(game);
       } catch {
         /* skip invalid */
       }
     }
-    return list.sort(sortLobbyRooms);
+    return {
+      liveRooms: live.sort(sortLobbyRooms),
+      pastRooms: past.sort(sortPastRooms),
+    };
   }, [rawGames, roomIds, playStyle]);
 
   return {
     nextId: nextId as bigint | undefined,
-    rooms,
+    liveRooms,
+    pastRooms,
     refetchNextId,
     refetchRooms,
     isFetching,

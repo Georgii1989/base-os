@@ -51,16 +51,172 @@ body {
       transform: translateY(0);
     }
     50% {
-      transform: translateY(-3px);
+      transform: translateY(-4px);
+    }
+  }
+
+  @keyframes grid646-float-sign {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes grid646-mascot-float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-3deg);
+    }
+    50% {
+      transform: translateY(-12px) rotate(3deg);
+    }
+  }
+
+  @keyframes grid646-win-beam-pulse {
+    0%,
+    100% {
+      opacity: 0.85;
+      stroke-width: 2.8;
+    }
+    50% {
+      opacity: 1;
+      stroke-width: 3.6;
+    }
+  }
+
+  @keyframes grid646-cell-win-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(253, 224, 71, 0.55), 0 0 40px rgba(253, 224, 71, 0.25);
+    }
+    50% {
+      box-shadow: 0 0 28px rgba(255, 255, 255, 0.7), 0 0 50px rgba(253, 224, 71, 0.45);
+    }
+  }
+
+  @keyframes grid646-sparkle {
+    0%,
+    100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.15);
     }
   }
 
   .grid646-rainbow-char {
     animation: grid646-rainbow-bob 2.4s ease-in-out infinite;
+    text-shadow:
+      1px 1px 0 #3d1a5c,
+      2px 2px 0 #3d1a5c,
+      3px 3px 0 #2a1244,
+      4px 4px 0 #1a0c2e,
+      0 0 22px currentColor;
+  }
+
+  .grid646-float-sign {
+    animation: grid646-float-sign 4.2s ease-in-out infinite;
+  }
+
+  .grid646-mascot-float {
+    animation: grid646-mascot-float 5s ease-in-out infinite;
+  }
+
+  .grid646-mascot-float-delay {
+    animation-delay: 0.8s;
+  }
+
+  .grid646-title-six {
+    text-shadow:
+      1px 1px 0 #1e3a8a,
+      2px 2px 0 #1e3a8a,
+      3px 3px 0 #172554,
+      4px 4px 0 #0f172a,
+      0 0 24px rgba(91, 124, 255, 0.55);
+  }
+
+  .grid646-hero {
+    background: linear-gradient(165deg, #1a0f3d 0%, #12082a 40%, #0c1628 100%);
+    border: 2px solid rgba(56, 189, 248, 0.25);
+    box-shadow:
+      0 0 50px rgba(139, 92, 246, 0.2),
+      inset 0 0 60px rgba(59, 130, 246, 0.08);
+  }
+
+  .grid646-pixels {
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255, 105, 180, 0.9) 50%, transparent 50%),
+      radial-gradient(1px 1px at 85% 15%, rgba(125, 211, 252, 0.9) 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 70% 80%, rgba(253, 224, 71, 0.8) 50%, transparent 50%),
+      radial-gradient(1px 1px at 25% 75%, rgba(167, 139, 250, 0.8) 50%, transparent 50%),
+      radial-gradient(1px 1px at 50% 50%, rgba(255, 255, 255, 0.4) 50%, transparent 50%);
+    opacity: 0.7;
+  }
+
+  .grid646-board-wrap {
+    background: linear-gradient(180deg, #140a2e 0%, #0a0618 100%);
+    border: 2px solid rgba(34, 211, 238, 0.35);
+    box-shadow:
+      0 0 40px rgba(34, 211, 238, 0.15),
+      inset 0 0 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .grid646-board-grid {
+    filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.12));
+  }
+
+  .grid646-cell-x {
+    box-shadow:
+      0 0 14px rgba(244, 114, 182, 0.55),
+      inset 0 0 12px rgba(244, 114, 182, 0.15);
+    text-shadow: 0 0 12px rgba(255, 182, 193, 0.9);
+  }
+
+  .grid646-cell-o {
+    box-shadow:
+      0 0 14px rgba(34, 211, 238, 0.55),
+      inset 0 0 12px rgba(34, 211, 238, 0.12);
+    border-radius: 9999px;
+    text-shadow: 0 0 12px rgba(165, 243, 252, 0.9);
+  }
+
+  .grid646-cell-win {
+    animation: grid646-cell-win-pulse 1.2s ease-in-out infinite;
+    border-color: rgba(253, 224, 71, 0.95) !important;
+    background: rgba(253, 224, 71, 0.2) !important;
+  }
+
+  .grid646-win-beam {
+    animation: grid646-win-beam-pulse 1.2s ease-in-out infinite;
+  }
+
+  .grid646-win-sparkle {
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), transparent 55%);
+    animation: grid646-sparkle 1s ease-in-out infinite;
+  }
+
+  .grid646-win-label {
+    text-shadow:
+      0 0 20px rgba(253, 224, 71, 0.8),
+      0 0 40px rgba(253, 224, 71, 0.4),
+      3px 3px 0 rgba(0, 0, 0, 0.5);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .grid646-rainbow-char {
+    .grid646-rainbow-char,
+    .grid646-float-sign,
+    .grid646-mascot-float,
+    .grid646-cell-win,
+    .grid646-win-beam,
+    .grid646-win-sparkle {
       animation: none;
     }
   }

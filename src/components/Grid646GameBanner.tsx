@@ -1,78 +1,60 @@
 "use client";
 
-const RAINBOW = [
-  "#ff5c7a",
-  "#ff9f43",
-  "#ffd93d",
-  "#6bcb77",
-  "#4d96ff",
-  "#9b5de5",
-  "#f15bb5",
-] as const;
-
-function RainbowTitle({ text }: { text: string }) {
-  return (
-    <span className="inline leading-tight" aria-label={text}>
-      {text.split("").map((char, i) => {
-        if (char === " ") {
-          return <span key={`sp-${i}`} className="inline-block w-[0.35em]" />;
-        }
-        const color = RAINBOW[i % RAINBOW.length];
-        return (
-          <span
-            key={`${i}-${char}`}
-            className="grid646-rainbow-char inline-block font-black"
-            style={{
-              color,
-              animationDelay: `${(i % 7) * 0.08}s`,
-              textShadow: `0 0 18px ${color}55, 0 2px 0 rgba(0,0,0,0.35)`,
-            }}
-          >
-            {char}
-          </span>
-        );
-      })}
-    </span>
-  );
-}
+const GRID_LETTERS = "GRID".split("");
+const GRID_COLORS = ["#ff4d8d", "#ff9f43", "#ffe14d", "#6ee7a8", "#4dabff", "#b57bff"];
 
 export function Grid646GameBanner() {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-fuchsia-400/35 bg-gradient-to-br from-fuchsia-600/25 via-violet-900/50 to-cyan-500/25 p-6 shadow-[0_0_40px_rgba(236,72,153,0.15)]">
-      <div
-        className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-yellow-400/20 blur-2xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -bottom-10 -right-6 h-36 w-36 rounded-full bg-cyan-400/25 blur-2xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute left-1/2 top-0 h-24 w-48 -translate-x-1/2 rounded-full bg-fuchsia-500/20 blur-3xl"
-        aria-hidden
-      />
+    <section className="grid646-hero relative overflow-hidden rounded-3xl p-6 sm:p-8">
+      <div className="grid646-pixels pointer-events-none absolute inset-0" aria-hidden />
 
-      <p className="relative text-[11px] font-black uppercase tracking-[0.4em] text-fuchsia-200">
-        <span className="mr-2 inline-block animate-pulse">★</span>
-        Arcade
-        <span className="ml-2 inline-block animate-pulse">★</span>
-      </p>
+      {/* Floating mascots */}
+      <div className="grid646-mascot-o pointer-events-none absolute -left-2 bottom-4 hidden sm:block" aria-hidden>
+        <div className="grid646-mascot-float grid646-mascot-float-delay relative h-16 w-16 rounded-full border-[5px] border-cyan-400 bg-cyan-500/30 shadow-[0_0_30px_rgba(34,211,238,0.5),inset_0_0_20px_rgba(34,211,238,0.2)]">
+          <span className="absolute left-1/2 top-[38%] h-2 w-2 -translate-x-[130%] rounded-full bg-slate-900" />
+          <span className="absolute left-1/2 top-[38%] h-2 w-2 translate-x-[30%] rounded-full bg-slate-900" />
+          <span className="absolute bottom-[28%] left-1/2 h-1.5 w-4 -translate-x-1/2 rounded-full bg-slate-900/80" />
+        </div>
+      </div>
+      <div className="grid646-mascot-x pointer-events-none absolute -right-1 bottom-6 hidden sm:block" aria-hidden>
+        <div className="grid646-mascot-float relative flex h-14 w-14 items-center justify-center text-4xl font-black leading-none text-fuchsia-400 drop-shadow-[0_0_24px_rgba(244,114,182,0.8)]">
+          ✕
+        </div>
+      </div>
 
-      <h2 className="relative mt-3 text-[1.65rem] leading-snug sm:text-[1.85rem]">
-        <RainbowTitle text="Grid 6×6" />
-        <span className="mx-1.5 inline-block text-white/50">·</span>
-        <RainbowTitle text="Four in a row" />
-      </h2>
+      <div className="grid646-float-sign relative z-10 mx-auto max-w-md text-center">
+        <p className="grid646-badge mb-3 inline-block rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-cyan-200/90">
+          Base OS · Game
+        </p>
 
-      <p className="relative mt-4 text-sm leading-relaxed text-white/85">
-        Create a <strong className="text-yellow-300">room</strong>, share the number, or pick one from
-        the list.{" "}
-        <strong className="font-mono text-amber-300">1/0</strong>
-        <span className="text-white/60"> = waiting</span>
-        <span className="text-white/40"> · </span>
-        <strong className="font-mono text-emerald-300">1/1</strong>
-        <span className="text-white/60"> = full</span>
-      </p>
+        <h2 className="grid646-title-main leading-none">
+          <span className="block text-[2.4rem] font-black tracking-tight sm:text-[2.85rem]">
+            {GRID_LETTERS.map((ch, i) => (
+              <span
+                key={ch + i}
+                className="grid646-rainbow-char inline-block"
+                style={{
+                  color: GRID_COLORS[i % GRID_COLORS.length],
+                  animationDelay: `${i * 0.1}s`,
+                }}
+              >
+                {ch}
+              </span>
+            ))}{" "}
+            <span className="grid646-title-six inline-block text-[#5b7cff]">6×6</span>
+          </span>
+        </h2>
+
+        <p className="mt-3 text-sm font-semibold tracking-wide text-cyan-100/95 sm:text-base">
+          Four in a row <span className="text-white/40">·</span> on Base
+        </p>
+
+        <p className="mt-4 text-xs leading-relaxed text-white/70 sm:text-sm">
+          Create a <strong className="text-amber-200">room</strong> or pick from the lobby.{" "}
+          <span className="font-mono text-amber-300/90">1/0</span> waiting ·{" "}
+          <span className="font-mono text-emerald-300/90">1/1</span> in play
+        </p>
+      </div>
     </section>
   );
 }

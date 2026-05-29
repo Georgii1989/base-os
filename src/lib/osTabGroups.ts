@@ -1,6 +1,6 @@
 import { OS_TAB_META, type OsTabId } from "@/lib/osTabs";
 
-export type OsTabGroupId = "hub" | "trade" | "build" | "you" | "explore";
+export type OsTabGroupId = "hub" | "trade" | "build" | "you" | "explore" | "games";
 
 export type OsTabGroup = {
   id: OsTabGroupId;
@@ -11,10 +11,11 @@ export type OsTabGroup = {
 /** Primary navigation — lens is command-palette only (?tab=lens). */
 export const OS_TAB_GROUPS: OsTabGroup[] = [
   { id: "hub", label: "Hub", tabIds: ["home"] },
-  { id: "trade", label: "Trade", tabIds: ["swap", "game"] },
+  { id: "trade", label: "Trade", tabIds: ["swap"] },
   { id: "build", label: "Build", tabIds: ["launch", "tip"] },
   { id: "you", label: "You", tabIds: ["score", "portfolio", "guard", "watch"] },
   { id: "explore", label: "Explore", tabIds: ["analytics", "radar"] },
+  { id: "games", label: "Games", tabIds: ["game"] },
 ];
 
 export const OS_PRIMARY_TAB_IDS: OsTabId[] = OS_TAB_GROUPS.flatMap((g) => g.tabIds);

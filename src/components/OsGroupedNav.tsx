@@ -10,6 +10,7 @@ const ACCENT_ACTIVE: Record<string, string> = {
   build: "border-fuchsia-400/60 bg-fuchsia-500/15 text-fuchsia-100",
   you: "border-emerald-400/60 bg-emerald-500/15 text-emerald-100",
   explore: "border-amber-400/60 bg-amber-500/15 text-amber-100",
+  games: "border-rose-400/60 bg-rose-500/15 text-rose-100",
 };
 
 const GROUP_LABEL: Record<OsTabGroupId, string> = {
@@ -21,6 +22,8 @@ const GROUP_LABEL: Record<OsTabGroupId, string> = {
   you: "border-emerald-400/60 bg-gradient-to-br from-emerald-500/30 to-emerald-400/10 text-emerald-50 shadow-[0_0_14px_rgba(52,211,153,0.18)]",
   explore:
     "border-amber-400/55 bg-gradient-to-br from-amber-500/28 to-amber-400/10 text-amber-50 shadow-[0_0_14px_rgba(251,191,36,0.16)]",
+  games:
+    "border-rose-400/55 bg-gradient-to-br from-rose-500/28 to-rose-400/10 text-rose-50 shadow-[0_0_14px_rgba(251,113,133,0.16)]",
 };
 
 type Props = {

@@ -53,8 +53,36 @@ export function recentRoomIds(nextGameId: bigint | undefined, limit = ROOM_LIST_
   return ids.reverse();
 }
 
-export function isLobbyRoom(game: Grid646GameView): boolean {
+export function isLiveRoom(game: Grid646GameView): boolean {
   return game.status === "open" || game.status === "active";
+}
+
+/** @deprecated use isLiveRoom */
+export const isLobbyRoom = isLiveRoom;
+
+export function isPastRoom(game: Grid646GameView): boolean {
+  return game.status === "finished" || game.status === "cancelled";
+}
+
+export function sortPastRooms(a: Grid646GameView, b: Grid646GameView): number {
+  return Number(b.gameId - a.gameId);
+}
+
+export function historySummary(game: Grid646GameView): string {
+  if (game.status === "cancelled") return "cancelled";
+  if (isGameDraw(game)) return "draw";
+  const mark = winnerMark(game);
+  if (mark) return `${mark} won`;
+  return "ended";
+}
+
+/** Join, or resume only your own live room — never spectate or reopen finished games */
+export function canEnterRoom(game: Grid646GameView, wallet: string | undefined): boolean {
+  if (isPastRoom(game)) return false;
+  if (!wallet) return false;
+  const me = wallet.toLowerCase();
+  if (game.playerX.toLowerCase() === me) return true;
+  return hasPlayerO(game.playerO) && game.playerO.toLowerCase() === me;
 }
 
 export function matchesPlayStyle(game: Grid646GameView, playStyle: "fun" | "money"): boolean {

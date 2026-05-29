@@ -10,17 +10,26 @@ export function Grid646WinOverlay({
   const isWin = label === "WIN";
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-3xl bg-black/55 backdrop-blur-[2px]"
+      className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center rounded-3xl bg-[#0a0618]/75 backdrop-blur-[3px]"
       aria-live="polite"
     >
       <p
-        className={`animate-grid646-win font-black tracking-[0.2em] ${
-          isWin ? "text-5xl text-yellow-300 drop-shadow-[0_0_28px_rgba(250,204,21,0.65)]" : "text-4xl text-slate-200"
+        className={`grid646-win-label animate-grid646-win font-black tracking-[0.15em] ${
+          isWin
+            ? "text-5xl text-yellow-300 sm:text-6xl"
+            : "font-mono text-4xl text-slate-200 sm:text-5xl"
         }`}
       >
         {label}
       </p>
-      <p className="mt-2 max-w-[14rem] text-center text-xs font-bold text-white/90">{sublabel}</p>
+      <p className="mt-3 max-w-[16rem] text-center text-xs font-bold text-white/90 sm:text-sm">
+        {sublabel}
+      </p>
+      {isWin ? (
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.35em] text-fuchsia-300/80">
+          ★ onchain ★
+        </p>
+      ) : null}
     </div>
   );
 }

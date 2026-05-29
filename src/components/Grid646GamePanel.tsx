@@ -27,8 +27,11 @@ import {
 } from "@/lib/grid646";
 import { findWinningCells, winningCellKeys } from "@/lib/grid646Logic";
 import {
+  canEnterRoom,
   hasPlayerO,
+  historySummary,
   isGameDraw,
+  isPastRoom,
   isZeroAddress,
   parseGetGameResult,
   roomOccupancy,
@@ -69,7 +72,10 @@ export function Grid646GamePanel() {
   const [lastTxHash, setLastTxHash] = useState<`0x${string}` | null>(null);
   const [isBusy, setIsBusy] = useState(false);
 
-  const { nextId, rooms, refetchNextId, refetchRooms } = useGrid646Rooms(contract, playStyle);
+  const { nextId, liveRooms, pastRooms, refetchNextId, refetchRooms } = useGrid646Rooms(
+    contract,
+    playStyle
+  );
 
   const { data: minStake } = useReadContract({
     address: contract,
@@ -103,12 +109,12 @@ export function Grid646GamePanel() {
 
   useEffect(() => {
     const roomRaw = searchParams.get("room") ?? searchParams.get("join");
-    if (!roomRaw) return;
+    if (!roomRaw || !contract) return;
     const id = parseRoomInput(roomRaw);
     if (id == null) return;
     setRoomInput(String(id));
-    setActiveGameId(id);
-  }, [searchParams]);
+    void openRoom(id, false);
+  }, [searchParams, contract]);
 
   const game: Grid646GameView | null = useMemo(() => {
     if (!rawGame || gameId == null) return null;
@@ -123,11 +129,12 @@ export function Grid646GamePanel() {
   const gameEnded = game?.status === "finished" || game?.status === "cancelled";
   const isDraw = game != null && isGameDraw(game);
   const winMark = game ? winnerMark(game) : null;
-  const winningKeys = useMemo(() => {
-    if (!game || !winMark) return new Set<string>();
-    const cells = findWinningCells(game.xMask, game.oMask, winMark);
-    return winningCellKeys(cells);
+  const winningLine = useMemo(() => {
+    if (!game || !winMark) return null;
+    return findWinningCells(game.xMask, game.oMask, winMark);
   }, [game, winMark]);
+
+  const winningKeys = useMemo(() => winningCellKeys(winningLine), [winningLine]);
 
   function leaveRoom() {
     setActiveGameId(null);
@@ -144,6 +151,11 @@ export function Grid646GamePanel() {
     if (game.playerO.toLowerCase() === me) return "O" as const;
     return null;
   }, [game, address]);
+
+  useEffect(() => {
+    if (!game || !isPastRoom(game) || myRole != null) return;
+    leaveRoom();
+  }, [game, myRole]);
 
   const isMyTurn =
     game?.status === "active" &&
@@ -197,11 +209,7 @@ export function Grid646GamePanel() {
 
   async function openRoom(id: bigint, tryJoin: boolean) {
     if (!contract) return;
-    setActiveGameId(id);
-    setRoomInput(String(id));
     setTxNote(null);
-
-    if (!tryJoin || !address) return;
 
     try {
       const raw = await readContract(wagmiConfig, {
@@ -212,13 +220,36 @@ export function Grid646GamePanel() {
         chainId: base.id,
       });
       const loaded = parseGetGameResult(id, raw as Grid646RawGame);
-      if (canJoinGame(loaded, address)) {
-        await runTx(`Joining room #${String(id)} as O…`, {
-          functionName: "joinGame",
-          args: [id],
-          value: loaded.stakeWei,
-        });
+      if (isPastRoom(loaded)) {
+        setTxNote("This game has ended — board is no longer available.");
+        return;
       }
+      if (tryJoin) {
+        if (canJoinGame(loaded, address)) {
+          setActiveGameId(id);
+          setRoomInput(String(id));
+          await runTx(`Joining room #${String(id)} as O…`, {
+            functionName: "joinGame",
+            args: [id],
+            value: loaded.stakeWei,
+          });
+          return;
+        }
+        if (canEnterRoom(loaded, address)) {
+          setActiveGameId(id);
+          setRoomInput(String(id));
+          return;
+        }
+        setTxNote("Cannot join this room — it may be full or already started.");
+        return;
+      }
+
+      if (!canEnterRoom(loaded, address)) {
+        setTxNote("You can only open rooms you are playing in.");
+        return;
+      }
+      setActiveGameId(id);
+      setRoomInput(String(id));
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not load room";
       setTxNote(msg);
@@ -410,56 +441,96 @@ export function Grid646GamePanel() {
           <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
             <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-400">Open rooms</h3>
             <p className="mt-1 text-xs text-slate-500">
-              Recent {playStyle} games on Base · tap to open or join
+              Waiting or in play · tap to join or resume your game
             </p>
-            {rooms.length === 0 ? (
+            {liveRooms.length === 0 ? (
               <p className="mt-4 text-center text-sm text-slate-500">No open rooms yet — create one above.</p>
             ) : (
-              <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto">
-                {rooms.map((r) => {
+              <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">
+                {liveRooms.map((r) => {
                   const occ = roomOccupancy(r);
                   const joinable = canJoinGame(r, address);
-                  const mine =
-                    address != null &&
-                    (r.playerX.toLowerCase() === address.toLowerCase() ||
-                      r.playerO.toLowerCase() === address.toLowerCase());
+                  const mine = canEnterRoom(r, address);
+                  const actionable = joinable || mine;
                   return (
                     <li key={String(r.gameId)}>
-                      <button
-                        type="button"
-                        disabled={isBusy}
-                        onClick={() => void openRoom(r.gameId, joinable)}
-                        className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-xs transition ${
-                          activeGameId === r.gameId
-                            ? "border-cyan-400/50 bg-cyan-500/15"
-                            : "border-white/10 bg-black/30 hover:border-white/20"
-                        }`}
-                      >
-                        <span className="font-mono text-base font-black text-white">#{String(r.gameId)}</span>
-                        <span
-                          className={`rounded-md px-2 py-0.5 font-mono font-bold ${
-                            occ === "1/0"
-                              ? "bg-amber-500/25 text-amber-100"
-                              : "bg-emerald-500/20 text-emerald-100"
+                      {actionable ? (
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          onClick={() => void openRoom(r.gameId, joinable)}
+                          className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-xs transition ${
+                            activeGameId === r.gameId
+                              ? "border-cyan-400/50 bg-cyan-500/15"
+                              : "border-white/10 bg-black/30 hover:border-white/20"
                           }`}
                         >
-                          {occ}
-                        </span>
-                        <span className="min-w-0 flex-1 text-slate-400">
-                          X {shortenAddr(r.playerX)}
-                          {hasPlayerO(r.playerO) ? ` · O ${shortenAddr(r.playerO)}` : ""}
-                          <span className="block text-[10px] text-slate-500">{statusLabel(r.status)}</span>
-                        </span>
-                        <span className="shrink-0 font-bold text-cyan-200/90">
-                          {joinable ? "Connect" : mine ? "Open" : "View"}
-                        </span>
-                      </button>
+                          <span className="font-mono text-base font-black text-white">
+                            #{String(r.gameId)}
+                          </span>
+                          <span
+                            className={`rounded-md px-2 py-0.5 font-mono font-bold ${
+                              occ === "1/0"
+                                ? "bg-amber-500/25 text-amber-100"
+                                : "bg-emerald-500/20 text-emerald-100"
+                            }`}
+                          >
+                            {occ}
+                          </span>
+                          <span className="min-w-0 flex-1 text-slate-400">
+                            X {shortenAddr(r.playerX)}
+                            {hasPlayerO(r.playerO) ? ` · O ${shortenAddr(r.playerO)}` : ""}
+                            <span className="block text-[10px] text-slate-500">
+                              {statusLabel(r.status)}
+                            </span>
+                          </span>
+                          <span className="shrink-0 font-bold text-cyan-200/90">
+                            {joinable ? "Connect" : "Resume"}
+                          </span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-3 rounded-xl border border-white/8 bg-black/20 px-3 py-2.5 text-xs opacity-70">
+                          <span className="font-mono font-black text-white">#{String(r.gameId)}</span>
+                          <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 font-mono font-bold text-emerald-100/80">
+                            {occ}
+                          </span>
+                          <span className="min-w-0 flex-1 text-slate-500">
+                            X {shortenAddr(r.playerX)} · O {shortenAddr(r.playerO)}
+                          </span>
+                          <span className="text-slate-600">In play</span>
+                        </div>
+                      )}
                     </li>
                   );
                 })}
               </ul>
             )}
           </section>
+
+          {pastRooms.length > 0 ? (
+            <section className="rounded-3xl border border-white/8 bg-slate-950/40 p-5">
+              <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500">History</h3>
+              <p className="mt-1 text-xs text-slate-600">Finished games — results only, board not available</p>
+              <ul className="mt-3 max-h-40 space-y-2 overflow-y-auto">
+                {pastRooms.map((r) => (
+                  <li
+                    key={String(r.gameId)}
+                    className="flex items-center gap-3 rounded-xl border border-white/8 bg-black/25 px-3 py-2.5 text-xs"
+                  >
+                    <span className="font-mono text-base font-black text-slate-400">#{String(r.gameId)}</span>
+                    <span className="rounded-md bg-slate-600/30 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-400">
+                      done
+                    </span>
+                    <span className="min-w-0 flex-1 text-slate-500">
+                      X {shortenAddr(r.playerX)}
+                      {hasPlayerO(r.playerO) ? ` · O ${shortenAddr(r.playerO)}` : ""}
+                      <span className="block text-[10px] text-slate-600">{historySummary(r)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </>
       )}
 
@@ -556,11 +627,12 @@ export function Grid646GamePanel() {
             ) : null}
           </section>
 
-          {board ? (
+          {board && (!isPastRoom(game) || myRole) ? (
             <div className="relative">
               <Grid646Board
                 board={board}
                 winningKeys={winningKeys}
+                winningLine={winningLine}
                 disabled={!isMyTurn || gameEnded}
                 isBusy={isBusy}
                 onPlay={handlePlay}

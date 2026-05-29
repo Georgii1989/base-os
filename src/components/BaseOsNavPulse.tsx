@@ -10,10 +10,11 @@ import { radarProjects } from "@/lib/radarProjects";
 
 const GROUP_ANGLE: Record<OsTabGroupId, number> = {
   hub: -90,
-  trade: -18,
-  build: 54,
-  you: 126,
-  explore: 198,
+  trade: -30,
+  build: 30,
+  you: 90,
+  explore: 150,
+  games: 210,
 };
 
 const GROUP_GLOW: Record<OsTabGroupId, string> = {
@@ -22,6 +23,7 @@ const GROUP_GLOW: Record<OsTabGroupId, string> = {
   build: "#e879f9",
   you: "#34d399",
   explore: "#fbbf24",
+  games: "#fb7185",
 };
 
 function nodePos(angleDeg: number, cx: number, cy: number, r: number) {
