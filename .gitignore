@@ -46,8 +46,8 @@ yarn-error.log*
 # other local secrets
 contracts.local.env
 
-# Local ops tooling (never commit — keys, wallet fleets, automation scripts)
-scripts/qa-fleet/
+# Local-only scripts (never commit)
+scripts/local/
 
 # vercel
 .vercel
