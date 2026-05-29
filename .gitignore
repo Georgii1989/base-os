@@ -46,9 +46,11 @@ yarn-error.log*
 # other local secrets
 contracts.local.env
 
-# QA fleet (standalone scripts — private keys)
+# QA fleet (standalone scripts — private keys; ops scripts stay local only)
 scripts/qa-fleet/wallets.json
 scripts/qa-fleet/qa-fleet.local.env
+scripts/qa-fleet/close-grid646-rooms.js
+scripts/qa-fleet/grid646-run.log
 scripts/qa-fleet/*.local.json
 scripts/qa-fleet/wallets.backup.*.json
 scripts/qa-fleet/wallets.fleet-*.json
