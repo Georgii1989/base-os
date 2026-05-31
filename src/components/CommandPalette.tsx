@@ -66,6 +66,8 @@ function tabCommandIcon(tabId: OsTabId): string {
       return "⇄";
     case "game":
       return "▦";
+    case "battleship":
+      return "⚓";
     case "tip":
     default:
       return "✦";
@@ -91,6 +93,8 @@ function tabNavKeywords(tab: { id: OsTabId; label: string; eyebrow: string }): s
       return `${base} trade swap bridge relay superbridge ethereum arbitrum linea zksync bnb 0x buy sell`;
     case "game":
       return `${base} games grid 646 four row tic tac toe stake bet 1v1 play`;
+    case "battleship":
+      return `${base} battleship sea naval war ships 10x10 stake bet 1v1`;
     default:
       return base;
   }

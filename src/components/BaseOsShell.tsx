@@ -20,6 +20,7 @@ import { TokenLauncherPanel } from "@/components/TokenLauncherPanel";
 import { WalletConnectControl } from "@/components/WalletConnectControl";
 import { WalletPortfolioPanel } from "@/components/WalletPortfolioPanel";
 import { Grid646GamePanel } from "@/components/Grid646GamePanel";
+import { Battleship10GamePanel } from "@/components/Battleship10GamePanel";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
 import { BaseOsNavPulse } from "@/components/BaseOsNavPulse";
 import { OsGroupedNav } from "@/components/OsGroupedNav";
@@ -183,6 +184,7 @@ function BaseOsShellInner() {
         {activeTab === "launch" ? <TokenLauncherPanel /> : null}
         {activeTab === "swap" ? <SwapBridgePanel /> : null}
         {activeTab === "game" ? <Grid646GamePanel /> : null}
+        {activeTab === "battleship" ? <Battleship10GamePanel /> : null}
         {activeTab === "tip" ? (
           <div className="flex flex-col items-center gap-4">
             {address ? (

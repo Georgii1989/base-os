@@ -15,7 +15,7 @@ export const OS_TAB_GROUPS: OsTabGroup[] = [
   { id: "build", label: "Build", tabIds: ["launch", "tip"] },
   { id: "you", label: "You", tabIds: ["score", "portfolio", "guard", "watch"] },
   { id: "explore", label: "Explore", tabIds: ["analytics", "radar"] },
-  { id: "games", label: "Games", tabIds: ["game"] },
+  { id: "games", label: "Games", tabIds: ["game", "battleship"] },
 ];
 
 export const OS_PRIMARY_TAB_IDS: OsTabId[] = OS_TAB_GROUPS.flatMap((g) => g.tabIds);

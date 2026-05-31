@@ -212,6 +212,27 @@ NEXT_PUBLIC_GRID646_ADDRESS=0x...
 
 Stakes: `MIN_STAKE`–`MAX_STAKE` on contract (default 0.00001–0.05 ETH). Open games can be cancelled after `JOIN_TIMEOUT` if nobody joins.
 
+## Game — Battleship 10×10 (1v1, onchain)
+
+**Battleship** tab: classic Hasbro fleet (5+4+3+3+2) on a 10×10 grid. Place your fleet on-chain, then alternate shots. Hit = extra turn. Casual (0 ETH) or ranked stakes — same model as Grid646.
+
+1) Compile and deploy:
+
+```bash
+npm run contract:compile:hardhat
+npm run contract:deploy:battleship10
+```
+
+2) Add to `.env.local` / Vercel:
+
+```env
+NEXT_PUBLIC_BATTLESHIP10_ADDRESS=0x...
+```
+
+3) Flow: **Create room** → share **Game ID** → opponent **Join** → both **Confirm fleet** → tap enemy grid to **Fire**.
+
+Note: ship layouts are stored on-chain (UI hides opponent fleet during battle; advanced users could read storage — same trust model as casual onchain games).
+
 ## Notes
 
 - This project is migrated away from Farcaster mini-app SDK flow.

@@ -15,6 +15,7 @@
     "contract:deploy:factory": "node scripts/deploy-token-factory.js",
     "contract:deploy:os-supporter": "node scripts/deploy-os-supporter-nft.js",
     "contract:deploy:grid646": "node scripts/deploy-grid646.js",
+    "contract:deploy:battleship10": "node scripts/deploy-battleship10.js",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
     "base-dev:icon": "node scripts/generate-app-icon-png.mjs",
