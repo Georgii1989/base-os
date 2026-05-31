@@ -25,6 +25,11 @@ import {
   shortenAddr,
   type Grid646GameView,
 } from "@/lib/grid646";
+import {
+  canCloseCasualIdle,
+  formatIdleCountdown,
+  secondsUntilCasualClose,
+} from "@/lib/grid646Timeouts";
 import { findWinningCells, winningCellKeys } from "@/lib/grid646Logic";
 import {
   canEnterRoom,
@@ -92,6 +97,21 @@ export function Grid646GamePanel() {
     chainId: base.id,
     query: { enabled: Boolean(contract) },
   });
+
+  const { data: casualTimeoutWei } = useReadContract({
+    address: contract,
+    abi: GRID646_ABI,
+    functionName: "CASUAL_INACTIVITY_TIMEOUT",
+    chainId: base.id,
+    query: { enabled: Boolean(contract) },
+  });
+  const hasCasualIdleClose = casualTimeoutWei != null;
+
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const id = window.setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 15_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const gameId = activeGameId;
 
@@ -165,7 +185,8 @@ export function Grid646GamePanel() {
   type Grid646Write =
     | { functionName: "createGame"; value: bigint }
     | { functionName: "joinGame"; args: readonly [bigint]; value: bigint }
-    | { functionName: "play"; args: readonly [bigint, number, number] };
+    | { functionName: "play"; args: readonly [bigint, number, number] }
+    | { functionName: "closeCasualIdleGame"; args: readonly [bigint] };
 
   async function runTx(
     note: string,
@@ -308,7 +329,21 @@ export function Grid646GamePanel() {
     });
   }
 
+  function handleCloseCasualIdle(id: bigint) {
+    if (!contract || !hasCasualIdleClose) return;
+    void runTx(`Closing idle casual room #${String(id)}…`, {
+      functionName: "closeCasualIdleGame",
+      args: [id],
+    });
+  }
+
   const canJoin = game != null && canJoinGame(game, address);
+  const gameCanCloseIdle =
+    game != null && hasCasualIdleClose && canCloseCasualIdle(game, nowSec);
+  const gameIdleCountdown =
+    game != null && isFreeStake(game.stakeWei) && !gameEnded
+      ? secondsUntilCasualClose(game, nowSec)
+      : null;
 
   const waitingForOpponent =
     game?.status === "open" && !hasPlayerO(game.playerO) && myRole === "X";
@@ -452,6 +487,8 @@ export function Grid646GamePanel() {
                   const joinable = canJoinGame(r, address);
                   const mine = canEnterRoom(r, address);
                   const actionable = joinable || mine;
+                  const idleClosable =
+                    hasCasualIdleClose && canCloseCasualIdle(r, nowSec);
                   return (
                     <li key={String(r.gameId)}>
                       {actionable ? (
@@ -594,6 +631,25 @@ export function Grid646GamePanel() {
                 Turn: {game.turn === 0 ? "X" : "O"}
                 {isMyTurn ? " · your move (tx required)" : myRole ? " · wait for opponent" : ""}
               </p>
+            ) : null}
+            {isFreeStake(game.stakeWei) && hasCasualIdleClose && !gameEnded ? (
+              <p className="mt-2 text-xs text-slate-500">
+                {gameCanCloseIdle
+                  ? "No activity for 1 hour — this casual table can be closed."
+                  : gameIdleCountdown != null
+                    ? `Auto-close in ${formatIdleCountdown(gameIdleCountdown)} without join or move.`
+                    : null}
+              </p>
+            ) : null}
+            {gameCanCloseIdle ? (
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() => handleCloseCasualIdle(game.gameId)}
+                className="mt-2 w-full rounded-xl border border-slate-400/35 bg-slate-600/25 py-2.5 text-xs font-bold text-slate-200 disabled:opacity-50"
+              >
+                Close idle table (on-chain)
+              </button>
             ) : null}
             {game.status === "finished" && !isZeroAddress(game.winner) ? (
               <p className="mt-2 text-sm font-bold text-fuchsia-200">

@@ -69,7 +69,9 @@ export function sortPastRooms(a: Grid646GameView, b: Grid646GameView): number {
 }
 
 export function historySummary(game: Grid646GameView): string {
-  if (game.status === "cancelled") return "cancelled";
+  if (game.status === "cancelled") {
+    return isFreeStake(game.stakeWei) ? "closed · idle" : "cancelled";
+  }
   if (isGameDraw(game)) return "draw";
   const mark = winnerMark(game);
   if (mark) return `${mark} won`;

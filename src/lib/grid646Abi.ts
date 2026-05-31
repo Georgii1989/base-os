@@ -40,6 +40,20 @@ export const GRID646_ABI = [
   },
   {
     type: "function",
+    name: "closeCasualIdleGame",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "gameId", type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "CASUAL_INACTIVITY_TIMEOUT",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
     name: "getGame",
     stateMutability: "view",
     inputs: [{ name: "gameId", type: "uint256" }],

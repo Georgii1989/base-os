@@ -16,6 +16,8 @@ contract Grid646 {
     uint256 public constant MAX_STAKE = 0.05 ether;
     uint256 public constant JOIN_TIMEOUT = 1 hours;
     uint256 public constant MOVE_TIMEOUT = 24 hours;
+    /// @notice Casual (0 stake): open or active room closes after this idle period.
+    uint256 public constant CASUAL_INACTIVITY_TIMEOUT = 1 hours;
 
     enum Status {
         Open,
@@ -150,13 +152,30 @@ contract Grid646 {
         emit MovePlayed(gameId, msg.sender, row, col, g.turn);
     }
 
+    /// @notice Ranked only — opponent wins after MOVE_TIMEOUT. Casual uses closeCasualIdleGame.
     function claimMoveTimeout(uint256 gameId) external {
         Game storage g = games[gameId];
         if (g.status != Status.Active) revert NotActive();
+        if (g.stakeWei == 0) revert InvalidStake();
         if (block.timestamp < uint256(g.lastMoveAt) + MOVE_TIMEOUT) revert TimeoutNotReached();
 
         address winner = g.turn == 0 ? g.playerO : g.playerX;
         _finishWin(g, gameId, winner);
+    }
+
+    /// @notice Anyone can close a casual room after 1h without join or move (status → Cancelled).
+    function closeCasualIdleGame(uint256 gameId) external {
+        Game storage g = games[gameId];
+        if (g.playerX == address(0)) revert InvalidGame();
+        if (g.stakeWei != 0) revert InvalidStake();
+        if (g.status != Status.Open && g.status != Status.Active) revert NotActive();
+        if (block.timestamp < uint256(g.lastMoveAt) + CASUAL_INACTIVITY_TIMEOUT) {
+            revert TimeoutNotReached();
+        }
+
+        g.status = Status.Cancelled;
+        g.stakeWei = 0;
+        emit GameCancelled(gameId, address(0), 0);
     }
 
     function getGame(uint256 gameId)

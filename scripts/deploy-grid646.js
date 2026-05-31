@@ -129,11 +129,45 @@ async function main() {
 
   const balance = await provider.getBalance(signer.address);
   console.log(`Deployer ${signer.address} balance: ${balance} wei`);
-  const estGas = await provider.estimateGas({
-    ...(await factory.getDeployTransaction()),
-    from: signer.address,
-  });
-  const feeData = await provider.getFeeData();
+
+  const DEFAULT_DEPLOY_GAS = 2_800_000n;
+  let estGas = DEFAULT_DEPLOY_GAS;
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
+    try {
+      estGas = await provider.estimateGas({
+        ...(await factory.getDeployTransaction()),
+        from: signer.address,
+      });
+      break;
+    } catch (err) {
+      const msg = String(err?.message ?? err);
+      if (
+        attempt < 8 &&
+        (msg.includes("ECONNRESET") ||
+          msg.includes("ETIMEDOUT") ||
+          msg.includes("ECONNREFUSED") ||
+          msg.includes("socket hang up"))
+      ) {
+        console.log(`estimateGas attempt ${attempt} failed, retry…`);
+        await sleep(2000 * attempt);
+        continue;
+      }
+      console.log(`estimateGas failed — using default ${DEFAULT_DEPLOY_GAS}`);
+      estGas = DEFAULT_DEPLOY_GAS;
+      break;
+    }
+  }
+
+  let feeData;
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
+    try {
+      feeData = await provider.getFeeData();
+      break;
+    } catch (err) {
+      if (attempt === 8) throw err;
+      await sleep(2000 * attempt);
+    }
+  }
   const defaultMax = feeData.maxFeePerGas ?? 10_000_000n;
   let maxFeePerGas = defaultMax;
   const needed = estGas * defaultMax;
