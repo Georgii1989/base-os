@@ -1,0 +1,18 @@
+{
+  "appId": "69f884af879b4ae3fa1c7162",
+  "appUrl": "https://app-base-os.vercel.app",
+  "tagline": "Your Base command center",
+  "description": "Base OS: tips, onchain score, analytics, ERC-20 launch, Grid 6×6 game, swap, identity cards, app radar & token guard — one toolkit on Base.",
+  "builderCode": "bc_59omft8w",
+  "capturedAt": "2026-05-31T09:52:18.480Z",
+  "baseUrl": "https://app-base-os.vercel.app",
+  "assets": {
+    "icon": "app-icon-base-os-512.png",
+    "screenshots": [
+      "01-home.png",
+      "02-score.png",
+      "03-game.png",
+      "04-launch.png"
+    ]
+  }
+}

@@ -16,7 +16,10 @@
     "contract:deploy:os-supporter": "node scripts/deploy-os-supporter-nft.js",
     "contract:deploy:grid646": "node scripts/deploy-grid646.js",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install chromium"
+    "test:e2e:install": "playwright install chromium",
+    "base-dev:icon": "node scripts/generate-app-icon-png.mjs",
+    "base-dev:screenshots": "node scripts/capture-base-dev-assets.mjs",
+    "base-dev:assets": "npm run base-dev:icon && npm run base-dev:screenshots"
   },
   "dependencies": {
     "@base-org/account": "^2.5.5",

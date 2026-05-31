@@ -4,7 +4,22 @@ Copy-paste for **Settings → App Information** and related tabs.
 
 **Live app:** https://app-base-os.vercel.app
 
----
+**Prepared assets (local, ready to upload):** `docs/base-dev-assets/`
+
+```bash
+npm run base-dev:assets   # regenerate icon PNG + 4 phone screenshots from prod
+```
+
+| File | Use in dashboard |
+|------|------------------|
+| `app-icon-base-os-512.png` | App icon (512×512) |
+| `01-home.png` | Screenshot 1 |
+| `02-score.png` | Screenshot 2 (addresses blurred in capture) |
+| `03-game.png` | Screenshot 3 |
+| `04-launch.png` | Screenshot 4 |
+| `manifest.json` | tagline + description copy-paste |
+
+**Dashboard URL:** https://base.dev → App **App-Base-OS** → Settings → App Information
 
 ## App Information
 
