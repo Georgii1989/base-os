@@ -233,6 +233,13 @@ NEXT_PUBLIC_BATTLESHIP10_ADDRESS=0x...
 
 Note: ship layouts are stored on-chain (UI hides opponent fleet during battle; advanced users could read storage — same trust model as casual onchain games).
 
+Local QA (gitignored `scripts/local/`):
+
+```bash
+node scripts/local/run-battleship10-games.js --dry-run
+node scripts/local/run-battleship10-games.js --skip-fund --matches 0
+```
+
 ## Notes
 
 - This project is migrated away from Farcaster mini-app SDK flow.

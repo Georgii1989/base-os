@@ -75,46 +75,6 @@ export function Battleship10BattleBoards({
   );
 }
 
-export function Battleship10PlacementPreview({
-  shipsMask,
-  onShuffle,
-  disabled,
-}: {
-  shipsMask: bigint;
-  onShuffle: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <section>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-amber-200/90">
-          Fleet preview
-        </h4>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={onShuffle}
-          className="rounded-lg border border-amber-300/35 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-100 disabled:opacity-50"
-        >
-          Shuffle layout
-        </button>
-      </div>
-      <p className="mb-3 text-xs text-slate-500">
-        Classic fleet: 5 + 4 + 3 + 3 + 2 cells. Confirm sends one on-chain placement tx.
-      </p>
-      <Grid10
-        render={(r, c) => {
-          const bit = BigInt(1) << BigInt(r * GRID_SIZE + c);
-          return (shipsMask & bit) !== BigInt(0) ? "ship" : "water";
-        }}
-        interactive={false}
-        isBusy={false}
-        onCell={() => {}}
-      />
-    </section>
-  );
-}
-
 function Grid10({
   render,
   interactive,

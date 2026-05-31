@@ -13,10 +13,10 @@ import {
 } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { BATTLESHIP10_ABI, resolveBattleship10Address } from "@/lib/battleship10Abi";
-import {
-  Battleship10BattleBoards,
-  Battleship10PlacementPreview,
-} from "@/components/Battleship10Board";
+import { Battleship10BattleBoards } from "@/components/Battleship10Board";
+import { Battleship10GameEndPanel } from "@/components/Battleship10GameEndPanel";
+import { Battleship10InviteBar } from "@/components/Battleship10InviteBar";
+import { Battleship10PlacementEditor } from "@/components/Battleship10PlacementEditor";
 import { useBattleship10Rooms } from "@/hooks/useBattleship10Rooms";
 import {
   formatGameStake,
@@ -30,7 +30,7 @@ import {
   formatIdleCountdown,
   secondsUntilCasualClose,
 } from "@/lib/battleship10Timeouts";
-import { randomFleet, shipsToMask, validateFleet } from "@/lib/battleship10Logic";
+import { randomFleet, validateFleet } from "@/lib/battleship10Logic";
 import {
   canEnterRoom,
   hasPlayerO,
@@ -259,11 +259,19 @@ export function Battleship10GamePanel() {
             args: [id],
             value: loaded.stakeWei,
           });
+          setDraftFleet(randomFleet());
           return;
         }
         if (canEnterRoom(loaded, address)) {
           setActiveGameId(id);
           setRoomInput(String(id));
+          if (loaded.status === "placing" && address) {
+            const me = address.toLowerCase();
+            const roleHost = loaded.playerX.toLowerCase() === me;
+            const roleGuest = loaded.playerO.toLowerCase() === me;
+            const placed = roleHost ? loaded.placedX : roleGuest ? loaded.placedO : true;
+            if (!placed) setDraftFleet(randomFleet());
+          }
           return;
         }
         setTxNote("Cannot join — room full or already in battle.");
@@ -280,7 +288,7 @@ export function Battleship10GamePanel() {
     }
   }
 
-  function createRoom() {
+  function createRoom(afterCreate?: (id: bigint) => void) {
     if (!contract) return;
     let value = BigInt(0);
     if (playStyle === "money") {
@@ -303,9 +311,17 @@ export function Battleship10GamePanel() {
           setRoomInput(String(id));
           setHighlightRoom(id);
           setDraftFleet(randomFleet());
+          afterCreate?.(id);
         }
       }
     );
+  }
+
+  function handleCreateRematch() {
+    leaveRoom();
+    createRoom((id) => {
+      setTxNote(`Rematch room #${String(id)} — share invite link with opponent.`);
+    });
   }
 
   function handleConnect() {
@@ -345,8 +361,6 @@ export function Battleship10GamePanel() {
       args: [id],
     });
   }
-
-  const draftMask = useMemo(() => shipsToMask(draftFleet), [draftFleet]);
 
   const battleView = useMemo(() => {
     if (!game || myRole == null || game.status !== "active") return null;
@@ -444,6 +458,12 @@ export function Battleship10GamePanel() {
             >
               Create room (host)
             </button>
+
+            {highlightRoom != null && activeGameId === highlightRoom ? (
+              <div className="mt-3">
+                <Battleship10InviteBar gameId={highlightRoom} />
+              </div>
+            ) : null}
             <div className="mt-4 flex gap-2">
               <input
                 type="text"
@@ -527,24 +547,21 @@ export function Battleship10GamePanel() {
           </section>
 
           {game.status === "open" && myRole === "host" ? (
-            <p className="rounded-2xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-3 text-center text-sm text-cyan-100">
-              Share room <strong className="font-mono">#{String(game.gameId)}</strong> — waiting for
-              guest to join.
-            </p>
+            <Battleship10InviteBar gameId={game.gameId} />
           ) : null}
 
           {game.status === "placing" && myRole != null ? (
             <>
               {!myPlaced(game, myRole) ? (
                 <>
-                  <Battleship10PlacementPreview
-                    shipsMask={draftMask}
-                    onShuffle={() => setDraftFleet(randomFleet())}
+                  <Battleship10PlacementEditor
+                    fleet={draftFleet}
+                    onFleetChange={setDraftFleet}
                     disabled={isBusy}
                   />
                   <button
                     type="button"
-                    disabled={isBusy}
+                    disabled={isBusy || validateFleet(draftFleet) !== null}
                     onClick={handlePlaceShips}
                     className="w-full rounded-xl bg-amber-500/80 py-3 text-sm font-black text-white disabled:opacity-50"
                   >
@@ -580,10 +597,20 @@ export function Battleship10GamePanel() {
           ) : null}
 
           {game.status === "finished" && game.winner !== "0x0000000000000000000000000000000000000000" ? (
-            <p className="rounded-2xl border border-fuchsia-400/35 bg-fuchsia-500/15 px-4 py-4 text-center text-sm font-bold text-fuchsia-100">
-              Winner: {shortenAddr(game.winner)}
-              {!isFreeStake(game.stakeWei) ? " · takes both stakes" : ""}
-            </p>
+            <>
+              <p className="rounded-2xl border border-fuchsia-400/35 bg-fuchsia-500/15 px-4 py-4 text-center text-sm font-bold text-fuchsia-100">
+                Winner: {shortenAddr(game.winner)}
+                {!isFreeStake(game.stakeWei) ? " · takes both stakes" : ""}
+              </p>
+              <Battleship10GameEndPanel
+                game={game}
+                myRole={myRole}
+                address={address}
+                isBusy={isBusy}
+                onLeave={leaveRoom}
+                onCreateRematch={handleCreateRematch}
+              />
+            </>
           ) : null}
 
           {gameCanCloseIdle ? (
