@@ -9,7 +9,7 @@ type Props = {
   className?: string;
 };
 
-export function Battleship10LabeledGrid({ renderCell, cellInteractive, className }: Props) {
+export function Battleship10LabeledGrid({ renderCell, className }: Props) {
   return (
     <div className={className}>
       <div
