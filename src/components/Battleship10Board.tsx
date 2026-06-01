@@ -1,12 +1,13 @@
 "use client";
 
-import { GRID_SIZE } from "@/lib/battleship10";
 import {
   opponentCellView,
   ownCellView,
   type OpponentCellView,
   type OwnCellView,
 } from "@/lib/battleship10Logic";
+import { formatCoord } from "@/lib/battleship10Grid";
+import { Battleship10LabeledGrid } from "@/components/Battleship10LabeledGrid";
 
 function cellClass(view: OpponentCellView | OwnCellView, interactive: boolean): string {
   const base =
@@ -87,28 +88,23 @@ function Grid10({
   onCell: (row: number, col: number) => void;
 }) {
   return (
-    <div
-      className="grid gap-0.5 rounded-2xl border border-white/10 bg-slate-950/50 p-2 sm:gap-1 sm:p-3"
-      style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}
-    >
-      {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
-        const row = Math.floor(i / GRID_SIZE);
-        const col = i % GRID_SIZE;
+    <Battleship10LabeledGrid
+      className="rounded-2xl border border-white/10 bg-slate-950/50 p-2 sm:p-3"
+      renderCell={(row, col) => {
         const view = render(row, col);
         const canClick = interactive && view === "unknown";
         return (
           <button
-            key={`${row}-${col}`}
             type="button"
             disabled={!canClick || isBusy}
             onClick={() => onCell(row, col)}
-            className={cellClass(view, canClick)}
-            aria-label={`${row},${col} ${view}`}
+            className={`w-full ${cellClass(view, canClick)}`}
+            aria-label={`${formatCoord(row, col)} ${view}`}
           >
             {cellLabel(view)}
           </button>
         );
-      })}
-    </div>
+      }}
+    />
   );
 }

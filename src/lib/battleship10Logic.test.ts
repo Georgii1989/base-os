@@ -35,4 +35,15 @@ describe("battleship10Logic", () => {
     ]);
     expect(err).toBe("Ships overlap");
   });
+
+  it("rejects touching ships", () => {
+    const err = validateFleet([
+      { row: 0, col: 0, length: 5, horizontal: true },
+      { row: 0, col: 8, length: 4, horizontal: false },
+      { row: 0, col: 9, length: 3, horizontal: false },
+      { row: 5, col: 0, length: 3, horizontal: true },
+      { row: 9, col: 0, length: 2, horizontal: true },
+    ]);
+    expect(err).toBe("Ships too close — leave 1 cell gap");
+  });
 });

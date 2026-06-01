@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { GRID_SIZE, type ShipPlacement } from "@/lib/battleship10";
+import { type ShipPlacement } from "@/lib/battleship10";
 import { randomFleet, validateFleet } from "@/lib/battleship10Logic";
+import { formatCoord } from "@/lib/battleship10Grid";
+import { Battleship10LabeledGrid } from "@/components/Battleship10LabeledGrid";
 import {
   cellShipIndex,
   initialRemainingFleet,
@@ -140,10 +142,9 @@ export function Battleship10PlacementEditor({ fleet, onFleetChange, disabled }: 
     const previewIdx = isPreview ? fleet.length : idx;
     return (
       <button
-        key={`${row}-${col}`}
         type="button"
         disabled={disabled}
-        className={cellClassForPlacement(previewIdx, isPreview, Boolean(dragStart))}
+        className={`w-full ${cellClassForPlacement(previewIdx, isPreview, Boolean(dragStart))}`}
         onPointerDown={(e) => {
           if (disabled) return;
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -158,7 +159,7 @@ export function Battleship10PlacementEditor({ fleet, onFleetChange, disabled }: 
           if (dragStart) finishDrag();
         }}
         onClick={() => handleCellClick(row, col)}
-        aria-label={`Place ${row},${col}`}
+        aria-label={`Place ${formatCoord(row, col)}`}
       />
     );
   }
@@ -200,7 +201,8 @@ export function Battleship10PlacementEditor({ fleet, onFleetChange, disabled }: 
       </div>
 
       <p className="mb-3 text-xs text-slate-500">
-        Select ship size, drag on grid (or tap for fixed orientation). Hit = extra turn in battle.
+        Select ship size, drag on grid (or tap for fixed orientation). Ships must not touch — leave
+        at least 1 empty cell between them. Hit = extra turn in battle.
       </p>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -235,17 +237,14 @@ export function Battleship10PlacementEditor({ fleet, onFleetChange, disabled }: 
       </div>
 
       <div
-        className="grid gap-0.5 rounded-2xl border border-white/10 bg-slate-950/50 p-2 sm:gap-1 sm:p-3"
-        style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}
         onPointerLeave={() => {
           if (dragStart) finishDrag();
         }}
       >
-        {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
-          const row = Math.floor(i / GRID_SIZE);
-          const col = i % GRID_SIZE;
-          return renderCell(row, col);
-        })}
+        <Battleship10LabeledGrid
+          className="rounded-2xl border border-white/10 bg-slate-950/50 p-2 sm:p-3"
+          renderCell={(row, col) => renderCell(row, col)}
+        />
       </div>
 
       <p className="mt-2 text-center text-[10px] text-slate-600">

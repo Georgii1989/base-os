@@ -89,6 +89,7 @@ contract Battleship10 {
     error AlreadyPlaced();
     error InvalidShip();
     error ShipsOverlap();
+    error ShipsTouching();
     error InvalidCell();
     error AlreadyShot();
     error SelfJoin();
@@ -280,6 +281,7 @@ contract Battleship10 {
         }
 
         uint128 m;
+        uint128 blockMask;
         for (uint256 i = 0; i < 5; i++) {
             ShipPlaced calldata s = ships[i];
             if (s.length < 2 || s.length > 5) revert InvalidShip();
@@ -290,11 +292,40 @@ contract Battleship10 {
                 uint8 idx = r * SIZE + c;
                 uint128 bit = uint128(1) << idx;
                 if (m & bit != 0) revert ShipsOverlap();
-                m |= bit;
+                if (blockMask & bit != 0) revert ShipsTouching();
             }
+            uint128 shipMask;
+            for (uint256 j = 0; j < s.length; j++) {
+                uint8 r = s.horizontal ? s.row : s.row + uint8(j);
+                uint8 c = s.horizontal ? s.col + uint8(j) : s.col;
+                uint8 idx = r * SIZE + c;
+                uint128 bit = uint128(1) << idx;
+                m |= bit;
+                shipMask |= bit;
+            }
+            blockMask |= _neighborBlock(shipMask);
         }
         if (_popcount128(m) != FLEET_CELLS) revert InvalidShip();
         return m;
+    }
+
+    function _neighborBlock(uint128 shipMask) internal pure returns (uint128 blockMask) {
+        for (uint8 idx = 0; idx < CELLS; idx++) {
+            uint128 bit = uint128(1) << idx;
+            if (shipMask & bit == 0) continue;
+            uint8 r = idx / SIZE;
+            uint8 c = idx % SIZE;
+            for (int8 dr = -1; dr <= 1; dr++) {
+                for (int8 dc = -1; dc <= 1; dc++) {
+                    if (dr == 0 && dc == 0) continue;
+                    int16 nr = int16(uint16(r)) + int16(int8(dr));
+                    int16 nc = int16(uint16(c)) + int16(int8(dc));
+                    if (nr >= 0 && nr < int16(uint16(SIZE)) && nc >= 0 && nc < int16(uint16(SIZE))) {
+                        blockMask |= uint128(1) << (uint8(uint16(nr)) * SIZE + uint8(uint16(nc)));
+                    }
+                }
+            }
+        }
     }
 
     function _sort5(uint8[5] memory arr) internal pure {

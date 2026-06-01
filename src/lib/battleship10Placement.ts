@@ -3,7 +3,7 @@ import {
   GRID_SIZE,
   type ShipPlacement,
 } from "@/lib/battleship10";
-import { canAddShipToFleet, validateFleet } from "@/lib/battleship10Logic";
+import { canAddShipToFleet, shipPlacementError, validateFleet } from "@/lib/battleship10Logic";
 
 export function initialRemainingFleet(): number[] {
   return [...FLEET_LENGTHS];
@@ -53,7 +53,7 @@ export function tryPlaceShip(
     return { error: `No size-${ship.length} ship left in dock` };
   }
   if (!canAddShipToFleet(placed, ship)) {
-    return { error: "Ship out of bounds or overlaps another" };
+    return { error: shipPlacementError(placed, ship) ?? "Invalid placement" };
   }
   const nextRemaining = [...remaining];
   nextRemaining.splice(idx, 1);
