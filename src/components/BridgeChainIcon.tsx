@@ -3,11 +3,7 @@
 import { useState } from "react";
 import type { BridgeChainId } from "@/lib/bridgeChains";
 import { getBridgeChain } from "@/lib/bridgeChains";
-import {
-  BRIDGE_CHAIN_ACCENT,
-  BRIDGE_CHAIN_BG,
-  bridgeChainLogoSources,
-} from "@/lib/bridgeChainLogos";
+import { BRIDGE_CHAIN_ACCENT, bridgeChainLogoSources } from "@/lib/bridgeChainLogos";
 
 export function BridgeChainIcon({
   chainId,
@@ -19,8 +15,7 @@ export function BridgeChainIcon({
   const chain = getBridgeChain(chainId);
   const sources = bridgeChainLogoSources(chainId);
   const accent = BRIDGE_CHAIN_ACCENT[chainId];
-  const bg = BRIDGE_CHAIN_BG[chainId];
-  const label = chain?.shortName ?? "?";
+  const label = chain?.shortName ?? chain?.name ?? "?";
   const [srcIndex, setSrcIndex] = useState(0);
   const [imgFailed, setImgFailed] = useState(false);
   const src = sources[srcIndex];
@@ -28,17 +23,18 @@ export function BridgeChainIcon({
 
   return (
     <span
-      className="relative inline-flex shrink-0 overflow-hidden rounded-full ring-1 ring-white/15"
-      style={{ width: size, height: size, backgroundColor: bg }}
+      className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-950/80 ring-1 ring-white/12"
+      style={{ width: size, height: size }}
+      title={chain?.name}
     >
       {showLogo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
-          alt=""
+          alt={chain?.name ?? "Chain"}
           width={size}
           height={size}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
           onError={() => {
             if (srcIndex < sources.length - 1) {
               setSrcIndex((i) => i + 1);
