@@ -152,6 +152,15 @@ contract Battleship10 {
     }
 
     function placeShips(uint256 gameId, ShipPlaced[5] calldata ships) external {
+        _storeFleetMask(gameId, _validateFleet(ships));
+    }
+
+    /// @notice Place fleet as a 100-bit mask (supports snake / non-linear ships).
+    function placeFleetMask(uint256 gameId, uint128 fleetMask) external {
+        _storeFleetMask(gameId, _validateFleetMask(fleetMask));
+    }
+
+    function _storeFleetMask(uint256 gameId, uint128 mask) internal {
         Game storage g = games[gameId];
         if (g.status != Status.Placing) revert NotPlacing();
 
@@ -160,8 +169,6 @@ contract Battleship10 {
         if (!isX && !isO) revert NotPlayer();
         if (isX && g.placedX) revert AlreadyPlaced();
         if (isO && g.placedO) revert AlreadyPlaced();
-
-        uint128 mask = _validateFleet(ships);
 
         if (isX) {
             g.shipsX = mask;
@@ -307,6 +314,89 @@ contract Battleship10 {
         }
         if (_popcount128(m) != FLEET_CELLS) revert InvalidShip();
         return m;
+    }
+
+    function _validateFleetMask(uint128 m) internal pure returns (uint128) {
+        if (_popcount128(m) != FLEET_CELLS) revert InvalidShip();
+
+        uint128 remaining = m;
+        uint8[5] memory sizes;
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint8 startIdx = _lowestSetBit(remaining);
+            if (startIdx == type(uint8).max) revert InvalidShip();
+
+            (uint128 compMask, uint8 size) = _connectedComponent(remaining, startIdx);
+            sizes[i] = size;
+
+            uint128 others = m & ~compMask;
+            uint128 neigh = _neighborBlock(compMask);
+            if ((neigh & others) != 0) revert ShipsTouching();
+
+            remaining &= ~compMask;
+        }
+
+        if (remaining != 0) revert InvalidShip();
+        _sort5(sizes);
+        if (sizes[0] != 2 || sizes[1] != 3 || sizes[2] != 3 || sizes[3] != 4 || sizes[4] != 5) {
+            revert InvalidShip();
+        }
+        return m;
+    }
+
+    function _lowestSetBit(uint128 x) internal pure returns (uint8) {
+        if (x == 0) return type(uint8).max;
+        for (uint8 i = 0; i < CELLS; i++) {
+            if ((x & (uint128(1) << i)) != 0) return i;
+        }
+        return type(uint8).max;
+    }
+
+    function _connectedComponent(
+        uint128 mask,
+        uint8 start
+    ) internal pure returns (uint128 compMask, uint8 size) {
+        compMask = 0;
+        size = 0;
+        uint128 frontier = uint128(1) << start;
+        uint128 visited = 0;
+
+        while (frontier != 0) {
+            uint8 idx = _lowestSetBit(frontier);
+            frontier &= ~(uint128(1) << idx);
+            if ((visited & (uint128(1) << idx)) != 0) continue;
+            visited |= uint128(1) << idx;
+            if ((mask & (uint128(1) << idx)) == 0) continue;
+            compMask |= uint128(1) << idx;
+            size++;
+
+            uint8 r = idx / SIZE;
+            uint8 c = idx % SIZE;
+            if (r > 0) {
+                uint8 ni = (r - 1) * SIZE + c;
+                if ((mask & (uint128(1) << ni)) != 0 && (visited & (uint128(1) << ni)) == 0) {
+                    frontier |= uint128(1) << ni;
+                }
+            }
+            if (r + 1 < SIZE) {
+                uint8 ni = (r + 1) * SIZE + c;
+                if ((mask & (uint128(1) << ni)) != 0 && (visited & (uint128(1) << ni)) == 0) {
+                    frontier |= uint128(1) << ni;
+                }
+            }
+            if (c > 0) {
+                uint8 ni = r * SIZE + (c - 1);
+                if ((mask & (uint128(1) << ni)) != 0 && (visited & (uint128(1) << ni)) == 0) {
+                    frontier |= uint128(1) << ni;
+                }
+            }
+            if (c + 1 < SIZE) {
+                uint8 ni = r * SIZE + (c + 1);
+                if ((mask & (uint128(1) << ni)) != 0 && (visited & (uint128(1) << ni)) == 0) {
+                    frontier |= uint128(1) << ni;
+                }
+            }
+        }
     }
 
     function _neighborBlock(uint128 shipMask) internal pure returns (uint128 blockMask) {

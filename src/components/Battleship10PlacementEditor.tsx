@@ -2,7 +2,9 @@
 
 import { useMemo, useRef, useState } from "react";
 import { type ShipPlacement } from "@/lib/battleship10";
+import { resolveBattleship10SupportsMask } from "@/lib/battleship10Abi";
 import { randomFleet, validateFleet } from "@/lib/battleship10Logic";
+import { shipLength } from "@/lib/battleship10Ship";
 import { formatCoord } from "@/lib/battleship10Grid";
 import { Battleship10LabeledGrid } from "@/components/Battleship10LabeledGrid";
 import {
@@ -23,7 +25,7 @@ const SHIP_COLORS = [
 ];
 
 function remainingFromFleet(fleet: readonly ShipPlacement[]): number[] {
-  const used = fleet.map((s) => s.length).sort((a, b) => a - b);
+  const used = fleet.map(shipLength).sort((a, b) => a - b);
   const pool = initialRemainingFleet().sort((a, b) => a - b);
   const usedCopy = [...used];
   const rem: number[] = [];
@@ -59,6 +61,7 @@ type Props = {
 };
 
 export function Battleship10PlacementEditor({ fleet, onFleetChange, disabled }: Props) {
+  const supportsMask = resolveBattleship10SupportsMask();
   const remaining = useMemo(() => remainingFromFleet(fleet), [fleet]);
   const [selectedLength, setSelectedLength] = useState(5);
   const [horizontal, setHorizontal] = useState(true);
@@ -108,7 +111,7 @@ export function Battleship10PlacementEditor({ fleet, onFleetChange, disabled }: 
 
   function handleShuffle() {
     if (disabled) return;
-    onFleetChange(randomFleet());
+    onFleetChange(randomFleet(600, { snakes: supportsMask }));
     setNote(null);
     setDragStart(null);
     setDragEnd(null);
@@ -130,14 +133,7 @@ export function Battleship10PlacementEditor({ fleet, onFleetChange, disabled }: 
     const idx = cellShipIndex(fleet, row, col);
     let isPreview = false;
     if (idx == null && previewShip) {
-      for (let j = 0; j < previewShip.length; j++) {
-        const r = previewShip.horizontal ? previewShip.row : previewShip.row + j;
-        const c = previewShip.horizontal ? previewShip.col + j : previewShip.col;
-        if (r === row && c === col) {
-          isPreview = true;
-          break;
-        }
-      }
+      isPreview = previewShip.cells.some((c) => c.row === row && c.col === col);
     }
     const previewIdx = isPreview ? fleet.length : idx;
     return (
@@ -179,7 +175,7 @@ export function Battleship10PlacementEditor({ fleet, onFleetChange, disabled }: 
             onClick={handleShuffle}
             className="rounded-lg border border-amber-300/35 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-100 disabled:opacity-50"
           >
-            Random
+            Shuffle fleet
           </button>
           <button
             type="button"
@@ -201,8 +197,9 @@ export function Battleship10PlacementEditor({ fleet, onFleetChange, disabled }: 
       </div>
 
       <p className="mb-3 text-xs text-slate-500">
-        Select ship size, drag on grid (or tap for fixed orientation). Ships must not touch — leave
-        at least 1 empty cell between them. Hit = extra turn in battle.
+        Tap <strong className="text-amber-200/90">Shuffle fleet</strong> until the layout looks good,
+        then confirm below. Or place ships manually (drag or tap). Ships can bend like a snake.
+        Leave at least 1 empty cell between ships.
       </p>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -248,7 +245,11 @@ export function Battleship10PlacementEditor({ fleet, onFleetChange, disabled }: 
       </div>
 
       <p className="mt-2 text-center text-[10px] text-slate-600">
-        {complete ? "Fleet complete — confirm below" : `${fleet.length}/5 ships placed`}
+        {complete
+          ? "Fleet complete — confirm below when ready"
+          : fleet.length === 0
+            ? "Empty board — shuffle or place ships manually"
+            : `${fleet.length}/5 ships placed`}
       </p>
       {note ? <p className="mt-1 text-center text-xs text-amber-200/90">{note}</p> : null}
     </section>

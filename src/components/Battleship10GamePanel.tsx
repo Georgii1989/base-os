@@ -12,11 +12,16 @@ import {
   useWriteContract,
 } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
-import { BATTLESHIP10_ABI, resolveBattleship10Address } from "@/lib/battleship10Abi";
+import {
+  BATTLESHIP10_ABI,
+  resolveBattleship10Address,
+  resolveBattleship10SupportsMask,
+} from "@/lib/battleship10Abi";
 import { Battleship10BattleBoards } from "@/components/Battleship10Board";
 import { Battleship10GameEndPanel } from "@/components/Battleship10GameEndPanel";
 import { Battleship10InviteBar } from "@/components/Battleship10InviteBar";
 import { Battleship10PlacementEditor } from "@/components/Battleship10PlacementEditor";
+import { useBattleship10IdleCloser } from "@/hooks/useBattleship10IdleCloser";
 import { useBattleship10Rooms } from "@/hooks/useBattleship10Rooms";
 import {
   formatGameStake,
@@ -30,7 +35,8 @@ import {
   formatIdleCountdown,
   secondsUntilCasualClose,
 } from "@/lib/battleship10Timeouts";
-import { randomFleet, validateFleet } from "@/lib/battleship10Logic";
+import { shipsToMask, validateFleet } from "@/lib/battleship10Logic";
+import { fleetHasSnake, toStraightContractShips } from "@/lib/battleship10Ship";
 import {
   canEnterRoom,
   hasPlayerO,
@@ -59,21 +65,6 @@ function parseRoomInput(raw: string): bigint | null {
   }
 }
 
-function toContractShips(ships: ShipPlacement[]) {
-  return ships.map((s) => ({
-    row: s.row,
-    col: s.col,
-    length: s.length,
-    horizontal: s.horizontal,
-  })) as [
-    { row: number; col: number; length: number; horizontal: boolean },
-    { row: number; col: number; length: number; horizontal: boolean },
-    { row: number; col: number; length: number; horizontal: boolean },
-    { row: number; col: number; length: number; horizontal: boolean },
-    { row: number; col: number; length: number; horizontal: boolean },
-  ];
-}
-
 export function Battleship10GamePanel() {
   const contract = resolveBattleship10Address();
   const searchParams = useSearchParams();
@@ -90,7 +81,7 @@ export function Battleship10GamePanel() {
   const [txNote, setTxNote] = useState<string | null>(null);
   const [lastTxHash, setLastTxHash] = useState<`0x${string}` | null>(null);
   const [isBusy, setIsBusy] = useState(false);
-  const [draftFleet, setDraftFleet] = useState<ShipPlacement[]>(() => randomFleet());
+  const [draftFleet, setDraftFleet] = useState<ShipPlacement[]>([]);
 
   const { nextId, liveRooms, pastRooms, refetchNextId, refetchRooms } = useBattleship10Rooms(
     contract,
@@ -127,6 +118,14 @@ export function Battleship10GamePanel() {
     const id = window.setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 15_000);
     return () => window.clearInterval(id);
   }, []);
+
+  useBattleship10IdleCloser(
+    contract,
+    liveRooms,
+    nowSec,
+    Boolean(isConnected && isOnBase && contract),
+    () => void refetchRooms()
+  );
 
   const gameId = activeGameId;
 
@@ -187,9 +186,10 @@ export function Battleship10GamePanel() {
   type BsWrite =
     | { functionName: "createGame"; value: bigint }
     | { functionName: "joinGame"; args: readonly [bigint]; value: bigint }
+    | { functionName: "placeFleetMask"; args: readonly [bigint, bigint] }
     | {
         functionName: "placeShips";
-        args: readonly [bigint, ReturnType<typeof toContractShips>];
+        args: readonly [bigint, ReturnType<typeof toStraightContractShips>];
       }
     | { functionName: "fire"; args: readonly [bigint, number, number] }
     | { functionName: "closeCasualIdleGame"; args: readonly [bigint] };
@@ -259,19 +259,12 @@ export function Battleship10GamePanel() {
             args: [id],
             value: loaded.stakeWei,
           });
-          setDraftFleet(randomFleet());
+          setDraftFleet([]);
           return;
         }
         if (canEnterRoom(loaded, address)) {
           setActiveGameId(id);
           setRoomInput(String(id));
-          if (loaded.status === "placing" && address) {
-            const me = address.toLowerCase();
-            const roleHost = loaded.playerX.toLowerCase() === me;
-            const roleGuest = loaded.playerO.toLowerCase() === me;
-            const placed = roleHost ? loaded.placedX : roleGuest ? loaded.placedO : true;
-            if (!placed) setDraftFleet(randomFleet());
-          }
           return;
         }
         setTxNote("Cannot join — room full or already in battle.");
@@ -310,7 +303,7 @@ export function Battleship10GamePanel() {
           setActiveGameId(id);
           setRoomInput(String(id));
           setHighlightRoom(id);
-          setDraftFleet(randomFleet());
+          setDraftFleet([]);
           afterCreate?.(id);
         }
       }
@@ -340,10 +333,21 @@ export function Battleship10GamePanel() {
       setTxNote(err);
       return;
     }
-    void runTx("Placing fleet on-chain…", {
-      functionName: "placeShips",
-      args: [gameId, toContractShips(draftFleet)],
-    });
+    const supportsMask = resolveBattleship10SupportsMask();
+    if (fleetHasSnake(draftFleet) && !supportsMask) {
+      setTxNote("Snake ships need contract v3 (placeFleetMask). Shuffle again for straight layout.");
+      return;
+    }
+    const useMask = supportsMask || fleetHasSnake(draftFleet);
+    void runTx("Placing fleet on-chain…", useMask
+      ? {
+          functionName: "placeFleetMask",
+          args: [gameId, shipsToMask(draftFleet)],
+        }
+      : {
+          functionName: "placeShips",
+          args: [gameId, toStraightContractShips(draftFleet)],
+        });
   }
 
   function handleFire(row: number, col: number) {
@@ -441,6 +445,11 @@ export function Battleship10GamePanel() {
                 ? ` · ${formatEther(minStake as bigint)}–${formatEther(maxStake as bigint)} ETH`
                 : " · 0 ETH"}
             </p>
+            {playStyle === "fun" ? (
+              <p className="mt-2 text-[10px] text-slate-600">
+                Idle casual rooms auto-close on-chain after 1 hour (cleaned up when lobby is open).
+              </p>
+            ) : null}
             {playStyle === "money" ? (
               <input
                 type="text"

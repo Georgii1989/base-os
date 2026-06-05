@@ -4,6 +4,11 @@ import {
   type ShipPlacement,
 } from "@/lib/battleship10";
 import { canAddShipToFleet, shipPlacementError, validateFleet } from "@/lib/battleship10Logic";
+import {
+  cellInShip,
+  shipLength,
+  straightShip,
+} from "@/lib/battleship10Ship";
 
 export function initialRemainingFleet(): number[] {
   return [...FLEET_LENGTHS];
@@ -15,10 +20,10 @@ export function shipAtAnchor(
   length: number,
   horizontal: boolean
 ): ShipPlacement {
-  return { row, col, length, horizontal };
+  return straightShip(row, col, length, horizontal);
 }
 
-/** Drag between two cells on same row or column → ship segment. */
+/** Drag between two cells on same row or column → straight ship. */
 export function shipFromDrag(
   start: { row: number; col: number },
   end: { row: number; col: number }
@@ -33,14 +38,14 @@ export function shipFromDrag(
     const col = dc >= 0 ? start.col : end.col;
     const row = start.row;
     if (row < 0 || row >= GRID_SIZE || col < 0 || col + length > GRID_SIZE) return null;
-    return { row, col, length, horizontal: true };
+    return straightShip(row, col, length, true);
   }
 
   const length = Math.abs(dr) + 1;
   const row = dr >= 0 ? start.row : end.row;
   const col = start.col;
   if (col < 0 || col >= GRID_SIZE || row < 0 || row + length > GRID_SIZE) return null;
-  return { row, col, length, horizontal: false };
+  return straightShip(row, col, length, false);
 }
 
 export function tryPlaceShip(
@@ -48,9 +53,10 @@ export function tryPlaceShip(
   remaining: readonly number[],
   ship: ShipPlacement
 ): { placed: ShipPlacement[]; remaining: number[] } | { error: string } {
-  const idx = remaining.indexOf(ship.length);
+  const len = shipLength(ship);
+  const idx = remaining.indexOf(len);
   if (idx === -1) {
-    return { error: `No size-${ship.length} ship left in dock` };
+    return { error: `No size-${len} ship left in dock` };
   }
   if (!canAddShipToFleet(placed, ship)) {
     return { error: shipPlacementError(placed, ship) ?? "Invalid placement" };
@@ -68,7 +74,7 @@ export function undoLastShip(
   const last = placed[placed.length - 1]!;
   return {
     placed: placed.slice(0, -1),
-    remaining: [...remaining, last.length].sort((a, b) => b - a),
+    remaining: [...remaining, shipLength(last)].sort((a, b) => b - a),
   };
 }
 
@@ -78,12 +84,7 @@ export function cellShipIndex(
   col: number
 ): number | null {
   for (let i = 0; i < placed.length; i++) {
-    const s = placed[i]!;
-    for (let j = 0; j < s.length; j++) {
-      const r = s.horizontal ? s.row : s.row + j;
-      const c = s.horizontal ? s.col + j : s.col;
-      if (r === row && c === col) return i;
-    }
+    if (cellInShip(placed[i]!, row, col)) return i;
   }
   return null;
 }
@@ -99,22 +100,19 @@ export function previewMask(
   let mask = BigInt(0);
   const all = preview ? [...placed, preview] : placed;
   for (const s of all) {
-    for (let i = 0; i < s.length; i++) {
-      const r = s.horizontal ? s.row : s.row + i;
-      const c = s.horizontal ? s.col + i : s.col;
-      mask |= BigInt(1) << BigInt(r * GRID_SIZE + c);
+    for (const { row, col } of s.cells) {
+      mask |= BigInt(1) << BigInt(row * GRID_SIZE + col);
     }
   }
   return mask;
 }
 
-/** Preview ship when dragging with a fixed selected length. */
 export function shipFromDragWithLength(
   start: { row: number; col: number },
   end: { row: number; col: number },
   length: number
 ): ShipPlacement | null {
   const raw = shipFromDrag(start, end);
-  if (!raw || raw.length !== length) return null;
+  if (!raw || shipLength(raw) !== length) return null;
   return raw;
 }

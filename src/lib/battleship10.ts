@@ -18,10 +18,7 @@ export const BATTLESHIP10_STATUS: Record<number, Battleship10Status> = {
 };
 
 export type ShipPlacement = {
-  row: number;
-  col: number;
-  length: number;
-  horizontal: boolean;
+  cells: readonly { row: number; col: number }[];
 };
 
 export type Battleship10GameView = {

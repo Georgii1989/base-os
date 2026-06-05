@@ -5,12 +5,13 @@ import {
   shipsToMask,
   validateFleet,
 } from "@/lib/battleship10Logic";
+import { shipLength, straightShip } from "@/lib/battleship10Ship";
 
 describe("battleship10Logic", () => {
   it("validates classic fleet lengths", () => {
     const ships = randomFleet();
     expect(validateFleet(ships)).toBeNull();
-    expect(ships.map((s) => s.length).sort()).toEqual([...FLEET_LENGTHS].sort());
+    expect(ships.map(shipLength).sort()).toEqual([...FLEET_LENGTHS].sort());
   });
 
   it("shipsToMask has 17 bits", () => {
@@ -27,23 +28,42 @@ describe("battleship10Logic", () => {
 
   it("rejects overlap", () => {
     const err = validateFleet([
-      { row: 0, col: 0, length: 5, horizontal: true },
-      { row: 0, col: 4, length: 4, horizontal: true },
-      { row: 2, col: 0, length: 3, horizontal: true },
-      { row: 4, col: 0, length: 3, horizontal: true },
-      { row: 6, col: 0, length: 2, horizontal: true },
+      straightShip(0, 0, 5, true),
+      straightShip(0, 4, 4, true),
+      straightShip(2, 0, 3, true),
+      straightShip(4, 0, 3, true),
+      straightShip(6, 0, 2, true),
     ]);
     expect(err).toBe("Ships overlap");
   });
 
   it("rejects touching ships", () => {
     const err = validateFleet([
-      { row: 0, col: 0, length: 5, horizontal: true },
-      { row: 0, col: 8, length: 4, horizontal: false },
-      { row: 0, col: 9, length: 3, horizontal: false },
-      { row: 5, col: 0, length: 3, horizontal: true },
-      { row: 9, col: 0, length: 2, horizontal: true },
+      straightShip(0, 0, 5, true),
+      straightShip(0, 8, 4, false),
+      straightShip(0, 9, 3, false),
+      straightShip(5, 0, 3, true),
+      straightShip(9, 0, 2, true),
     ]);
     expect(err).toBe("Ships too close — leave 1 cell gap");
+  });
+
+  it("accepts snake ship", () => {
+    const snake = {
+      cells: [
+        { row: 0, col: 0 },
+        { row: 0, col: 1 },
+        { row: 1, col: 1 },
+        { row: 1, col: 2 },
+      ],
+    };
+    const fleet = [
+      snake,
+      straightShip(3, 0, 5, true),
+      straightShip(5, 0, 3, true),
+      straightShip(7, 0, 3, true),
+      straightShip(9, 0, 2, true),
+    ];
+    expect(validateFleet(fleet)).toBeNull();
   });
 });

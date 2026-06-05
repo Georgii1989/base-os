@@ -34,6 +34,16 @@ export const BATTLESHIP10_ABI = [
   },
   {
     type: "function",
+    name: "placeFleetMask",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "gameId", type: "uint256" },
+      { name: "fleetMask", type: "uint128" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
     name: "fire",
     stateMutability: "nonpayable",
     inputs: [
@@ -155,4 +165,9 @@ export function resolveBattleship10Address(): `0x${string}` | undefined {
   const raw = process.env.NEXT_PUBLIC_BATTLESHIP10_ADDRESS?.trim();
   if (raw && /^0x[a-fA-F0-9]{40}$/.test(raw)) return raw as `0x${string}`;
   return undefined;
+}
+
+/** Set to "1" after deploying contract with placeFleetMask (snake ships). */
+export function resolveBattleship10SupportsMask(): boolean {
+  return process.env.NEXT_PUBLIC_BATTLESHIP10_MASK_PLACEMENT === "1";
 }

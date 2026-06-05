@@ -3,6 +3,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { ContractFactory, Wallet, JsonRpcProvider } = require("ethers");
 
+const BASE_CHAIN_ID = 8453;
+const DEFAULT_DEPLOY_GAS = 3_500_000n;
+const RPC_PROBE_MS = 15_000;
+
 function loadEnvFile(filePath) {
   const text = fs.readFileSync(filePath, "utf8");
   for (const rawLine of text.split(/\r?\n/)) {
@@ -54,140 +58,164 @@ async function sleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function deployWithRetries(factory, args, overrides) {
-  const maxAttempts = 10;
+function isTransientRpcError(err) {
+  const msg = String(err?.message ?? err);
+  return (
+    msg.includes("ECONNRESET") ||
+    msg.includes("ETIMEDOUT") ||
+    msg.includes("TIMEOUT") ||
+    msg.includes("ECONNREFUSED") ||
+    msg.includes("socket hang up") ||
+    msg.includes("RPC probe timeout") ||
+    msg.includes("failed to detect network")
+  );
+}
+
+async function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    sleep(ms).then(() => {
+      throw new Error(`${label} timeout after ${ms}ms`);
+    }),
+  ]);
+}
+
+const RPC_FALLBACKS = [
+  "https://base.drpc.org",
+  "https://rpc.ankr.com/base",
+  "https://base-rpc.publicnode.com",
+  "https://mainnet.base.org",
+  "https://base.llamarpc.com",
+  process.env.BASE_RPC_URL,
+].filter(Boolean);
+
+async function probeRpc(rpcUrl) {
+  const provider = new JsonRpcProvider(rpcUrl, BASE_CHAIN_ID, { staticNetwork: true });
+  const block = await withTimeout(provider.getBlockNumber(), RPC_PROBE_MS, `RPC ${rpcUrl}`);
+  console.log(`RPC OK: ${rpcUrl} (block ${block})`);
+  return provider;
+}
+
+async function deployViaBroadcast(signer, factory, overrides) {
+  const deployTx = await factory.getDeployTransaction();
+  const nonce = await withTimeout(
+    signer.provider.getTransactionCount(signer.address, "pending"),
+    RPC_PROBE_MS,
+    "getTransactionCount"
+  );
+  const txRequest = {
+    ...deployTx,
+    chainId: BASE_CHAIN_ID,
+    nonce,
+    gasLimit: DEFAULT_DEPLOY_GAS,
+    type: 2,
+    ...overrides,
+  };
+  const signed = await signer.signTransaction(txRequest);
+  const sent = await withTimeout(
+    signer.provider.broadcastTransaction(signed),
+    RPC_PROBE_MS,
+    "broadcastTransaction"
+  );
+  console.log(`Deploy tx (broadcast): ${sent.hash}`);
+  const receipt = await withTimeout(sent.wait(1), 180_000, "tx.wait");
+  if (!receipt || receipt.status !== 1) {
+    throw new Error(`Deploy tx failed: ${sent.hash}`);
+  }
+  const address = receipt.contractAddress;
+  if (!address) throw new Error("No contract address in receipt");
+  return { address, hash: sent.hash };
+}
+
+async function deployWithRetries(factory, signer, overrides) {
+  const maxAttempts = 6;
   let lastErr;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      const contract = await factory.deploy(...args, {
-        gasLimit: 3_200_000n,
-        ...overrides,
-      });
-      const tx = contract.deploymentTransaction();
-      if (!tx) throw new Error("No deployment transaction");
-      console.log(`Deploy tx: ${tx.hash}`);
-      const receipt = await tx.wait(2);
-      if (!receipt || receipt.status !== 1) {
-        throw new Error(`Deploy tx failed: ${tx.hash}`);
+      if (attempt <= 2) {
+        const contract = await factory.deploy({
+          gasLimit: DEFAULT_DEPLOY_GAS,
+          ...overrides,
+        });
+        const tx = contract.deploymentTransaction();
+        if (!tx) throw new Error("No deployment transaction");
+        console.log(`Deploy tx: ${tx.hash}`);
+        const receipt = await withTimeout(tx.wait(1), 180_000, "tx.wait");
+        if (!receipt || receipt.status !== 1) {
+          throw new Error(`Deploy tx failed: ${tx.hash}`);
+        }
+        const address = await contract.getAddress();
+        return { address, hash: tx.hash };
       }
-      const address = await contract.getAddress();
-      return { contract, address, hash: tx.hash };
+      return await deployViaBroadcast(signer, factory, overrides);
     } catch (err) {
       lastErr = err;
-      const msg = String(err?.message ?? err);
-      if (
-        !msg.includes("ECONNRESET") &&
-        !msg.includes("ETIMEDOUT") &&
-        !msg.includes("ECONNREFUSED") &&
-        !msg.includes("socket hang up")
-      ) {
-        throw err;
-      }
-      if (attempt === maxAttempts) throw err;
-      const backoff = 2000 * attempt;
-      console.log(`Deploy attempt ${attempt} failed. Retrying in ${backoff}ms…`);
+      if (!isTransientRpcError(err) || attempt === maxAttempts) throw err;
+      const backoff = 1500 * attempt;
+      console.log(`Deploy attempt ${attempt} failed (${err.message ?? err}). Retry in ${backoff}ms…`);
       await sleep(backoff);
     }
   }
   throw lastErr;
 }
 
-const RPC_FALLBACKS = [
-  process.env.BASE_RPC_URL,
-  "https://mainnet.base.org",
-  "https://base.llamarpc.com",
-  "https://1rpc.io/base",
-].filter(Boolean);
-
-async function main() {
-  const deployerPkRaw = process.env.DEPLOYER_PRIVATE_KEY;
-
-  if (!isValidPrivateKey(deployerPkRaw)) {
-    throw new Error("DEPLOYER_PRIVATE_KEY missing or invalid in contracts.local.env");
-  }
-
-  const artifact = readArtifact("Battleship10.sol", "Battleship10");
-  let provider;
-  let lastRpcErr;
-  for (const rpcUrl of RPC_FALLBACKS) {
-    try {
-      provider = new JsonRpcProvider(rpcUrl, undefined, { staticNetwork: true });
-      await provider.getBlockNumber();
-      console.log(`RPC: ${rpcUrl}`);
-      lastRpcErr = null;
-      break;
-    } catch (err) {
-      lastRpcErr = err;
-      console.log(`RPC failed (${rpcUrl}): ${err.message ?? err}`);
-    }
-  }
-  if (!provider) {
-    throw lastRpcErr ?? new Error("No working Base RPC");
-  }
-  const signer = new Wallet(normalizePrivateKey(deployerPkRaw), provider);
+async function tryDeployOnRpc(rpcUrl, signerPk, artifact) {
+  const provider = await probeRpc(rpcUrl);
+  const signer = new Wallet(signerPk, provider);
   const factory = new ContractFactory(artifact.abi, artifact.bytecode, signer);
 
-  const balance = await provider.getBalance(signer.address);
+  const balance = await withTimeout(
+    provider.getBalance(signer.address),
+    RPC_PROBE_MS,
+    "getBalance"
+  );
   console.log(`Deployer ${signer.address} balance: ${balance} wei`);
 
-  const DEFAULT_DEPLOY_GAS = 3_200_000n;
-  let estGas = DEFAULT_DEPLOY_GAS;
-  for (let attempt = 1; attempt <= 8; attempt += 1) {
-    try {
-      estGas = await provider.estimateGas({
-        ...(await factory.getDeployTransaction()),
-        from: signer.address,
-      });
-      break;
-    } catch (err) {
-      const msg = String(err?.message ?? err);
-      if (
-        attempt < 8 &&
-        (msg.includes("ECONNRESET") ||
-          msg.includes("ETIMEDOUT") ||
-          msg.includes("ECONNREFUSED") ||
-          msg.includes("socket hang up"))
-      ) {
-        console.log(`estimateGas attempt ${attempt} failed, retry…`);
-        await sleep(2000 * attempt);
-        continue;
-      }
-      console.log(`estimateGas failed — using default ${DEFAULT_DEPLOY_GAS}`);
-      estGas = DEFAULT_DEPLOY_GAS;
-      break;
-    }
+  const maxFeePerGas =
+    balance < DEFAULT_DEPLOY_GAS * 8_000_000n
+      ? (balance * 85n) / 100n / DEFAULT_DEPLOY_GAS
+      : 8_000_000n;
+  if (maxFeePerGas < 1_000_000n) {
+    throw new Error(`Insufficient balance on ${rpcUrl}`);
   }
-
-  let feeData;
-  for (let attempt = 1; attempt <= 8; attempt += 1) {
-    try {
-      feeData = await provider.getFeeData();
-      break;
-    } catch (err) {
-      if (attempt === 8) throw err;
-      await sleep(2000 * attempt);
-    }
-  }
-  const defaultMax = feeData.maxFeePerGas ?? 10_000_000n;
-  let maxFeePerGas = defaultMax;
-  const needed = estGas * defaultMax;
-  if (balance < needed && estGas > 0n) {
-    maxFeePerGas = (balance * 88n) / 100n / estGas;
-    console.log(`Low balance — using maxFeePerGas ${maxFeePerGas}`);
-  }
+  console.log(`Using gasLimit=${DEFAULT_DEPLOY_GAS} maxFeePerGas=${maxFeePerGas}`);
 
   console.log("Deploying Battleship10 to Base…");
-  const deployed = await deployWithRetries(factory, [], {
-    gasLimit: estGas + 80_000n,
+  return deployWithRetries(factory, signer, {
     maxFeePerGas,
     maxPriorityFeePerGas: 1n,
   });
-  const address = deployed.address;
-  console.log(`Battleship10 deployed at: ${address}`);
-  console.log(`https://basescan.org/address/${address}`);
-  console.log("");
-  console.log("Add to .env.local and Vercel:");
-  console.log(`NEXT_PUBLIC_BATTLESHIP10_ADDRESS=${address}`);
+}
+
+async function main() {
+  const deployerPkRaw = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!isValidPrivateKey(deployerPkRaw)) {
+    throw new Error("DEPLOYER_PRIVATE_KEY missing or invalid in contracts.local.env");
+  }
+  const deployerPk = normalizePrivateKey(deployerPkRaw);
+  const artifact = readArtifact("Battleship10.sol", "Battleship10");
+
+  const seen = new Set();
+  let lastErr;
+  for (const rpcUrl of RPC_FALLBACKS) {
+    if (seen.has(rpcUrl)) continue;
+    seen.add(rpcUrl);
+    try {
+      const deployed = await tryDeployOnRpc(rpcUrl, deployerPk, artifact);
+      const address = deployed.address;
+      console.log(`Battleship10 deployed at: ${address}`);
+      console.log(`https://basescan.org/address/${address}`);
+      console.log("");
+      console.log("Add to .env.local and Vercel:");
+      console.log(`NEXT_PUBLIC_BATTLESHIP10_ADDRESS=${address}`);
+      console.log(`NEXT_PUBLIC_BATTLESHIP10_MASK_PLACEMENT=1`);
+      return;
+    } catch (err) {
+      lastErr = err;
+      console.log(`Failed on ${rpcUrl}: ${err.message ?? err}`);
+    }
+  }
+  throw lastErr ?? new Error("All RPC endpoints failed");
 }
 
 main().catch((err) => {
