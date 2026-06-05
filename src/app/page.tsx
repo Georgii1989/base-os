@@ -2,20 +2,34 @@ import { BaseOsShell } from "@/components/BaseOsShell";
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-[100dvh] w-full items-start justify-center overflow-hidden bg-[#070313] px-3 py-4 md:px-8">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(217,70,239,0.32),transparent_38%),radial-gradient(circle_at_75%_30%,rgba(34,211,238,0.24),transparent_38%),radial-gradient(circle_at_55%_80%,rgba(236,72,153,0.26),transparent_42%)]" />
-      <div className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-fuchsia-600/20 blur-3xl os-animate-drift" />
-      <div className="pointer-events-none absolute -right-16 top-32 h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl os-animate-drift-slow" />
-      <div className="pointer-events-none absolute bottom-24 left-1/3 h-56 w-56 rounded-full bg-violet-600/15 blur-3xl os-animate-drift [animation-delay:4s]" />
+    <main className="relative flex min-h-[100dvh] w-full items-start justify-center overflow-hidden bg-[var(--os-void)] px-3 py-4 md:px-8">
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.45]"
+        className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-          maskImage: "radial-gradient(ellipse 85% 65% at 50% 18%, black, transparent)",
+          background: `
+            radial-gradient(ellipse 90% 55% at 15% 8%, rgba(245, 158, 11, 0.14), transparent 52%),
+            radial-gradient(ellipse 70% 50% at 88% 12%, rgba(139, 92, 246, 0.16), transparent 48%),
+            radial-gradient(ellipse 60% 45% at 50% 95%, rgba(109, 40, 217, 0.12), transparent 50%),
+            radial-gradient(ellipse 40% 30% at 72% 68%, rgba(251, 191, 36, 0.06), transparent 45%)
+          `,
         }}
       />
+      <div className="pointer-events-none absolute -left-32 top-10 h-96 w-96 rounded-full bg-amber-500/10 blur-[100px] os-animate-drift" />
+      <div className="pointer-events-none absolute -right-24 top-24 h-80 w-80 rounded-full bg-violet-600/12 blur-[90px] os-animate-drift-slow" />
+      <div
+        className="pointer-events-none absolute bottom-16 left-1/4 h-64 w-64 rounded-full bg-violet-500/8 blur-[80px] os-animate-drift [animation-delay:5s]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.22]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(245,158,11,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.04) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+          maskImage: "radial-gradient(ellipse 90% 70% at 50% 15%, black, transparent)",
+        }}
+      />
+      <div className="os-grain" aria-hidden />
       <BaseOsShell />
     </main>
   );

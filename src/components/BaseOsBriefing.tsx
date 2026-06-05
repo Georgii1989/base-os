@@ -135,13 +135,11 @@ export function BaseOsBriefing({
   });
 
   return (
-    <section className="os-animate-fade-up rounded-3xl border border-violet-300/25 bg-gradient-to-br from-violet-500/10 via-slate-950/70 to-cyan-500/10 p-5 shadow-[0_0_48px_rgba(139,92,246,0.12)] md:p-6">
+    <section className="os-animate-fade-up os-panel border-violet-400/20 bg-gradient-to-br from-violet-500/8 via-slate-950/80 to-amber-500/5 p-5 shadow-[0_0_48px_rgba(139,92,246,0.1)] md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.35em] text-violet-200/90">
-            Base OS Briefing
-          </p>
-          <h2 className="mt-1 text-2xl font-black text-white md:text-3xl">
+          <p className="os-eyebrow text-violet-200/90">Base OS Briefing</p>
+          <h2 className="os-display mt-2 text-2xl font-semibold text-white md:text-3xl">
             {isConnected && address ? `Your command center` : `One system for Base`}
           </h2>
           <p className="mt-2 text-sm text-slate-400">
@@ -193,14 +191,14 @@ function BriefingCard({
       type="button"
       onClick={onAction}
       style={{ animationDelay: `${delayMs}ms` }}
-      className={`os-animate-fade-up group flex flex-col rounded-2xl border bg-black/35 p-4 text-left transition hover:bg-black/50 ${ACCENT_BORDER[item.accent]}`}
+      className={`os-animate-fade-up os-panel-bento group flex flex-col p-4 ${ACCENT_BORDER[item.accent]}`}
     >
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-lg">
           {item.icon}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-black text-white group-hover:text-cyan-100">{item.title}</p>
+          <p className="font-bold text-white group-hover:text-amber-100">{item.title}</p>
           <p className="mt-1 text-xs leading-relaxed text-slate-400">{item.description}</p>
         </div>
       </div>

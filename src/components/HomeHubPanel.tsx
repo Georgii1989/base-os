@@ -131,10 +131,8 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
     <div className="grid gap-5">
       <BaseOsBriefing setActiveTab={setActiveTab} />
 
-      <section
-        className="os-animate-fade-up rounded-3xl border border-white/10 bg-slate-950/50 p-5 [animation-delay:80ms]"
-      >
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Base pulse</p>
+      <section className="os-animate-fade-up os-panel p-5 [animation-delay:80ms]">
+        <p className="os-eyebrow text-slate-400">Base pulse</p>
         {analyticsLoading ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -157,12 +155,10 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
       </section>
 
       {connectedAddress ? (
-        <section className="os-animate-fade-up rounded-3xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-5 [animation-delay:160ms]">
+        <section className="os-animate-fade-up os-panel border-violet-400/20 p-5 [animation-delay:160ms]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/80">
-                Your wallet
-              </p>
+              <p className="os-eyebrow text-violet-200/80">Your wallet</p>
               <p className="mt-1 font-mono text-sm font-bold text-fuchsia-100">
                 {shortenAddressDisplay(connectedAddress)}
               </p>
@@ -181,7 +177,7 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
               <button
                 type="button"
                 onClick={() => setActiveTab("score")}
-                className="rounded-xl bg-gradient-to-r from-cyan-500/80 to-fuchsia-500/70 px-4 py-2 text-sm font-black text-white"
+                className="os-cta os-display px-4 py-2 text-sm"
               >
                 Full score & breakdown
               </button>
@@ -201,7 +197,7 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
           ) : null}
         </section>
       ) : (
-        <section className="os-animate-fade-up rounded-3xl border border-dashed border-white/15 bg-black/25 p-5 text-center [animation-delay:160ms]">
+        <section className="os-animate-fade-up os-panel border-dashed p-5 text-center [animation-delay:160ms]">
           <p className="text-sm text-slate-400">
             Connect a wallet to see your score here, or paste any address on the{" "}
             <button
@@ -217,19 +213,19 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
       )}
 
       <section className="os-animate-fade-up [animation-delay:220ms]">
-        <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Modules</p>
+        <p className="os-eyebrow mb-3 text-slate-400">Modules</p>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {MODULES.map((card, i) => (
             <button
               key={card.tab}
               type="button"
               onClick={() => setActiveTab(card.tab)}
-              className={`os-animate-fade-up rounded-3xl border border-white/12 bg-gradient-to-br ${card.accent} p-5 text-left transition hover:border-cyan-200/40 hover:shadow-[0_0_28px_rgba(168,85,247,0.15)] hover:-translate-y-0.5`}
+              className={`os-animate-fade-up os-panel-bento bg-gradient-to-br ${card.accent}`}
               style={{ animationDelay: `${260 + i * 55}ms` }}
             >
-              <h3 className="text-lg font-black text-white">{card.title}</h3>
-              <p className="mt-2 text-sm text-slate-300">{card.text}</p>
-              <p className="mt-4 text-sm font-black text-cyan-200">{card.cta} →</p>
+              <h3 className="os-display text-lg font-semibold text-white">{card.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-300/90">{card.text}</p>
+              <p className="mt-4 text-sm font-bold text-amber-200/90">{card.cta} →</p>
             </button>
           ))}
         </div>

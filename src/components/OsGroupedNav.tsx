@@ -5,25 +5,25 @@ import { OS_TAB_GROUPS, tabMeta, type OsTabGroupId } from "@/lib/osTabGroups";
 import type { OsTabId } from "@/lib/osTabs";
 
 const ACCENT_ACTIVE: Record<string, string> = {
-  hub: "border-cyan-400/60 bg-cyan-500/15 text-cyan-100",
-  trade: "border-violet-400/60 bg-violet-500/15 text-violet-100",
-  build: "border-fuchsia-400/60 bg-fuchsia-500/15 text-fuchsia-100",
-  you: "border-emerald-400/60 bg-emerald-500/15 text-emerald-100",
-  explore: "border-amber-400/60 bg-amber-500/15 text-amber-100",
-  games: "border-rose-400/60 bg-rose-500/15 text-rose-100",
+  hub: "border-amber-400/55 bg-amber-500/12 text-amber-50 shadow-[0_0_20px_rgba(245,158,11,0.15)]",
+  trade: "border-violet-400/55 bg-violet-500/12 text-violet-50 shadow-[0_0_20px_rgba(139,92,246,0.12)]",
+  build: "border-fuchsia-400/50 bg-fuchsia-500/12 text-fuchsia-50 shadow-[0_0_18px_rgba(232,121,249,0.12)]",
+  you: "border-emerald-400/50 bg-emerald-500/12 text-emerald-50 shadow-[0_0_18px_rgba(52,211,153,0.1)]",
+  explore: "border-amber-300/45 bg-amber-400/10 text-amber-50 shadow-[0_0_16px_rgba(251,191,36,0.1)]",
+  games: "border-rose-400/50 bg-rose-500/12 text-rose-50 shadow-[0_0_18px_rgba(251,113,133,0.12)]",
 };
 
 const GROUP_LABEL: Record<OsTabGroupId, string> = {
-  hub: "border-cyan-400/60 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.2)]",
+  hub: "border-amber-400/50 bg-gradient-to-br from-amber-500/25 to-amber-600/5 text-amber-50 shadow-[0_0_16px_rgba(245,158,11,0.12)]",
   trade:
-    "border-violet-400/60 bg-gradient-to-br from-violet-500/30 to-violet-400/10 text-violet-50 shadow-[0_0_14px_rgba(167,139,250,0.18)]",
+    "border-violet-400/50 bg-gradient-to-br from-violet-500/25 to-violet-600/5 text-violet-50 shadow-[0_0_14px_rgba(139,92,246,0.12)]",
   build:
-    "border-fuchsia-400/60 bg-gradient-to-br from-fuchsia-500/30 to-fuchsia-400/10 text-fuchsia-50 shadow-[0_0_14px_rgba(232,121,249,0.18)]",
-  you: "border-emerald-400/60 bg-gradient-to-br from-emerald-500/30 to-emerald-400/10 text-emerald-50 shadow-[0_0_14px_rgba(52,211,153,0.18)]",
+    "border-fuchsia-400/45 bg-gradient-to-br from-fuchsia-500/22 to-fuchsia-600/5 text-fuchsia-50 shadow-[0_0_14px_rgba(232,121,249,0.1)]",
+  you: "border-emerald-400/45 bg-gradient-to-br from-emerald-500/22 to-emerald-600/5 text-emerald-50 shadow-[0_0_14px_rgba(52,211,153,0.1)]",
   explore:
-    "border-amber-400/55 bg-gradient-to-br from-amber-500/28 to-amber-400/10 text-amber-50 shadow-[0_0_14px_rgba(251,191,36,0.16)]",
+    "border-amber-300/40 bg-gradient-to-br from-amber-400/20 to-amber-500/5 text-amber-50 shadow-[0_0_12px_rgba(251,191,36,0.08)]",
   games:
-    "border-rose-400/55 bg-gradient-to-br from-rose-500/28 to-rose-400/10 text-rose-50 shadow-[0_0_14px_rgba(251,113,133,0.16)]",
+    "border-rose-400/45 bg-gradient-to-br from-rose-500/22 to-rose-600/5 text-rose-50 shadow-[0_0_14px_rgba(251,113,133,0.1)]",
 };
 
 type Props = {
@@ -40,16 +40,13 @@ export function OsGroupedNav({ activeTab, onSelect, onKeyDown, tabButtonRefs }: 
     <nav
       role="tablist"
       aria-label="Base OS modules"
-      className="space-y-2.5"
+      className="space-y-2"
       onKeyDown={onKeyDown}
     >
       {OS_TAB_GROUPS.map((group) => (
-        <div
-          key={group.id}
-          className="flex flex-wrap items-center gap-2 rounded-xl border border-white/[0.06] bg-black/20 px-2 py-2 sm:gap-3 sm:px-3"
-        >
+        <div key={group.id} className="os-nav-group">
           <span
-            className={`inline-flex min-w-[4.75rem] shrink-0 items-center justify-center rounded-lg border px-2.5 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] ${GROUP_LABEL[group.id]}`}
+            className={`os-display inline-flex min-w-[4.75rem] shrink-0 items-center justify-center rounded-lg border px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] ${GROUP_LABEL[group.id]}`}
           >
             {group.label}
           </span>
@@ -71,13 +68,13 @@ export function OsGroupedNav({ activeTab, onSelect, onKeyDown, tabButtonRefs }: 
                   aria-controls={`base-os-panel-${tabId}`}
                   tabIndex={isActive ? 0 : -1}
                   onClick={() => onSelect(tabId)}
-                  className={`rounded-xl border px-3 py-2 text-left transition ${
+                  className={`cursor-pointer rounded-xl border px-3 py-2 text-left transition-colors duration-200 ${
                     isActive
-                      ? `${ACCENT_ACTIVE[group.id]} shadow-[0_0_16px_rgba(34,211,238,0.12)]`
-                      : "border-white/10 bg-black/30 text-slate-400 hover:border-white/25 hover:text-slate-200"
+                      ? ACCENT_ACTIVE[group.id]
+                      : "border-white/[0.08] bg-black/25 text-slate-400 hover:border-violet-400/25 hover:bg-violet-500/5 hover:text-slate-100"
                   }`}
                 >
-                  <span className="block text-[9px] font-semibold uppercase tracking-[0.12em] opacity-70">
+                  <span className="block text-[9px] font-semibold uppercase tracking-[0.1em] opacity-65">
                     {tab.eyebrow}
                   </span>
                   <span className="block text-sm font-bold">{tab.label}</span>

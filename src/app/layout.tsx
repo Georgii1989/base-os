@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
+import { Exo_2, Orbitron } from "next/font/google";
 import "./globals.css";
 import { Web3Providers } from "@/components/Web3Providers";
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  variable: "--font-orbitron",
+  weight: ["400", "500", "600", "700"],
+});
+
+const exo2 = Exo_2({
+  subsets: ["latin"],
+  variable: "--font-exo",
+  weight: ["300", "400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "Base OS · your onchain command center",
@@ -20,8 +33,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
+    <html lang="en" className={`${orbitron.variable} ${exo2.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col font-[family-name:var(--font-exo)]">
         <Web3Providers>{children}</Web3Providers>
       </body>
     </html>

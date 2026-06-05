@@ -198,7 +198,7 @@ export function HomePulseCard({
     <button
       type="button"
       onClick={onClick}
-      className="os-animate-fade-up group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-black/50 to-slate-950/80 p-4 text-left transition hover:border-cyan-300/40 hover:shadow-[0_0_24px_rgba(34,211,238,0.12)]"
+      className="os-animate-fade-up os-panel-bento group p-4"
       style={style}
     >
       <div

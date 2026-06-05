@@ -37,7 +37,7 @@ export function WalletConnectControl() {
             chainId: base.id,
           })
         }
-        className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-500 px-4 py-3 text-sm font-black text-white shadow-[0_0_24px_rgba(217,70,239,0.25)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+        className="os-cta os-display w-full px-4 py-3 text-sm sm:w-auto"
       >
         {connectLabel}
       </button>
@@ -48,7 +48,7 @@ export function WalletConnectControl() {
     <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
       <div className="flex w-full flex-wrap items-center justify-end gap-2">
         <span
-          className="rounded-2xl border border-fuchsia-300/35 bg-fuchsia-500/15 px-3 py-2 font-mono text-sm font-bold text-fuchsia-100"
+          className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-2 font-mono text-sm font-bold text-violet-100"
           title={address}
         >
           {address ? shortenAddressDisplay(address) : "Connected"}

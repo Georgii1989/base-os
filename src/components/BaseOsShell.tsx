@@ -51,7 +51,7 @@ export function BaseOsShell() {
 
 function OsShellFallback() {
   return (
-    <section className="relative z-10 w-full max-w-7xl rounded-3xl border border-white/15 bg-black/35 p-8 text-white shadow-[0_0_60px_rgba(76,29,149,0.45)] backdrop-blur-xl">
+    <section className="os-shell p-8">
       <div className="animate-pulse space-y-6">
         <div className="h-28 rounded-3xl bg-white/5" />
         <div className="flex flex-wrap gap-2">
@@ -119,19 +119,18 @@ function BaseOsShellInner() {
   }
 
   return (
-    <section className="relative z-10 w-full max-w-7xl overflow-hidden rounded-3xl border border-white/15 bg-black/35 p-4 text-white shadow-[0_0_80px_rgba(76,29,149,0.55),0_0_120px_rgba(34,211,238,0.08)] backdrop-blur-xl md:p-6">
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"
-        aria-hidden
-      />
-      <header className="relative flex flex-col gap-4 border-b border-white/10 pb-4 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-6">
+    <section className="os-shell">
+      <div className="os-shell-topline" aria-hidden />
+      <header className="relative flex flex-col gap-4 border-b border-white/[0.07] pb-5 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-6">
         <div className="md:justify-self-start">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-200/80">
-            Base OS
-          </p>
-          <h1 className="mt-1 text-3xl font-black text-fuchsia-100 md:text-5xl">Base OS</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-200/80">
-            One system for Base — briefing, trade, build, and protect your wallet.
+          <p className="os-eyebrow">Onchain command center</p>
+          <h1 className="os-display mt-2 text-3xl font-bold tracking-wide text-white md:text-5xl">
+            <span className="bg-gradient-to-r from-amber-200 via-amber-100 to-violet-200 bg-clip-text text-transparent">
+              Base OS
+            </span>
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300/90">
+            Briefing, trade, build, and protect — one interface for everything on Base.
           </p>
         </div>
 
@@ -143,21 +142,21 @@ function BaseOsShellInner() {
             type="button"
             title="⌘ K or Ctrl K"
             onClick={() => openCommandPalette()}
-            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-cyan-300/35 bg-black/55 px-4 py-3 text-xs font-black uppercase tracking-[0.35em] text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm transition hover:border-cyan-200/85 hover:bg-cyan-500/15 hover:shadow-[0_0_42px_rgba(34,211,238,0.18)] sm:w-auto sm:justify-center"
+            className="os-cta-ghost flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-xs font-black uppercase tracking-[0.28em] sm:w-auto sm:justify-center"
           >
             <span>Quick menu</span>
-            <kbd className="hidden rounded-xl border border-white/15 bg-black/70 px-2 py-1 font-mono text-[11px] font-bold text-slate-200 sm:inline">
+            <kbd className="hidden rounded-lg border border-violet-400/25 bg-black/50 px-2 py-1 font-mono text-[11px] font-bold text-amber-100/90 sm:inline">
               ⌘K
             </kbd>
           </button>
-          <div className="w-full rounded-2xl border border-cyan-300/25 bg-cyan-500/10 px-4 py-3 text-right sm:w-auto">
-            <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Open now</p>
-            <p className="text-lg font-black text-cyan-100">{activeMeta?.label}</p>
+          <div className="os-panel w-full px-4 py-3 text-right sm:w-auto">
+            <p className="os-eyebrow text-[0.6rem]">Active module</p>
+            <p className="os-display mt-1 text-lg font-semibold text-violet-100">{activeMeta?.label}</p>
           </div>
         </div>
       </header>
 
-      <div className="mt-4 grid gap-4 border-b border-[#6b2248]/70 pb-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start">
+      <div className="relative mt-5 grid gap-4 border-b border-violet-500/15 pb-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start">
         <OsGroupedNav
           activeTab={activeTab}
           onSelect={setActiveTab}
