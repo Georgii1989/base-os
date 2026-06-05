@@ -138,9 +138,9 @@ export function GuardPanel() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-      <div className="rounded-3xl border border-white/15 bg-slate-950/55 p-6">
-        <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-200/90">Safety</p>
-        <h2 className="mt-2 text-3xl font-black text-white">Wallet guard</h2>
+      <div className="os-panel p-6">
+        <p className="os-eyebrow text-emerald-200/90">Safety</p>
+        <h2 className="os-display mt-2 text-3xl font-semibold text-white">Wallet guard</h2>
         <p className="mt-3 max-w-2xl text-sm text-slate-200/85">
           See how much a contract can spend — and <span className="text-emerald-200">revoke</span> access
           in one click. Stay safe on Base without leaving Base OS.
@@ -182,7 +182,7 @@ export function GuardPanel() {
                 onChange={(e) => setTokenInput(e.target.value.trim())}
                 placeholder={PRESET_USDC}
                 spellCheck={false}
-                className="mt-2 w-full rounded-xl border border-white/15 bg-black/35 px-3 py-2 font-mono text-sm text-white outline-none focus:border-emerald-300/60"
+                className="os-input mt-2 font-mono outline-none focus:border-emerald-400/40"
               />
             </label>
             <label className="block">
@@ -192,7 +192,7 @@ export function GuardPanel() {
                 onChange={(e) => setSpenderInput(e.target.value.trim())}
                 spellCheck={false}
                 placeholder="0x…"
-                className="mt-2 w-full rounded-xl border border-white/15 bg-black/35 px-3 py-2 font-mono text-sm text-white outline-none focus:border-emerald-300/60"
+                className="os-input mt-2 font-mono outline-none focus:border-emerald-400/40"
               />
             </label>
             <div className="flex flex-wrap gap-2">
@@ -251,7 +251,7 @@ export function GuardPanel() {
       </div>
 
       <aside className="grid content-start gap-4">
-        <div className="rounded-3xl border border-emerald-300/25 bg-emerald-500/10 p-5">
+        <div className="os-panel border-emerald-400/20 p-5">
           <h3 className="font-black text-emerald-100">Advanced revoke</h3>
           <p className="mt-2 text-sm text-emerald-100/90">Bulk review on revoke.cash for all tokens.</p>
           <a
@@ -263,7 +263,7 @@ export function GuardPanel() {
             Open revoke.cash ↗
           </a>
         </div>
-        <div className="rounded-3xl border border-white/15 bg-slate-950/55 p-5 text-sm text-slate-300">
+        <div className="os-panel p-5 text-sm text-slate-300">
           <p className="font-bold text-white">Hints</p>
           <ul className="mt-2 list-disc space-y-2 pl-4">
             <li>The “app” address often comes from your approve transaction on BaseScan.</li>

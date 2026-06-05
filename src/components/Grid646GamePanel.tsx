@@ -14,6 +14,7 @@ import {
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { GRID646_ABI, resolveGrid646Address } from "@/lib/grid646Abi";
 import { Grid646GameBanner } from "@/components/Grid646GameBanner";
+import { OsSubTabs } from "@/components/os/OsChrome";
 import { Grid646Board } from "@/components/Grid646Board";
 import { Grid646GameEndPanel } from "@/components/Grid646GameEndPanel";
 import { Grid646WinOverlay } from "@/components/Grid646WinOverlay";
@@ -364,30 +365,14 @@ export function Grid646GamePanel() {
     <div className="mx-auto grid max-w-lg gap-5">
       <Grid646GameBanner />
 
-      <div className="flex rounded-2xl border border-violet-400/25 bg-violet-950/40 p-1 shadow-inner">
-        <button
-          type="button"
-          onClick={() => setPlayStyle("fun")}
-          className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-black transition ${
-            playStyle === "fun"
-              ? "bg-gradient-to-r from-cyan-500/50 to-fuchsia-500/50 text-white shadow-sm"
-              : "text-slate-400 hover:text-slate-200"
-          }`}
-        >
-          Casual
-        </button>
-        <button
-          type="button"
-          onClick={() => setPlayStyle("money")}
-          className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-black transition ${
-            playStyle === "money"
-              ? "bg-gradient-to-r from-emerald-500/60 to-yellow-500/40 text-white shadow-sm"
-              : "text-slate-400 hover:text-slate-200"
-          }`}
-        >
-          Ranked
-        </button>
-      </div>
+      <OsSubTabs
+        tabs={[
+          { id: "fun" as const, label: "Casual" },
+          { id: "money" as const, label: "Ranked" },
+        ]}
+        active={playStyle}
+        onChange={setPlayStyle}
+      />
 
       {!isConnected ? (
         <p className="rounded-2xl border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-center text-sm text-amber-100">
@@ -404,7 +389,7 @@ export function Grid646GamePanel() {
         </button>
       ) : (
         <>
-          <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+          <section className="os-panel p-5">
             <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-400">
               {playStyle === "money" ? "Ranked lobby" : "Casual lobby"}
             </h3>
@@ -473,7 +458,7 @@ export function Grid646GamePanel() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+          <section className="os-panel p-5">
             <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-400">Open rooms</h3>
             <p className="mt-1 text-xs text-slate-500">
               Waiting or in play · tap to join or resume your game
@@ -545,7 +530,7 @@ export function Grid646GamePanel() {
           </section>
 
           {pastRooms.length > 0 ? (
-            <section className="rounded-3xl border border-white/8 bg-slate-950/40 p-5">
+            <section className="os-panel p-5">
               <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500">History</h3>
               <p className="mt-1 text-xs text-slate-600">Finished games — results only, board not available</p>
               <ul className="mt-3 max-h-40 space-y-2 overflow-y-auto">
@@ -573,7 +558,7 @@ export function Grid646GamePanel() {
 
       {game && isConnected && isOnBase ? (
         <>
-          <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+          <section className="os-panel p-5">
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <p className="font-bold text-white">
                 Room <span className="font-mono text-lg">#{String(game.gameId)}</span>

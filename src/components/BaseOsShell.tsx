@@ -336,9 +336,9 @@ function RadarPanel() {
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
-      <aside className="rounded-xl border border-white/10 bg-slate-950/40 p-4">
+      <aside className="os-panel p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-cyan-100">Filters</h2>
+          <h2 className="os-display text-base font-semibold text-amber-100">Filters</h2>
           <button type="button" onClick={resetFilters} className="text-xs font-semibold text-slate-500 hover:text-cyan-200">
             Reset
           </button>
@@ -372,7 +372,8 @@ function RadarPanel() {
 
       <main className="grid content-start gap-4 self-start">
         <div>
-          <h2 className="text-3xl font-black text-white md:text-4xl">Project Radar</h2>
+          <p className="os-eyebrow">Explore</p>
+          <h2 className="os-display mt-2 text-3xl font-semibold text-white md:text-4xl">Project Radar</h2>
           <p className="mt-1 text-sm text-slate-200/80">Projects we like, with links and prices when available.</p>
           <p className="mt-2 text-sm font-bold text-cyan-200">
             {filteredProjects.length} / {radarProjects.length} projects
@@ -461,7 +462,7 @@ function FilterList({
                   onClick={() => onChange(item)}
                   className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 text-left text-sm transition first:rounded-t-md last:rounded-b-md ${
                     active
-                      ? "border-l-2 border-[#d25b8f] bg-[#4a102d]/75 text-[#ffe1ee]"
+                      ? "border-l-2 border-amber-400/70 bg-violet-500/15 text-amber-50"
                       : "text-slate-300 hover:bg-white/[0.04]"
                   }`}
                 >
@@ -487,7 +488,7 @@ function FilterList({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-white/[0.09] bg-black/30 px-3 py-2">
+    <div className="os-metric-tile px-3 py-2">
       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
       <p className="mt-1 text-base font-bold tabular-nums tracking-tight text-white">{value}</p>
     </div>
@@ -514,7 +515,7 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
   const hasLiveMarket = typeof market?.priceUsd === "number";
 
   return (
-    <article className="rounded-xl border border-white/12 bg-slate-950/45 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <article className="os-panel-bento p-4">
       <div className="flex items-start gap-3">
         <a
           href={project.website}

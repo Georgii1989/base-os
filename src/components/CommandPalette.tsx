@@ -308,7 +308,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
       {children}
       {open ? (
         <div
-          className="fixed inset-0 z-[100] flex items-start justify-center bg-[#070312]/85 px-3 pt-[14vh] backdrop-blur-md sm:px-6"
+          className="fixed inset-0 z-[100] flex items-start justify-center bg-[var(--os-void)]/90 px-3 pt-[14vh] backdrop-blur-md sm:px-6"
           role="presentation"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setOpen(false);
@@ -318,7 +318,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
-            className="relative w-full max-w-xl overflow-hidden rounded-[1.75rem] border border-white/18 bg-gradient-to-br from-black/92 via-zinc-950/95 to-black/92 shadow-[0_0_120px_rgba(168,85,247,0.35),0_0_60px_rgba(34,211,238,0.12)]"
+            className="os-shell relative max-w-xl overflow-hidden shadow-[0_0_80px_rgba(139,92,246,0.25)]"
           >
             <div className="pointer-events-none absolute inset-px rounded-[1.68rem] border border-white/8" />
             <div className="relative px-4 pb-4 pt-4 md:px-5 md:pt-5">
@@ -345,7 +345,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
                   placeholder="Search or paste 0x…"
                   onChange={(event) => setQuery(event.target.value)}
                   onKeyDown={onInputKeyDown}
-                  className="w-full rounded-2xl border border-white/12 bg-black/55 py-3 pl-9 pr-3 text-sm text-white outline-none ring-2 ring-transparent transition placeholder:text-slate-500 focus:border-cyan-400/50 focus:ring-cyan-400/20"
+                  className="os-input w-full py-3 pl-9 pr-3 outline-none ring-2 ring-transparent focus:ring-violet-400/20"
                 />
               </div>
               <div
@@ -372,7 +372,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
                         aria-selected={active}
                         data-active={active}
                         onMouseEnter={() => setSelectedIndex(index)}
-                        className={`mb-2 flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition md:gap-4 md:px-4 md:py-3.5 ${active ? "border-cyan-300/65 bg-gradient-to-br from-cyan-500/15 via-fuchsia-500/15 to-purple-950/40 shadow-[0_0_32px_rgba(34,211,238,0.15)]" : "border-transparent bg-white/[0.04] hover:border-white/14 hover:bg-white/[0.07]"}`}
+                        className={`mb-2 flex w-full cursor-pointer items-start gap-3 rounded-2xl border px-3 py-3 text-left transition-colors duration-200 md:gap-4 md:px-4 md:py-3.5 ${active ? "border-amber-400/40 bg-gradient-to-br from-amber-500/10 via-violet-500/15 to-slate-950/50 shadow-[0_0_24px_rgba(139,92,246,0.12)]" : "border-transparent bg-white/[0.04] hover:border-violet-400/20 hover:bg-white/[0.07]"}`}
                       >
                         <span
                           aria-hidden

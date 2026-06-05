@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAddress, isAddress } from "viem";
 import { IdentityCard } from "@/components/IdentityCard";
+import { OsStandaloneBackdrop } from "@/components/os/OsChrome";
 import { fetchOnchainScore } from "@/lib/onchainScoreFetch";
 
 type PageProps = { params: Promise<{ address: string }> };
@@ -65,21 +66,15 @@ export default async function IdentityCardPage({ params }: PageProps) {
   if (!data) notFound();
 
   return (
-    <main className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-[#070313] px-4 py-10 md:px-8">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(217,70,239,0.22),transparent_40%),radial-gradient(circle_at_75%_30%,rgba(34,211,238,0.15),transparent_40%)]" />
+    <main className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-[var(--os-void)] px-4 py-10 md:px-8">
+      <OsStandaloneBackdrop />
 
       <div className="relative z-[1] w-full max-w-md">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <Link
-            href="/"
-            className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400 hover:text-white"
-          >
+          <Link href="/" className="os-cta-ghost px-3 py-1.5 text-xs">
             ← Base OS
           </Link>
-          <Link
-            href={`/?tab=score&address=${data.address}`}
-            className="text-xs font-bold text-cyan-300/90 hover:text-cyan-100"
-          >
+          <Link href={`/?tab=score&address=${data.address}`} className="os-cta-ghost px-3 py-1.5 text-xs">
             Full score ↗
           </Link>
         </div>

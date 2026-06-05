@@ -83,22 +83,22 @@ export function SoulboundHoldersList() {
 
   if (!sbtAddress) {
     return (
-      <div className="mt-4 grid gap-3 rounded-2xl border border-violet-300/30 bg-slate-950/50 p-4">
-        <h2 className="text-xl font-black text-violet-200">Badge holders</h2>
+      <div className="mt-4 os-panel grid gap-3 p-4">
+        <h2 className="os-display text-xl font-semibold text-white">Badge holders</h2>
         <p className="text-sm text-violet-100/90">Badge list isn't turned on in this build.</p>
       </div>
     );
   }
 
   return (
-    <div className="mt-4 grid gap-3 rounded-2xl border border-violet-300/30 bg-slate-950/50 p-4">
+    <div className="mt-4 os-panel grid gap-3 p-4">
       <button
         type="button"
         onClick={() => setRegistryExpanded((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-3 rounded-xl border border-violet-200/30 bg-violet-500/10 px-3 py-2 text-left"
+        className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-left"
       >
         <div>
-          <h2 className="text-xl font-black text-violet-200">Badge holders</h2>
+          <h2 className="os-display text-xl font-semibold text-white">Badge holders</h2>
           <p className="mt-1 text-sm text-violet-100/90">
             <span className="font-mono text-xs text-violet-300">{sbtAddress}</span>
           </p>

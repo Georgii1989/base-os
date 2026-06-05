@@ -53,9 +53,9 @@ function MetricCard({
           : "text-cyan-200";
 
   return (
-    <div className={`rounded-2xl border ${border} bg-black/35 p-4`}>
+    <div className={`os-metric-tile border ${border}`}>
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className={`mt-1 text-2xl font-black ${text}`}>{value}</p>
+      <p className={`mt-1 text-2xl font-bold tabular-nums ${text}`}>{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-400">{hint}</p> : null}
     </div>
   );
@@ -94,7 +94,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
       </div>
 
       {data.source === "blockscout" && data.onchain ? (
-        <section className="rounded-3xl border border-cyan-300/20 bg-slate-950/50 p-5">
+        <section className="os-panel p-5">
           <h3 className="text-lg font-black text-cyan-100">Network snapshot</h3>
           <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
             <li className="flex justify-between rounded-xl border border-white/8 bg-black/30 px-3 py-2">
@@ -127,7 +127,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
 
       {chartPoints.length >= 2 ? (
         <>
-          <section className="rounded-3xl border border-cyan-300/25 bg-slate-950/55 p-5 md:p-6">
+          <section className="os-panel p-5 md:p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="text-xl font-black text-cyan-100">
                 {data.source === "l2beat" ? "Transaction activity" : "TVL history"}
@@ -146,7 +146,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           {data.source === "defillama" ? (
-            <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+            <section className="os-panel p-5">
               <h3 className="text-lg font-black text-white">Fees on Base</h3>
               {data.fees ? (
                 <ul className="mt-4 grid gap-2 text-sm">
@@ -172,7 +172,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
               )}
             </section>
           ) : data.source === "l2beat" && data.activity ? (
-            <section className="rounded-3xl border border-fuchsia-300/20 bg-slate-950/50 p-5">
+            <section className="os-panel p-5">
               <h3 className="text-lg font-black text-fuchsia-100">Latest day</h3>
               <ul className="mt-4 grid gap-2 text-sm">
                 <li className="flex justify-between border-b border-white/5 py-2">
@@ -199,7 +199,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
       ) : null}
 
       {data.dexVolume && data.dexVolume.byProtocol.length > 0 ? (
-        <section className="rounded-3xl border border-fuchsia-300/20 bg-slate-950/50 p-5">
+        <section className="os-panel p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="text-lg font-black text-fuchsia-100">DEX volume on Base</h3>
             <span className="text-xs text-slate-500">
@@ -240,7 +240,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
       ) : null}
 
       {data.stablecoins && data.stablecoins.breakdown.length > 0 ? (
-        <section className="rounded-3xl border border-amber-300/20 bg-slate-950/50 p-5">
+        <section className="os-panel p-5">
           <h3 className="text-lg font-black text-amber-100">Stablecoin supply</h3>
           <p className="mt-1 text-sm text-slate-400">
             Total {formatUsd(data.stablecoins.circulatingUsd)} circulating on Base.
@@ -262,7 +262,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
       {data.chainRanks.length > 0 || data.protocols.length > 0 ? (
         <div className="grid gap-4 lg:grid-cols-2">
           {data.chainRanks.length > 0 ? (
-            <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+            <section className="os-panel p-5">
               <h3 className="text-lg font-black text-white">Chains by TVL</h3>
               <p className="mt-1 text-xs text-slate-500">Base highlighted among top L1/L2s.</p>
               <ul className="mt-4 space-y-2">
@@ -287,7 +287,7 @@ function AnalyticsBody({ data }: { data: BaseAnalyticsPayload }) {
           ) : null}
 
           {data.protocols.length > 0 ? (
-            <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+            <section className="os-panel p-5">
               <h3 className="text-lg font-black text-white">Top protocols on Base</h3>
               <p className="mt-1 text-xs text-slate-500">TVL on Base from DeFi Llama protocol pages.</p>
               <ul className="mt-4 space-y-2">
@@ -365,8 +365,8 @@ export function BaseAnalyticsPanel() {
       <header className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">Base chain</p>
-            <h2 className="text-3xl font-black text-white md:text-4xl">Analytics</h2>
+            <p className="os-eyebrow">Base chain</p>
+            <h2 className="os-display mt-2 text-3xl font-semibold text-white md:text-4xl">Analytics</h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-300/90">
               {activeMeta.description}. Source:{" "}
               <a
@@ -404,10 +404,10 @@ export function BaseAnalyticsPanel() {
               role="tab"
               aria-selected={source === item.id}
               onClick={() => selectSource(item.id)}
-              className={`rounded-xl border px-3 py-2 text-left transition ${
+              className={`cursor-pointer rounded-xl border px-3 py-2 text-left transition-colors duration-200 ${
                 source === item.id
-                  ? "border-cyan-300/50 bg-cyan-500/15 text-cyan-50"
-                  : "border-white/12 bg-black/25 text-slate-400 hover:border-white/25 hover:text-slate-200"
+                  ? "os-subtab-active border-transparent"
+                  : "border-white/12 bg-black/25 text-slate-400 hover:border-violet-400/25 hover:text-slate-200"
               }`}
             >
               <span className="block text-sm font-black">{item.label}</span>

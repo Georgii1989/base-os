@@ -370,10 +370,11 @@ export function BaseBuilderApp() {
   const badgeUnlocked = Boolean(hasBadgeOnchain) || txConfirmed;
 
   return (
-    <section className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/15 bg-black/45 p-5 text-white shadow-[0_0_50px_rgba(76,29,149,0.45)] backdrop-blur-xl">
-      <h1 className="text-3xl font-black text-fuchsia-200 md:text-5xl">Base OS</h1>
+    <section className="os-panel mx-auto w-full max-w-3xl p-5 text-white">
+      <p className="os-eyebrow">Build</p>
+      <h1 className="os-display mt-2 text-3xl font-semibold text-white md:text-4xl">Tips & badge</h1>
 
-      <div className="mt-5 grid gap-3 rounded-2xl border border-cyan-300/30 bg-slate-950/50 p-4">
+      <div className="mt-5 os-panel grid gap-3 p-4">
         <p className="text-sm text-cyan-100">Wallet: <span className="font-bold">{shortAddress}</span></p>
         <p className="text-sm text-cyan-100">
           Network:{" "}
@@ -406,7 +407,7 @@ export function BaseBuilderApp() {
               preferredConnector &&
               connect({ connector: preferredConnector, chainId: base.id })
             }
-            className="rounded-xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-500 px-4 py-2 text-sm font-black disabled:opacity-50"
+            className="os-cta os-display px-4 py-2 text-sm disabled:opacity-50"
           >
             {connectorButtonLabel(preferredConnector, isConnecting)}
           </button>
@@ -432,7 +433,7 @@ export function BaseBuilderApp() {
         {networkStatus ? <p className="text-sm text-cyan-200">{networkStatus}</p> : null}
       </div>
 
-      <div className="mt-4 grid gap-3 rounded-2xl border border-fuchsia-300/30 bg-slate-950/50 p-4">
+      <div className="mt-4 os-panel grid gap-3 p-4">
         <h2 className="text-xl font-black text-fuchsia-200">Sign in (Ethereum)</h2>
         <button
           onClick={handleSiwe}

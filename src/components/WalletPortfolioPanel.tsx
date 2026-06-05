@@ -129,16 +129,16 @@ export function WalletPortfolioPanel() {
 
   return (
     <div className="grid gap-5">
-      <section className="rounded-3xl border border-cyan-300/25 bg-gradient-to-br from-cyan-500/10 via-slate-950/60 to-violet-500/10 p-6 md:p-8">
-        <p className="text-[11px] font-black uppercase tracking-[0.35em] text-cyan-200/90">You</p>
-        <h2 className="mt-2 text-3xl font-black text-white">Base portfolio</h2>
+      <section className="os-panel p-6 md:p-8">
+        <p className="os-eyebrow">You</p>
+        <h2 className="os-display mt-2 text-3xl font-semibold text-white">Base portfolio</h2>
         <p className="mt-3 max-w-2xl text-sm text-slate-300">
           ETH and ERC-20 balances on Base via Blockscout. Spam airdrops are filtered — verify unknown tokens before
           interacting.
         </p>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5 md:p-6">
+      <section className="os-panel p-5 md:p-6">
         {!isConnected ? (
           <div className="grid gap-3">
             <p className="text-sm text-slate-400">Connect to view your wallet, or paste any address below.</p>
@@ -147,7 +147,7 @@ export function WalletPortfolioPanel() {
                 type="button"
                 disabled={isConnecting}
                 onClick={() => connect({ connector: preferredConnector })}
-                className="w-fit rounded-xl bg-cyan-500/80 px-4 py-2 text-sm font-black text-white disabled:opacity-50"
+                className="w-fit os-cta os-display px-4 py-2 text-sm disabled:opacity-50"
               >
                 {connectorButtonLabel(preferredConnector, isConnecting)}
               </button>
@@ -199,7 +199,7 @@ export function WalletPortfolioPanel() {
 
       {data ? (
         <>
-          <section className="rounded-3xl border border-cyan-300/30 bg-gradient-to-r from-cyan-500/12 to-violet-500/8 p-5">
+          <section className="os-panel p-5">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Estimated total</p>
             <p className="mt-1 text-3xl font-black text-white">{formatUsd(totalUsd)}</p>
             <p className="mt-1 text-xs text-slate-500">
@@ -207,7 +207,7 @@ export function WalletPortfolioPanel() {
             </p>
           </section>
 
-          <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+          <section className="os-panel p-5">
             <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-400">Native</h3>
             <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-black/30 px-4 py-3">
               <div className="min-w-0 flex-1">
@@ -232,7 +232,7 @@ export function WalletPortfolioPanel() {
             ) : null}
           </section>
 
-          <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+          <section className="os-panel p-5">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-400">ERC-20</h3>
               <button

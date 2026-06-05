@@ -94,11 +94,11 @@ export function OSSupporterMintCard({
 
   if (!nftAddress) {
     return (
-      <div className="mt-4 grid gap-3 rounded-2xl border border-indigo-300/25 bg-slate-950/50 p-4">
-        <h2 className="text-xl font-black text-indigo-200">Base OS supporter NFT</h2>
-        <p className="text-sm text-indigo-100/85">
-          Deploy <span className="font-mono text-indigo-50">BaseOSSupporterNFT</span> on Base and set{" "}
-          <span className="font-mono text-indigo-50">NEXT_PUBLIC_OS_SUPPORTER_NFT_ADDRESS</span> to enable minting here.
+      <div className="mt-4 os-panel grid gap-3 p-4">
+        <h2 className="text-xl font-black text-violet-200">Base OS supporter NFT</h2>
+        <p className="text-sm text-slate-300/85">
+          Deploy <span className="font-mono text-amber-100">BaseOSSupporterNFT</span> on Base and set{" "}
+          <span className="font-mono text-amber-100">NEXT_PUBLIC_OS_SUPPORTER_NFT_ADDRESS</span> to enable minting here.
         </p>
       </div>
     );
@@ -107,9 +107,9 @@ export function OSSupporterMintCard({
   const mintDone = Boolean(hasMinted) || mintConfirmed;
 
   return (
-    <div className="mt-4 grid gap-3 rounded-2xl border border-indigo-300/25 bg-slate-950/50 p-4">
-      <h2 className="text-xl font-black text-indigo-200">Base OS supporter NFT</h2>
-      <p className="text-sm text-indigo-100/85">
+    <div className="mt-4 os-panel grid gap-3 p-4">
+      <h2 className="text-xl font-black text-violet-200">Base OS supporter NFT</h2>
+      <p className="text-sm text-slate-300/85">
         Soulbound badge minted from this app (gas only). Token metadata links to the tip-profile soulbound collection on
         BaseScan — send a tip through Base OS to mint that badge too.
       </p>
@@ -118,21 +118,21 @@ export function OSSupporterMintCard({
           href={`https://basescan.org/token/${linkedDisplay}`}
           target="_blank"
           rel="noreferrer"
-          className="w-fit rounded-lg border border-indigo-300/40 bg-indigo-500/15 px-3 py-1.5 text-xs font-bold text-indigo-100"
+          className="w-fit rounded-lg border border-violet-400/30 bg-violet-500/10 px-3 py-1.5 text-xs font-bold text-slate-300"
         >
           Tip soulbound collection ↗
         </Link>
       ) : (
-        <p className="text-xs text-indigo-200/70">
+        <p className="text-xs text-violet-200/70">
           Set <span className="font-mono">NEXT_PUBLIC_SBT_ADDRESS</span> so metadata and links resolve cleanly.
         </p>
       )}
       {!isConnected ? (
-        <p className="text-sm text-indigo-200/80">Connect a wallet to mint.</p>
+        <p className="text-sm text-violet-200/80">Connect a wallet to mint.</p>
       ) : !isOnBase ? (
         <p className="text-sm text-amber-200">Switch to Base to mint.</p>
       ) : mintDone ? (
-        <div className="rounded-xl border border-indigo-200/40 bg-indigo-500/15 px-3 py-2 text-sm font-semibold text-indigo-50">
+        <div className="rounded-xl border border-violet-400/25 bg-violet-500/10 px-3 py-2 text-sm font-semibold text-amber-100">
           Minted — soulbound on your wallet.
           <div className="mt-2 flex flex-wrap gap-2">
             <Link
@@ -163,7 +163,7 @@ export function OSSupporterMintCard({
             {isMinting || mintConfirming ? "Confirm in wallet…" : "Mint Base OS supporter"}
           </button>
           {mintHash ? (
-            <p className="text-xs text-indigo-200/90">
+            <p className="text-xs text-violet-200/90">
               Tx:{" "}
               <a
                 href={`https://basescan.org/tx/${mintHash}`}

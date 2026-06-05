@@ -13,6 +13,7 @@ type TipEntry = {
   blockNumber: bigint;
 };
 
+import { OsMetricTile } from "@/components/os/OsChrome";
 import { resolveTipJarAddress } from "@/lib/tipContracts";
 /** Narrower window keeps public RPCs from failing on huge eth_getLogs ranges. Override with NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK. */
 const DEFAULT_PROFILE_LOOKBACK = BigInt(25_000);
@@ -264,58 +265,49 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
   );
 
   return (
-    <section className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/15 bg-black/45 p-5 text-white shadow-[0_0_50px_rgba(76,29,149,0.45)] backdrop-blur-xl">
+    <section className="os-panel mx-auto w-full max-w-3xl p-5 text-white">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-black text-sky-200 md:text-4xl">Public tip page</h1>
+        <div>
+          <p className="os-eyebrow">Tips</p>
+          <h1 className="os-display mt-1 text-2xl font-semibold text-white md:text-3xl">Public tip page</h1>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href={`/safety/${address}`}
-            className="rounded-lg border border-teal-300/55 bg-teal-500/15 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-teal-100 hover:border-teal-200"
-          >
+          <Link href={`/safety/${address}`} className="os-cta-ghost px-3 py-1.5 text-xs">
             Address lookup
           </Link>
-          <Link href="/" className="rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-bold">
+          <Link href="/" className="os-cta-ghost px-3 py-1.5 text-xs">
             Home
           </Link>
         </div>
       </div>
 
-      <p className="mt-3 text-sm text-sky-100/90 break-all">{address}</p>
+      <p className="mt-3 break-all font-mono text-sm text-slate-400">{address}</p>
 
-      <div className="mt-4 grid gap-3 rounded-2xl border border-sky-300/30 bg-slate-950/50 p-4 sm:grid-cols-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-sky-300">Total tipped</p>
-          <p className="text-lg font-black text-sky-100">{totalEth} ETH</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-sky-300"># Tips</p>
-          <p className="text-lg font-black text-sky-100">{tips.length}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-sky-300">Biggest tip</p>
-          <p className="text-lg font-black text-sky-100">{maxEth} ETH</p>
-        </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <OsMetricTile label="Total tipped" value={`${totalEth} ETH`} accent="gold" />
+        <OsMetricTile label="# Tips" value={tips.length} accent="violet" />
+        <OsMetricTile label="Biggest tip" value={`${maxEth} ETH`} accent="amber" />
       </div>
 
-      <div className="mt-4 grid gap-2 rounded-2xl border border-sky-300/30 bg-slate-950/50 p-4">
-        <h2 className="text-lg font-black text-sky-200">Recent tips</h2>
-        {isLoading ? <p className="text-sm text-sky-100/90">Loading…</p> : null}
+      <div className="mt-4 os-panel grid gap-2 p-4">
+        <h2 className="os-display text-lg font-semibold text-white">Recent tips</h2>
+        {isLoading ? <p className="text-sm text-slate-400">Loading…</p> : null}
         {error ? <p className="text-sm text-rose-300">{error}</p> : null}
         {historyHint ? <p className="text-sm text-amber-200/95">{historyHint}</p> : null}
         {!isLoading && !error && tips.length === 0 ? (
-          <p className="text-sm text-sky-100/90">No tips found for this address in the time range we checked.</p>
+          <p className="text-sm text-slate-400">No tips found for this address in the time range we checked.</p>
         ) : null}
         {!isLoading && !error && tips.length > 0 ? (
           <div className="grid gap-2">
             {tips.map((tip) => (
-              <div key={tip.id} className="rounded-xl border border-sky-200/20 bg-sky-950/25 p-3 text-sm">
-                <p className="font-bold text-sky-100">{tip.amountEth} ETH</p>
-                <p className="text-sky-100/90">{tip.message}</p>
+              <div key={tip.id} className="os-metric-tile p-3 text-sm">
+                <p className="font-bold text-amber-100">{tip.amountEth} ETH</p>
+                <p className="text-slate-300">{tip.message}</p>
                 <a
                   href={`https://basescan.org/tx/${tip.txHash}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs font-bold text-cyan-300 underline"
+                  className="text-xs font-bold text-violet-300 underline hover:text-violet-200"
                 >
                   {tip.txHash.slice(0, 10)}...{tip.txHash.slice(-8)}
                 </a>

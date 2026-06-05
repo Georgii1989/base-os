@@ -5,6 +5,7 @@ import { getAddress, isAddress } from "viem";
 import { getBasePublicClient } from "@/lib/baseRpcPublic";
 import type { PublicSafetyPayload } from "@/components/PublicAddressReport";
 import { PublicAddressReport } from "@/components/PublicAddressReport";
+import { OsStandaloneBackdrop } from "@/components/os/OsChrome";
 
 type PageProps = { params: Promise<{ address: string }> };
 
@@ -43,28 +44,20 @@ export default async function SafetyAddressPage({ params }: PageProps) {
   };
 
   return (
-    <main className="relative flex min-h-[100dvh] flex-col bg-[#070313] px-4 py-8 md:px-10 lg:py-14">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(217,70,239,0.25),transparent_35%),radial-gradient(circle_at_75%_30%,rgba(34,211,238,0.18),transparent_35%),radial-gradient(circle_at_55%_80%,rgba(236,72,153,0.20),transparent_40%)]" />
+    <main className="relative flex min-h-[100dvh] flex-col bg-[var(--os-void)] px-4 py-8 md:px-10 lg:py-14">
+      <OsStandaloneBackdrop />
 
       <div className="relative z-[1] mx-auto w-full max-w-5xl px-1">
         <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.42em] text-cyan-200/85">Base OS · lookup</p>
-            <p className="mt-3 text-xl font-black text-white md:text-3xl">
-              Address snapshot
-            </p>
+            <p className="os-eyebrow text-[11px]">Base OS · lookup</p>
+            <p className="os-display mt-3 text-xl font-semibold text-white md:text-3xl">Address snapshot</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link
-              href="/"
-              className="rounded-2xl border border-white/12 bg-black/35 px-4 py-2 text-xs font-black uppercase tracking-[0.15em] text-slate-200 hover:border-white/35"
-            >
+            <Link href="/" className="os-cta-ghost px-4 py-2 text-xs uppercase tracking-[0.15em]">
               Home
             </Link>
-            <Link
-              href="/safety"
-              className="rounded-2xl border border-cyan-300/55 bg-gradient-to-br from-cyan-500/15 to-transparent px-4 py-2 text-xs font-black uppercase tracking-[0.15em] text-cyan-100"
-            >
+            <Link href="/safety" className="os-cta px-4 py-2 text-xs uppercase tracking-[0.15em]">
               New lookup
             </Link>
           </div>

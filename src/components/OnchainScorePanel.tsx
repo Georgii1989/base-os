@@ -48,8 +48,8 @@ function ScoreRing({ score, grade }: { score: number; grade: string }) {
         />
         <defs>
           <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#22d3ee" />
-            <stop offset="100%" stopColor="#e879f9" />
+            <stop offset="0%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#8b5cf6" />
           </linearGradient>
         </defs>
       </svg>
@@ -73,9 +73,9 @@ function MetricTile({
   hint?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/35 p-4">
+    <div className="os-metric-tile">
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-black text-white">{value}</p>
+      <p className="mt-1 text-xl font-bold tabular-nums text-amber-50">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-400">{hint}</p> : null}
     </div>
   );
@@ -110,9 +110,9 @@ export function OnchainScorePanel() {
 
   return (
     <div className="grid gap-6">
-      <div className="rounded-3xl border border-cyan-300/25 bg-slate-950/55 p-6 md:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-200/90">Base mainnet</p>
-        <h2 className="mt-2 text-3xl font-black text-white md:text-4xl">Onchain score</h2>
+      <div className="os-panel p-6 md:p-8">
+        <p className="os-eyebrow">Base mainnet</p>
+        <h2 className="os-display mt-2 text-3xl font-semibold text-white md:text-4xl">Onchain score</h2>
         <p className="mt-3 max-w-2xl text-sm text-slate-200/85">
           Paste any Base address to see activity depth: transactions, contracts touched, bridges,
           deployments, and token transfers (when indexed).
@@ -128,13 +128,13 @@ export function OnchainScorePanel() {
             }}
             placeholder="0x… Base address"
             spellCheck={false}
-            className="min-w-0 flex-1 rounded-2xl border border-white/15 bg-black/40 px-4 py-3 font-mono text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-400/50"
+            className="min-w-0 flex-1 os-input font-mono outline-none"
           />
           <button
             type="button"
             onClick={runLookup}
             disabled={!isAddress(input.trim())}
-            className="rounded-2xl bg-gradient-to-r from-cyan-500/90 to-fuchsia-500/80 px-6 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="os-cta os-display px-6 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
             Analyze
           </button>
@@ -201,7 +201,7 @@ export function OnchainScorePanel() {
           <ScoreShareActions data={data} />
 
           <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
-            <section className="flex flex-col items-center justify-center rounded-3xl border border-fuchsia-300/20 bg-slate-950/50 p-6">
+            <section className="flex flex-col items-center justify-center os-panel p-6">
               <ScoreRing score={data.score.score} grade={data.score.grade} />
               <p className="mt-4 text-center text-xs text-slate-400">
                 Heuristic Base activity score
@@ -210,7 +210,7 @@ export function OnchainScorePanel() {
               </p>
             </section>
 
-            <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+            <section className="os-panel p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs text-slate-500">Address</p>

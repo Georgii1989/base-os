@@ -214,7 +214,7 @@ export function BridgeRelayPanel() {
 
   return (
     <div className="grid gap-4">
-      <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+      <div className="os-panel p-4">
         <div className="grid gap-3">
           <BridgeChainSelect
             label="From"
@@ -333,7 +333,7 @@ export function BridgeRelayPanel() {
       </p>
 
       {fromChain.officialBridge && toChain.officialBridge && fromChainId !== 56 ? (
-        <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+        <div className="os-panel p-4">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
             Prefer canonical route?
           </p>

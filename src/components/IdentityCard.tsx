@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatEther } from "viem";
+import { OsMetricTile } from "@/components/os/OsChrome";
 import { formatCompactNumber } from "@/lib/baseAnalyticsFormat";
 import { shortenAddressDisplay } from "@/lib/knownBaseProtocols";
 import type { OnchainScorePayload } from "@/lib/onchainScoreFetch";
@@ -35,14 +36,14 @@ function ScoreRing({ score, grade }: { score: number; grade: string }) {
         />
         <defs>
           <linearGradient id="cardScoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#22d3ee" />
-            <stop offset="100%" stopColor="#e879f9" />
+            <stop offset="0%" stopColor="#F59E0B" />
+            <stop offset="100%" stopColor="#8B5CF6" />
           </linearGradient>
         </defs>
       </svg>
       <div className="absolute text-center">
-        <p className="text-4xl font-black text-white">{score}</p>
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/90">Grade {grade}</p>
+        <p className="os-display text-4xl font-semibold text-white">{score}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300/90">Grade {grade}</p>
       </div>
     </div>
   );
@@ -59,11 +60,11 @@ export function IdentityCard({ data }: Props) {
   const appOrigin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://app-base-os.vercel.app";
 
   return (
-    <article className="mx-auto w-full max-w-md overflow-hidden rounded-[2rem] border border-cyan-300/30 bg-gradient-to-b from-slate-950/90 via-[#0a0f1e] to-[#12081f] shadow-[0_0_80px_rgba(34,211,238,0.12)]">
+    <article className="os-panel mx-auto w-full max-w-md overflow-hidden p-0">
       <header className="border-b border-white/8 bg-black/30 px-6 py-5 text-center">
-        <p className="text-[10px] font-black uppercase tracking-[0.35em] text-cyan-200/80">Base OS</p>
-        <p className="mt-2 text-lg font-black text-white">Onchain identity</p>
-        <p className="mt-2 font-mono text-sm font-bold text-cyan-100/90">
+        <p className="os-eyebrow">Base OS</p>
+        <p className="os-display mt-2 text-lg font-semibold text-white">Onchain identity</p>
+        <p className="mt-2 font-mono text-sm font-bold text-amber-100/90">
           {shortenAddressDisplay(data.address)}
         </p>
         <p className="mt-1 text-xs text-slate-500">
@@ -75,22 +76,9 @@ export function IdentityCard({ data }: Props) {
         <ScoreRing score={data.score.score} grade={data.score.grade} />
 
         <dl className="mt-6 grid grid-cols-3 gap-2 text-center text-xs">
-          <div className="rounded-xl border border-white/8 bg-black/30 px-2 py-3">
-            <dt className="text-slate-500">Active days</dt>
-            <dd className="mt-1 text-lg font-black text-white">{m.activeDays}</dd>
-          </div>
-          <div className="rounded-xl border border-white/8 bg-black/30 px-2 py-3">
-            <dt className="text-slate-500">Outgoing</dt>
-            <dd className="mt-1 text-lg font-black text-white">
-              {formatCompactNumber(m.outgoingTxs)}
-            </dd>
-          </div>
-          <div className="rounded-xl border border-white/8 bg-black/30 px-2 py-3">
-            <dt className="text-slate-500">Contracts</dt>
-            <dd className="mt-1 text-lg font-black text-white">
-              {formatCompactNumber(m.uniqueContractsTouched)}
-            </dd>
-          </div>
+          <OsMetricTile label="Active days" value={m.activeDays} accent="gold" />
+          <OsMetricTile label="Outgoing" value={formatCompactNumber(m.outgoingTxs)} accent="violet" />
+          <OsMetricTile label="Contracts" value={formatCompactNumber(m.uniqueContractsTouched)} accent="amber" />
         </dl>
 
         <p className="mt-4 text-center text-[11px] text-slate-500">
@@ -113,7 +101,7 @@ export function IdentityCard({ data }: Props) {
                   </div>
                   <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/8">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-cyan-500/80 to-fuchsia-500/70"
+                      className="h-full rounded-full bg-gradient-to-r from-amber-500/80 to-violet-500/70"
                       style={{ width: `${Math.round((p.txs / maxProtocolTxs) * 100)}%` }}
                     />
                   </div>
@@ -127,16 +115,13 @@ export function IdentityCard({ data }: Props) {
       </div>
 
       <footer className="flex flex-col gap-2 border-t border-white/8 bg-black/35 px-6 py-5">
-        <Link
-          href={`${appOrigin}/?tab=score`}
-          className="rounded-xl bg-gradient-to-r from-cyan-500/90 to-fuchsia-500/80 py-3 text-center text-sm font-black text-white"
-        >
+        <Link href={`${appOrigin}/?tab=score`} className="os-cta os-display py-3 text-center text-sm">
           Check your score
         </Link>
         <div className="grid grid-cols-2 gap-2">
           <Link
             href={`/${data.address}`}
-            className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-500/10 py-2.5 text-center text-xs font-bold text-fuchsia-100"
+            className="os-cta-ghost py-2.5 text-center text-xs"
           >
             Tip profile
           </Link>
@@ -144,7 +129,7 @@ export function IdentityCard({ data }: Props) {
             href={`https://basescan.org/address/${data.address}`}
             target="_blank"
             rel="noreferrer"
-            className="rounded-xl border border-white/12 py-2.5 text-center text-xs font-bold text-slate-200"
+            className="os-cta-ghost py-2.5 text-center text-xs"
           >
             BaseScan ↗
           </a>

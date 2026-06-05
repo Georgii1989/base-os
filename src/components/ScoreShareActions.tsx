@@ -75,7 +75,7 @@ export function ScoreShareActions({ data }: Props) {
   }, [data]);
 
   return (
-    <section className="rounded-3xl border border-cyan-300/30 bg-gradient-to-br from-cyan-500/10 via-slate-950/60 to-fuchsia-500/10 p-5">
+    <section className="os-panel p-5">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200/90">Share</p>
       <p className="mt-1 max-w-xl text-sm text-slate-300">
         Post your score on X — we open compose with text and link. Score card image is copied when

@@ -196,10 +196,10 @@ export function TxLensPanel() {
       <div className="relative overflow-hidden rounded-[1.85rem] border border-indigo-300/35 bg-gradient-to-br from-indigo-500/18 via-purple-950/40 to-black/90 p-6 md:p-8">
         <div className="pointer-events-none absolute left-[-20%] top-[-30%] h-60 w-60 rounded-full bg-fuchsia-500/12 blur-[90px]" />
         <header className="relative max-w-4xl space-y-3">
-          <p className="text-[11px] font-black uppercase tracking-[0.38em] text-indigo-200/90">
+          <p className="os-eyebrow text-violet-200/90">
             Test · nothing is sent from your wallet
           </p>
-          <h2 className="text-4xl font-black tracking-tight text-white md:text-[2.85rem]">Transaction preview</h2>
+          <h2 className="os-display text-4xl font-semibold tracking-tight text-white md:text-[2.85rem]">Transaction preview</h2>
           <p className="max-w-3xl text-sm leading-relaxed text-slate-300 md:text-[15px]">
             Paste data from BaseScan or your wallet preview. You’ll see if the call likely works — without signing or
             spending gas here.
@@ -213,7 +213,7 @@ export function TxLensPanel() {
         </header>
       </div>
 
-      <div className="grid gap-4 rounded-3xl border border-white/12 bg-black/45 p-5 md:p-7">
+      <div className="os-panel grid gap-4 p-5 md:p-7">
         <div className="grid gap-4 md:grid-cols-2">
           <label className="grid gap-1.5 text-sm md:col-span-2 lg:col-span-1">
             <span className="text-[11px] font-black uppercase tracking-[0.26em] text-slate-500">Sender</span>
@@ -270,7 +270,7 @@ export function TxLensPanel() {
             type="button"
             disabled={outcome.kind === "running"}
             onClick={() => void simulate()}
-            className="rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500 px-10 py-3 text-sm font-black uppercase tracking-[0.18em] text-white shadow-[0_16px_48px_rgba(99,102,241,0.35)] transition hover:brightness-110 disabled:opacity-45"
+            className="os-cta os-display px-10 py-3 text-sm uppercase tracking-[0.18em] disabled:opacity-45"
           >
             {outcome.kind === "running" ? "Checking…" : "Run preview"}
           </button>

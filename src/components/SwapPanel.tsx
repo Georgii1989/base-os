@@ -445,7 +445,7 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
         </p>
       ) : null}
 
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-b from-slate-900/90 to-black/95 p-1 shadow-[0_0_80px_rgba(139,92,246,0.15)]">
+      <div className="os-panel relative overflow-hidden p-1 shadow-[0_0_60px_rgba(139,92,246,0.12)]">
         <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-600/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-cyan-500/15 blur-3xl" />
 
@@ -563,7 +563,7 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
                   !quote || quoteQuery.isLoading || needsApproval || isSwapping || isSwapConfirming
                 }
                 onClick={handleSwap}
-                className="w-full rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 py-4 text-base font-black text-white shadow-[0_8px_32px_rgba(168,85,247,0.35)] transition hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+                className="os-cta os-display w-full py-4 text-base disabled:opacity-40"
               >
                 {isSwapping || isSwapConfirming
                   ? "Confirm in wallet…"

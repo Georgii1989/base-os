@@ -21,6 +21,7 @@ import { Battleship10BattleBoards } from "@/components/Battleship10Board";
 import { Battleship10GameEndPanel } from "@/components/Battleship10GameEndPanel";
 import { Battleship10InviteBar } from "@/components/Battleship10InviteBar";
 import { Battleship10PlacementEditor } from "@/components/Battleship10PlacementEditor";
+import { OsSubTabs } from "@/components/os/OsChrome";
 import { useBattleship10IdleCloser } from "@/hooks/useBattleship10IdleCloser";
 import { useBattleship10Rooms } from "@/hooks/useBattleship10Rooms";
 import {
@@ -395,32 +396,22 @@ export function Battleship10GamePanel() {
 
   return (
     <div className="mx-auto grid max-w-3xl gap-5">
-      <header className="rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-slate-950 via-cyan-950/40 to-slate-950 p-6 text-center">
-        <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-200/80">1v1 on Base</p>
-        <h2 className="mt-2 text-3xl font-black text-white">Battleship</h2>
+      <header className="os-game-hero p-6 text-center">
+        <p className="os-eyebrow">1v1 on Base</p>
+        <h2 className="os-display mt-2 text-3xl font-semibold text-white">Battleship</h2>
         <p className="mt-2 text-sm text-slate-400">
           10×10 classic fleet · place ships · hunt opponent · hit = extra turn
         </p>
       </header>
 
-      <div className="flex rounded-2xl border border-cyan-400/25 bg-slate-950/40 p-1">
-        {(["fun", "money"] as const).map((style) => (
-          <button
-            key={style}
-            type="button"
-            onClick={() => setPlayStyle(style)}
-            className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-black transition ${
-              playStyle === style
-                ? style === "fun"
-                  ? "bg-slate-500/60 text-white"
-                  : "bg-emerald-500/70 text-white"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            {style === "fun" ? "Casual" : "Ranked"}
-          </button>
-        ))}
-      </div>
+      <OsSubTabs
+        tabs={[
+          { id: "fun" as const, label: "Casual" },
+          { id: "money" as const, label: "Ranked" },
+        ]}
+        active={playStyle}
+        onChange={setPlayStyle}
+      />
 
       {!isConnected ? (
         <p className="rounded-2xl border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-center text-sm text-amber-100">
@@ -437,7 +428,7 @@ export function Battleship10GamePanel() {
         </button>
       ) : !game ? (
         <>
-          <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+          <section className="os-panel p-5">
             <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-400">Lobby</h3>
             <p className="mt-1 text-xs text-slate-500">
               Next room #{nextId != null ? String(nextId) : "…"}
@@ -511,7 +502,7 @@ export function Battleship10GamePanel() {
             ) : null}
           </section>
           {pastRooms.length > 0 ? (
-            <section className="rounded-3xl border border-white/8 bg-slate-950/40 p-5">
+            <section className="os-panel p-5">
               <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500">History</h3>
               <ul className="mt-3 max-h-32 space-y-2 overflow-y-auto">
                 {pastRooms.map((r) => (
@@ -529,7 +520,7 @@ export function Battleship10GamePanel() {
         </>
       ) : (
         <>
-          <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+          <section className="os-panel p-5">
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <p className="font-bold text-white">
                 Room <span className="font-mono text-lg">#{String(game.gameId)}</span>

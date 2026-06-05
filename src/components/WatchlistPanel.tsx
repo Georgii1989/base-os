@@ -188,10 +188,10 @@ export function WatchlistPanel() {
       <div className="relative overflow-hidden rounded-[1.75rem] border border-emerald-300/35 bg-gradient-to-br from-emerald-500/14 via-black/65 to-purple-950/40 p-6 md:p-8">
         <div className="pointer-events-none absolute right-[-8%] top-[-28%] h-52 w-52 rounded-full bg-cyan-400/12 blur-[70px]" />
         <header className="relative max-w-3xl">
-          <p className="text-[11px] font-black uppercase tracking-[0.38em] text-emerald-200/90">
+          <p className="os-eyebrow text-emerald-200/90">
             Saved only on this device
           </p>
-          <h2 className="mt-3 text-4xl font-black tracking-tight text-white md:text-5xl">
+          <h2 className="os-display mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
             Tracked wallets
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-slate-300 md:text-base">
@@ -206,7 +206,7 @@ export function WatchlistPanel() {
         </header>
       </div>
 
-      <section className="rounded-3xl border border-white/12 bg-black/45 p-5 backdrop-blur-sm md:flex md:flex-wrap md:items-end md:gap-4 md:p-6">
+      <section className="os-panel p-5 md:flex md:flex-wrap md:items-end md:gap-4 md:p-6">
         <div className="min-w-[min(100%,380px)] flex-1">
           <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
             Base address (0x…)
@@ -232,7 +232,7 @@ export function WatchlistPanel() {
         <button
           type="button"
           onClick={() => handleAdd()}
-          className="mt-4 h-[46px] w-full rounded-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-600 px-6 text-sm font-black uppercase tracking-[0.15em] text-white shadow-[0_14px_40px_rgba(16,185,129,0.25)] transition hover:brightness-110 md:mt-[22px] md:w-auto md:min-w-[140px]"
+          className="os-cta os-display mt-4 h-[46px] w-full px-6 text-sm uppercase tracking-[0.15em] md:mt-[22px] md:w-auto md:min-w-[140px]"
         >
           Pin
         </button>
@@ -332,7 +332,7 @@ export function WatchlistPanel() {
               return (
                 <article
                   key={addr}
-                  className="group relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 px-5 py-5 transition hover:border-cyan-300/55 hover:bg-white/[0.04] md:px-6"
+                  className="os-panel-bento group px-5 py-5 md:px-6"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 flex-1">

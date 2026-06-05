@@ -195,9 +195,9 @@ export function TokenLauncherPanel() {
 
   return (
     <div className="grid gap-5">
-      <section className="rounded-3xl border border-cyan-300/25 bg-gradient-to-br from-cyan-500/10 via-slate-950/60 to-emerald-500/10 p-6 md:p-8">
-        <p className="text-[11px] font-black uppercase tracking-[0.35em] text-cyan-200/90">Launch Kit</p>
-        <h2 className="mt-2 text-3xl font-black text-white">Create your token on Base</h2>
+      <section className="os-panel p-6 md:p-8">
+        <p className="os-eyebrow">Launch Kit</p>
+        <h2 className="os-display mt-2 text-3xl font-semibold text-white">Create your token on Base</h2>
         <p className="mt-3 max-w-2xl text-sm text-slate-300">
           Step-by-step ERC-20 deploy. Full supply mints to your wallet — you pay gas only.
         </p>
@@ -207,7 +207,7 @@ export function TokenLauncherPanel() {
       </section>
 
       {step === "intro" ? (
-        <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-6">
+        <section className="os-panel p-6">
           <h3 className="text-xl font-black text-white">What you get</h3>
           <ul className="mt-4 grid gap-3 text-sm text-slate-300">
             <li className="rounded-xl border border-white/8 bg-black/30 px-4 py-3">
@@ -226,7 +226,7 @@ export function TokenLauncherPanel() {
           <button
             type="button"
             onClick={goNext}
-            className="mt-6 rounded-xl bg-gradient-to-r from-cyan-500/80 to-emerald-500/70 px-5 py-2.5 text-sm font-black text-white"
+            className="mt-6 os-cta os-display px-5 py-2.5 text-sm"
           >
             Start wizard
           </button>
@@ -234,7 +234,7 @@ export function TokenLauncherPanel() {
       ) : null}
 
       {step === "identity" ? (
-        <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-6">
+        <section className="os-panel p-6">
           <h3 className="text-lg font-black text-white">Token identity</h3>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="block">
@@ -264,7 +264,7 @@ export function TokenLauncherPanel() {
             <button type="button" onClick={goBack} className="rounded-xl border border-white/15 px-4 py-2 text-sm font-bold text-slate-300">
               Back
             </button>
-            <button type="button" onClick={goNext} className="rounded-xl bg-cyan-500/80 px-4 py-2 text-sm font-black text-white">
+            <button type="button" onClick={goNext} className="os-cta os-display px-4 py-2 text-sm">
               Continue
             </button>
           </div>
@@ -272,7 +272,7 @@ export function TokenLauncherPanel() {
       ) : null}
 
       {step === "supply" ? (
-        <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-6">
+        <section className="os-panel p-6">
           <h3 className="text-lg font-black text-white">Initial supply</h3>
           <label className="mt-4 block">
             <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">Whole tokens</span>
@@ -290,7 +290,7 @@ export function TokenLauncherPanel() {
             <button type="button" onClick={goBack} className="rounded-xl border border-white/15 px-4 py-2 text-sm font-bold text-slate-300">
               Back
             </button>
-            <button type="button" onClick={goNext} className="rounded-xl bg-cyan-500/80 px-4 py-2 text-sm font-black text-white">
+            <button type="button" onClick={goNext} className="os-cta os-display px-4 py-2 text-sm">
               Review
             </button>
           </div>
@@ -298,7 +298,7 @@ export function TokenLauncherPanel() {
       ) : null}
 
       {step === "review" ? (
-        <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-6">
+        <section className="os-panel p-6">
           <h3 className="text-lg font-black text-white">Review & launch</h3>
           {validation.ok ? (
             <dl className="mt-4 grid gap-2 text-sm">
@@ -343,7 +343,7 @@ export function TokenLauncherPanel() {
                 type="button"
                 disabled={!validation.ok || isLaunching || isConfirming}
                 onClick={handleLaunch}
-                className="rounded-xl bg-gradient-to-r from-cyan-500/80 to-emerald-500/70 px-5 py-2.5 text-sm font-black text-white disabled:opacity-50"
+                className="os-cta os-display px-5 py-2.5 text-sm disabled:opacity-50"
               >
                 {isLaunching || isConfirming ? "Confirm in wallet…" : "Launch on Base"}
               </button>

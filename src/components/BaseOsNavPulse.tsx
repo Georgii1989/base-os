@@ -18,12 +18,12 @@ const GROUP_ANGLE: Record<OsTabGroupId, number> = {
 };
 
 const GROUP_GLOW: Record<OsTabGroupId, string> = {
-  hub: "#22d3ee",
-  trade: "#a78bfa",
-  build: "#e879f9",
-  you: "#34d399",
-  explore: "#fbbf24",
-  games: "#fb7185",
+  hub: "#F59E0B",
+  trade: "#A78BFA",
+  build: "#C084FC",
+  you: "#34D399",
+  explore: "#FBBF24",
+  games: "#FB7185",
 };
 
 function nodePos(angleDeg: number, cx: number, cy: number, r: number) {
@@ -68,17 +68,15 @@ export function BaseOsNavPulse({ activeTab, onSelect }: Props) {
 
   return (
     <aside
-      className="relative hidden min-h-[220px] overflow-hidden rounded-2xl border border-violet-300/25 bg-gradient-to-br from-violet-500/10 via-[#070313]/90 to-cyan-500/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_40px_rgba(139,92,246,0.12)] lg:block"
+      className="os-panel relative hidden min-h-[220px] overflow-hidden p-4 lg:block"
       aria-label="Base OS system map"
     >
-      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-fuchsia-500/20 blur-3xl os-animate-glow" />
-      <div className="pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-cyan-400/15 blur-2xl os-animate-glow [animation-delay:1.2s]" />
+      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-amber-500/15 blur-3xl os-animate-glow" />
+      <div className="pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-violet-500/12 blur-2xl os-animate-glow [animation-delay:1.2s]" />
 
       <div className="relative flex items-center justify-between gap-2">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-violet-200/90">
-            System map
-          </p>
+          <p className="os-eyebrow text-[10px]">System map</p>
           <p className="mt-0.5 text-sm font-bold text-white">Live on Base</p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-200">
@@ -97,8 +95,8 @@ export function BaseOsNavPulse({ activeTab, onSelect }: Props) {
       >
         <defs>
           <radialGradient id="nav-pulse-core" cx="50%" cy="50%" r="50%">
-            <stop stopColor="#A855F7" stopOpacity="0.45" />
-            <stop offset="1" stopColor="#A855F7" stopOpacity="0" />
+            <stop stopColor="#F59E0B" stopOpacity="0.35" />
+            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0" />
           </radialGradient>
           <filter id="nav-node-glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="2.5" result="blur" />
@@ -117,7 +115,7 @@ export function BaseOsNavPulse({ activeTab, onSelect }: Props) {
           rx="78"
           ry="34"
           fill="none"
-          stroke="rgba(34,211,238,0.22)"
+          stroke="rgba(245,158,11,0.22)"
           strokeWidth="1"
           strokeDasharray="4 6"
           className="origin-center animate-[spin_36s_linear_infinite]"
@@ -159,7 +157,7 @@ export function BaseOsNavPulse({ activeTab, onSelect }: Props) {
             x="140"
             y="92"
             textAnchor="middle"
-            fill="#F5D0FE"
+            fill="#FCD34D"
             fontSize="9"
             fontWeight="700"
             letterSpacing="0.12em"
@@ -207,19 +205,19 @@ export function BaseOsNavPulse({ activeTab, onSelect }: Props) {
       </svg>
 
       <div className="relative mt-1 grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-cyan-300/20 bg-black/35 px-2.5 py-2">
+        <div className="os-metric-tile px-2.5 py-2">
           <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">Base TVL</p>
-          <p className="mt-0.5 text-sm font-black tabular-nums text-cyan-100">{formatUsd(tvl)}</p>
+          <p className="mt-0.5 text-sm font-black tabular-nums text-amber-100">{formatUsd(tvl)}</p>
         </div>
-        <div className="rounded-xl border border-violet-300/20 bg-black/35 px-2.5 py-2">
+        <div className="os-metric-tile px-2.5 py-2">
           <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">Tx · day</p>
           <p className="mt-0.5 text-sm font-black tabular-nums text-violet-100">
             {formatCompactNumber(txs)}
           </p>
         </div>
-        <div className="rounded-xl border border-fuchsia-300/20 bg-black/35 px-2.5 py-2">
+        <div className="os-metric-tile px-2.5 py-2">
           <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">Radar</p>
-          <p className="mt-0.5 text-sm font-black tabular-nums text-fuchsia-100">
+          <p className="mt-0.5 text-sm font-black tabular-nums text-amber-200">
             {radarProjects.length} apps
           </p>
         </div>

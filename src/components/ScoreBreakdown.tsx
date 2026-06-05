@@ -14,7 +14,7 @@ export function ScoreBreakdown({ metrics, tokenTransfers, score, rpcTxCount }: P
   const { items, total } = buildScoreBreakdown(metrics, tokenTransfers, { rpcTxCount });
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-slate-950/50 p-5 md:p-6">
+    <section className="os-panel p-5 md:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h3 className="text-lg font-black text-white">Score breakdown</h3>

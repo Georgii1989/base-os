@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatEther } from "viem";
+import { OsMetricTile } from "@/components/os/OsChrome";
 import { BASE_OS_WATCHLIST_EVENT, isWatched, toggleWatchlistAddress } from "@/lib/watchlistStorage";
 
 export type PublicSafetyPayload = {
@@ -41,14 +42,14 @@ export function PublicAddressReport({ data }: { data: PublicSafetyPayload }) {
     : balanceEth;
 
   return (
-    <div className="relative overflow-hidden rounded-[2rem] border border-white/16 bg-black/55 p-6 shadow-[0_0_80px_rgba(217,70,239,0.08),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl md:p-10">
-      <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-fuchsia-500/12 blur-[100px]" />
-      <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-cyan-400/15 blur-[80px]" />
+    <div className="os-panel relative overflow-hidden p-6 md:p-10">
+      <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-amber-500/10 blur-[100px]" />
+      <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-violet-500/12 blur-[80px]" />
 
       <header className="relative flex flex-col gap-5 border-b border-white/10 pb-8 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-cyan-400/35 bg-cyan-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-200/90">
+            <span className="rounded-full border border-amber-400/35 bg-amber-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-amber-200/90">
               Summary
             </span>
             <span className="rounded-full border border-white/14 bg-white/5 px-2.5 py-1 text-[11px] font-mono font-semibold text-slate-300">
@@ -57,18 +58,12 @@ export function PublicAddressReport({ data }: { data: PublicSafetyPayload }) {
           </div>
           <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Address
-              </p>
+              <p className="os-eyebrow text-[11px]">Address</p>
               <p className="mt-2 break-all font-mono text-lg font-bold tracking-tight text-white md:text-2xl">
                 {data.checksum}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => void copy()}
-              className="shrink-0 rounded-2xl border border-white/14 bg-white/5 px-4 py-2.5 text-sm font-black text-white transition hover:border-cyan-400/55 hover:bg-cyan-400/15"
-            >
+            <button type="button" onClick={() => void copy()} className="os-cta-ghost shrink-0 px-4 py-2.5 text-sm">
               {copied ? "Copied" : "Copy address"}
             </button>
           </div>
@@ -76,32 +71,25 @@ export function PublicAddressReport({ data }: { data: PublicSafetyPayload }) {
       </header>
 
       <section className="relative mt-8 grid gap-4 sm:grid-cols-3">
-        <StatCard
+        <OsMetricTile
           label="Type"
           value={data.isContract ? "Smart contract" : "Wallet"}
           hint={data.isContract ? "Has code on-chain" : "Typical user wallet"}
-          accent="fuchsia"
+          accent="violet"
         />
-        <StatCard
-          label="ETH balance"
-          value={`${deBankStyle}`}
-          hint="on Base"
-          accent="cyan"
-        />
-        <StatCard
+        <OsMetricTile label="ETH balance" value={deBankStyle} hint="on Base" accent="gold" />
+        <OsMetricTile
           label="Transactions sent"
           value={data.txCount.toLocaleString()}
           hint="from this address"
-          accent="violet"
+          accent="amber"
         />
       </section>
 
-      <section className="relative mt-8 rounded-3xl border border-white/12 bg-black/35 p-5 md:flex md:items-center md:justify-between md:gap-6">
+      <section className="os-panel relative mt-8 p-5 md:flex md:items-center md:justify-between md:gap-6">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">
-            Code size
-          </p>
-          <p className="mt-3 text-xl font-black text-white">
+          <p className="os-eyebrow text-[11px]">Code size</p>
+          <p className="mt-3 text-xl font-bold text-white">
             {data.isContract ? `${data.bytecodeBytes.toLocaleString()} bytes` : "— none —"}
           </p>
           <p className="mt-2 text-sm text-slate-400">
@@ -111,26 +99,18 @@ export function PublicAddressReport({ data }: { data: PublicSafetyPayload }) {
           </p>
         </div>
         <div className="mt-4 flex flex-wrap gap-2 md:mt-0 md:justify-end">
-          <a
-            href={basescan}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center justify-center rounded-2xl border border-cyan-300/55 bg-gradient-to-br from-cyan-500/25 via-cyan-500/10 to-transparent px-4 py-2.5 text-sm font-black text-cyan-50 shadow-[0_0_26px_rgba(34,211,238,0.15)] hover:border-cyan-200"
-          >
+          <a href={basescan} target="_blank" rel="noreferrer noopener" className="os-cta px-4 py-2.5 text-sm">
             Open Basescan ↗
           </a>
           <a
             href={REVOKE}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center justify-center rounded-2xl border border-white/16 bg-white/5 px-4 py-2.5 text-sm font-bold text-slate-100 hover:border-white/30"
+            className="os-cta-ghost px-4 py-2.5 text-sm"
           >
             Token permissions ↗
           </a>
-          <Link
-            href={`/?tab=guard`}
-            className="inline-flex items-center justify-center rounded-2xl border border-fuchsia-300/35 bg-fuchsia-500/15 px-4 py-2.5 text-sm font-black text-fuchsia-50 hover:bg-fuchsia-500/25"
-          >
+          <Link href={`/?tab=guard`} className="os-cta-ghost px-4 py-2.5 text-sm">
             Guard in Base OS
           </Link>
           <button
@@ -139,14 +119,11 @@ export function PublicAddressReport({ data }: { data: PublicSafetyPayload }) {
               const next = toggleWatchlistAddress(data.checksum);
               setSignalsPinned(next);
             }}
-            className="inline-flex items-center justify-center rounded-2xl border border-emerald-300/45 bg-emerald-500/10 px-4 py-2.5 text-sm font-black uppercase tracking-[0.08em] text-emerald-100 hover:border-emerald-200 hover:bg-emerald-500/20"
+            className="os-cta-ghost px-4 py-2.5 text-sm uppercase tracking-[0.08em] text-emerald-100"
           >
             {signalsPinned ? "Remove from tracker" : "Save to tracker"}
           </button>
-          <Link
-            href={`/${data.checksum}`}
-            className="inline-flex items-center justify-center rounded-2xl border border-white/12 bg-transparent px-4 py-2.5 text-sm font-bold text-slate-200 hover:border-white/25"
-          >
+          <Link href={`/${data.checksum}`} className="os-cta-ghost px-4 py-2.5 text-sm">
             Tips for this address →
           </Link>
         </div>
@@ -156,33 +133,6 @@ export function PublicAddressReport({ data }: { data: PublicSafetyPayload }) {
         <strong className="text-slate-200">Note:</strong> this page reads public data only. It isn’t financial or security
         advice — always double-check before you send money.
       </footer>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  hint,
-  accent,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  accent: "cyan" | "fuchsia" | "violet";
-}) {
-  const ring =
-    accent === "cyan"
-      ? "from-cyan-400/35 to-transparent shadow-[inset_0_0_0_1px_rgba(34,211,238,0.18)]"
-      : accent === "fuchsia"
-        ? "from-fuchsia-400/35 to-transparent shadow-[inset_0_0_0_1px_rgba(217,70,239,0.16)]"
-        : "from-violet-400/35 to-transparent shadow-[inset_0_0_0_1px_rgba(139,92,246,0.14)]";
-
-  return (
-    <div className={`rounded-3xl border border-white/10 bg-gradient-to-b ${ring} via-black/55 to-black/65 p-4`}>
-      <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-500">{label}</p>
-      <p className="mt-4 text-xl font-black text-white md:text-[1.35rem]">{value}</p>
-      <p className="mt-2 text-[12px] text-slate-500">{hint}</p>
     </div>
   );
 }
