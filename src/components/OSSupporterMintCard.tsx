@@ -7,9 +7,9 @@ import { base } from "wagmi/chains";
 import {
   useAccount,
   useReadContract,
-  useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
+import { useFlashblocksReceipt } from "@/hooks/useFlashblocksReceipt";
 
 const OSSUPPORTER_ABI = [
   {
@@ -74,9 +74,7 @@ export function OSSupporterMintCard({
     reset: resetMint,
   } = useWriteContract();
 
-  const { isLoading: mintConfirming, isSuccess: mintConfirmed } = useWaitForTransactionReceipt({
-    hash: mintHash,
-  });
+  const { isLoading: mintConfirming, isSuccess: mintConfirmed } = useFlashblocksReceipt(mintHash);
 
   const linkedDisplay = useMemo(() => {
     const envSbt = process.env.NEXT_PUBLIC_SBT_ADDRESS?.trim();

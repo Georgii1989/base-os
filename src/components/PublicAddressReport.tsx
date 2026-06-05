@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatEther } from "viem";
+import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import { OsMetricTile } from "@/components/os/OsChrome";
 import { BASE_OS_WATCHLIST_EVENT, isWatched, toggleWatchlistAddress } from "@/lib/watchlistStorage";
 
@@ -59,9 +60,13 @@ export function PublicAddressReport({ data }: { data: PublicSafetyPayload }) {
           <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
               <p className="os-eyebrow text-[11px]">Address</p>
-              <p className="mt-2 break-all font-mono text-lg font-bold tracking-tight text-white md:text-2xl">
-                {data.checksum}
-              </p>
+              <div className="mt-2">
+                <OsAddressDisplay
+                  address={data.checksum as `0x${string}`}
+                  showChecksum
+                  monoClassName="break-all font-mono text-lg font-bold tracking-tight text-white md:text-2xl"
+                />
+              </div>
             </div>
             <button type="button" onClick={() => void copy()} className="os-cta-ghost shrink-0 px-4 py-2.5 text-sm">
               {copied ? "Copied" : "Copy address"}

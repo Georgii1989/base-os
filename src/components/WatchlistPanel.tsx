@@ -3,9 +3,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { formatEther, isAddress } from "viem";
-import { base } from "wagmi/chains";
+import { formatEther } from "viem";
 import { useAccount, usePublicClient } from "wagmi";
+import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
+import { BASE_CHAIN_ID } from "@/lib/baseChain";
+import { resolveAddressInput } from "@/lib/baseBasenames";
 import {
   addToWatchlist,
   loadWatchlist,
@@ -64,7 +66,7 @@ function computeDeltaMap(prev: WatchSnapshot[] | null, next: WatchSnapshot[]) {
 }
 
 export function WatchlistPanel() {
-  const publicClient = usePublicClient({ chainId: base.id });
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
   const queryClient = useQueryClient();
   const { address: connected } = useAccount();
   const [list, setList] = useState<`0x${string}`[]>(() => loadWatchlist());
@@ -158,13 +160,20 @@ export function WatchlistPanel() {
   const [rawInput, setRawInput] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
 
-  function handleAdd(trimmed?: string) {
+  async function handleAdd(trimmed?: string) {
     const raw = (trimmed ?? rawInput).trim();
-    const ok = addToWatchlist(raw);
+    if (!raw) {
+      setInputError("Enter an address or Base name.");
+      return;
+    }
+    const resolved = trimmed ? raw : await resolveAddressInput(raw);
+    if (!resolved) {
+      setInputError("That doesn’t look like a valid address or Base name.");
+      return;
+    }
+    const ok = addToWatchlist(resolved);
     if (!ok) {
-      const t = raw.trim();
-      if (!isAddress(t)) setInputError("That doesn’t look like a valid address.");
-      else if (loadWatchlist().length >= watchlistCapacity) {
+      if (loadWatchlist().length >= watchlistCapacity) {
         setInputError(`You can save up to ${watchlistCapacity} addresses. Remove one to add more.`);
       } else setInputError("Already in your list.");
       return;
@@ -209,12 +218,12 @@ export function WatchlistPanel() {
       <section className="os-panel p-5 md:flex md:flex-wrap md:items-end md:gap-4 md:p-6">
         <div className="min-w-[min(100%,380px)] flex-1">
           <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
-            Base address (0x…)
+            Base address or name
           </label>
           <input
             value={rawInput}
             spellCheck={false}
-            placeholder="0x…"
+            placeholder="0x… or name.base.eth"
             onChange={(e) => {
               setRawInput(e.target.value);
               setInputError(null);
@@ -222,7 +231,7 @@ export function WatchlistPanel() {
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                handleAdd();
+                void handleAdd();
               }
             }}
             className="mt-2 w-full rounded-2xl border border-white/12 bg-black/55 px-4 py-3 font-mono text-sm text-white outline-none ring-cyan-500/0 transition focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-400/25"
@@ -231,7 +240,7 @@ export function WatchlistPanel() {
         </div>
         <button
           type="button"
-          onClick={() => handleAdd()}
+          onClick={() => void handleAdd()}
           className="os-cta os-display mt-4 h-[46px] w-full px-6 text-sm uppercase tracking-[0.15em] md:mt-[22px] md:w-auto md:min-w-[140px]"
         >
           Pin
@@ -239,7 +248,7 @@ export function WatchlistPanel() {
         {connected ? (
           <button
             type="button"
-            onClick={() => handleAdd(connected)}
+            onClick={() => void handleAdd(connected)}
             className="mt-2 w-full rounded-2xl border border-white/16 bg-white/5 px-4 py-2.5 text-sm font-bold text-slate-200 hover:border-emerald-300/55 hover:bg-emerald-500/15 md:mt-[22px] md:w-auto"
           >
             Pin connected wallet
@@ -341,9 +350,13 @@ export function WatchlistPanel() {
                           {snap ? (snap.isContract ? "Contract" : "Wallet") : "⋯"}
                         </span>
                       </div>
-                      <p className="mt-3 break-all font-mono text-sm font-bold tracking-tight text-white md:text-base">
-                        {addr}
-                      </p>
+                      <div className="mt-3">
+                        <OsAddressDisplay
+                          address={addr}
+                          showChecksum
+                          monoClassName="break-all font-mono text-sm font-bold tracking-tight text-white md:text-base"
+                        />
+                      </div>
                       <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
                         <div>
                           <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">

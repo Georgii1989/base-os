@@ -2,33 +2,45 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { getAddress, isAddress } from "viem";
+import { isBasenameLike, resolveAddressInput } from "@/lib/baseBasenames";
 
 export function SafetyLanding() {
   const [raw, setRaw] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
   const router = useRouter();
 
-  function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
     const trimmed = raw.trim();
     if (!trimmed) {
-      setError("Enter an address.");
+      setError("Enter an address or Base name.");
       return;
     }
-    if (!isAddress(trimmed)) {
-      setError("That's not a valid address.");
-      return;
-    }
+    setIsResolving(true);
     setError(null);
-    router.push(`/safety/${getAddress(trimmed as `0x${string}`)}`);
+    try {
+      const resolved = await resolveAddressInput(trimmed);
+      if (!resolved) {
+        setError(
+          isBasenameLike(trimmed)
+            ? "Could not resolve that Base name."
+            : "That's not a valid address or Base name."
+        );
+        return;
+      }
+      router.push(`/safety/${resolved}`);
+    } finally {
+      setIsResolving(false);
+    }
   }
 
-  const okShape = /^0x[a-fA-F0-9]{40}$/.test(raw.trim());
+  const okShape =
+    /^0x[a-fA-F0-9]{40}$/.test(raw.trim()) || isBasenameLike(raw.trim());
 
   return (
-    <form onSubmit={onSubmit} className="os-panel p-5 md:p-8">
-      <label className="os-eyebrow block text-slate-500">Base address</label>
+    <form onSubmit={(e) => void onSubmit(e)} className="os-panel p-5 md:p-8">
+      <label className="os-eyebrow block text-slate-500">Base address or name</label>
       <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-stretch">
         <input
           value={raw}
@@ -38,14 +50,15 @@ export function SafetyLanding() {
           }}
           autoComplete="off"
           spellCheck={false}
-          placeholder="0x…"
+          placeholder="0x… or alice.base.eth"
           className={`os-input min-h-[52px] flex-1 font-mono md:text-base ${okShape ? "border-amber-400/40 ring-2 ring-amber-400/20" : ""}`}
         />
         <button
           type="submit"
-          className="os-cta os-display inline-flex shrink-0 items-center justify-center px-8 py-3 text-[15px] uppercase tracking-[0.12em]"
+          disabled={isResolving}
+          className="os-cta os-display inline-flex shrink-0 items-center justify-center px-8 py-3 text-[15px] uppercase tracking-[0.12em] disabled:opacity-50"
         >
-          Look up →
+          {isResolving ? "Resolving…" : "Look up →"}
         </button>
       </div>
       {error ? (
@@ -54,7 +67,8 @@ export function SafetyLanding() {
         </p>
       ) : (
         <p className="mt-4 text-xs leading-relaxed text-slate-500">
-          Data comes from public Base nodes. We don't store what you paste. Share the result link if you want.
+          Paste a checksum address or a <span className="text-slate-400">.base.eth</span> name. Data comes from
+          public Base nodes — we don&apos;t store what you paste.
         </p>
       )}
     </form>

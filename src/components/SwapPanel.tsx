@@ -10,9 +10,9 @@ import {
   useReadContract,
   useSendTransaction,
   useSwitchChain,
-  useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
+import { useFlashblocksReceipt } from "@/hooks/useFlashblocksReceipt";
 import { useQuery } from "@tanstack/react-query";
 import {
   formatSwapBalance,
@@ -317,7 +317,7 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
   } = useWriteContract();
 
   const { isLoading: isApproveConfirming, isSuccess: approveConfirmed } =
-    useWaitForTransactionReceipt({ hash: approveHash });
+    useFlashblocksReceipt(approveHash);
 
   const {
     sendTransaction,
@@ -328,7 +328,7 @@ export function SwapPanel({ embedded = false }: SwapPanelProps) {
   } = useSendTransaction();
 
   const { isLoading: isSwapConfirming, isSuccess: swapConfirmed } =
-    useWaitForTransactionReceipt({ hash: swapHash });
+    useFlashblocksReceipt(swapHash);
 
   const sellBalanceLoading =
     sellToken && isNativeEthToken(sellToken.address) ? ethLoading : sellErc20Loading;

@@ -1,8 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { formatEther } from "viem";
+import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import { OsMetricTile } from "@/components/os/OsChrome";
 import { formatCompactNumber } from "@/lib/baseAnalyticsFormat";
-import { shortenAddressDisplay } from "@/lib/knownBaseProtocols";
 import type { OnchainScorePayload } from "@/lib/onchainScoreFetch";
 
 function formatDate(ts: number | null): string {
@@ -64,9 +66,12 @@ export function IdentityCard({ data }: Props) {
       <header className="border-b border-white/8 bg-black/30 px-6 py-5 text-center">
         <p className="os-eyebrow">Base OS</p>
         <p className="os-display mt-2 text-lg font-semibold text-white">Onchain identity</p>
-        <p className="mt-2 font-mono text-sm font-bold text-amber-100/90">
-          {shortenAddressDisplay(data.address)}
-        </p>
+        <div className="mt-2 flex justify-center">
+          <OsAddressDisplay
+            address={data.address}
+            monoClassName="font-mono text-sm font-bold text-amber-100/90"
+          />
+        </div>
         <p className="mt-1 text-xs text-slate-500">
           {data.isContract ? "Contract" : "Wallet"} · {Number(balanceEth).toFixed(4)} ETH
         </p>

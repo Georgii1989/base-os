@@ -13,9 +13,9 @@ import {
   useReadContract,
   useSignMessage,
   useSwitchChain,
-  useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
+import { useFlashblocksReceipt } from "@/hooks/useFlashblocksReceipt";
 import { SoulboundHoldersList } from "@/components/SoulboundHoldersList";
 import { OSSupporterMintCard } from "@/components/OSSupporterMintCard";
 import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
@@ -77,7 +77,7 @@ export function BaseBuilderApp() {
   const publicClient = usePublicClient();
   const { signMessageAsync } = useSignMessage();
   const { data: txHash, isPending: isSending, writeContract } = useWriteContract();
-  const { isSuccess: txConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
+  const { isSuccess: txConfirmed } = useFlashblocksReceipt(txHash);
 
   const tipJarAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
   const sbtAddress = process.env.NEXT_PUBLIC_SBT_ADDRESS;

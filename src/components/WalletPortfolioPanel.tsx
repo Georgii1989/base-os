@@ -9,7 +9,7 @@ import { base } from "wagmi/chains";
 import { useAccount, useBalance, useConnect, useSwitchChain } from "wagmi";
 import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
 import type { PortfolioToken, WalletPortfolioPayload } from "@/lib/walletPortfolioFetch";
-import { shortenAddressDisplay } from "@/lib/knownBaseProtocols";
+import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import {
   buildPortfolioSwapBuyHref,
   buildPortfolioSwapSellHref,
@@ -163,9 +163,13 @@ export function WalletPortfolioPanel() {
             {isSwitching ? "Switching…" : "Switch to Base"}
           </button>
         ) : address ? (
-          <p className="text-sm text-slate-400">
-            Wallet: <span className="font-mono font-bold text-cyan-200">{shortenAddressDisplay(address)}</span>
-          </p>
+          <div className="text-sm text-slate-400">
+            <span className="mr-2">Wallet:</span>
+            <OsAddressDisplay
+              address={address}
+              monoClassName="inline font-mono font-bold text-cyan-200"
+            />
+          </div>
         ) : null}
 
         <label className="mt-4 block">

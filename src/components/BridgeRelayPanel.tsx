@@ -8,8 +8,8 @@ import {
   useReadContract,
   useSendTransaction,
   useSwitchChain,
-  useWaitForTransactionReceipt,
 } from "wagmi";
+import { useFlashblocksReceipt } from "@/hooks/useFlashblocksReceipt";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   BRIDGE_CHAINS,
@@ -141,7 +141,8 @@ export function BridgeRelayPanel() {
   const { sendTransactionAsync } = useSendTransaction();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [txChainId, setTxChainId] = useState<BridgeChainId | undefined>();
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash: txHash });
+  const confirmChainId = txChainId ?? fromChain.id;
+  const { isLoading: isConfirming } = useFlashblocksReceipt(txHash, Boolean(txHash), confirmChainId);
 
   const bridgeMutation = useMutation({
     mutationFn: async (quote: RelayQuoteResponse) => {

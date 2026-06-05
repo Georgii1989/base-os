@@ -5,9 +5,11 @@ import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatEther, isAddress } from "viem";
 import { useAccount } from "wagmi";
+import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import { ScoreBreakdown } from "@/components/ScoreBreakdown";
 import { ScoreShareActions } from "@/components/ScoreShareActions";
 import { formatCompactNumber } from "@/lib/baseAnalyticsFormat";
+import { isBasenameLike, resolveAddressInput } from "@/lib/baseBasenames";
 import type { OnchainScorePayload } from "@/lib/onchainScoreFetch";
 
 function formatDate(ts: number | null): string {
@@ -85,6 +87,8 @@ export function OnchainScorePanel() {
   const { address: connected } = useAccount();
   const [input, setInput] = useState("");
   const [queryAddress, setQueryAddress] = useState<string | null>(null);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["onchain-score", queryAddress],
@@ -99,11 +103,29 @@ export function OnchainScorePanel() {
     retry: 1,
   });
 
-  const runLookup = useCallback(() => {
+  const runLookup = useCallback(async () => {
     const trimmed = input.trim();
-    if (!isAddress(trimmed)) return;
-    setQueryAddress(trimmed);
+    if (!trimmed) return;
+    setResolveError(null);
+    setIsResolving(true);
+    try {
+      const resolved = await resolveAddressInput(trimmed);
+      if (!resolved) {
+        setResolveError(
+          isBasenameLike(trimmed)
+            ? "Could not resolve that Base name. Check spelling or try again in a minute."
+            : "Enter a valid 0x address or name.base.eth"
+        );
+        return;
+      }
+      setQueryAddress(resolved);
+    } finally {
+      setIsResolving(false);
+    }
   }, [input]);
+
+  const canAnalyze =
+    isAddress(input.trim()) || isBasenameLike(input.trim());
 
   const m = data?.score.metrics;
   const balanceEth = data ? formatEther(BigInt(data.balanceWei)) : "0";
@@ -124,21 +146,24 @@ export function OnchainScorePanel() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") runLookup();
+              if (e.key === "Enter") void runLookup();
             }}
-            placeholder="0x… Base address"
+            placeholder="0x… or name.base.eth"
             spellCheck={false}
             className="min-w-0 flex-1 os-input font-mono outline-none"
           />
           <button
             type="button"
-            onClick={runLookup}
-            disabled={!isAddress(input.trim())}
+            onClick={() => void runLookup()}
+            disabled={!canAnalyze || isResolving}
             className="os-cta os-display px-6 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Analyze
+            {isResolving ? "Resolving…" : "Analyze"}
           </button>
         </div>
+        {resolveError ? (
+          <p className="mt-2 text-sm text-amber-200/95">{resolveError}</p>
+        ) : null}
 
         <div className="mt-3 flex flex-wrap gap-2">
           {connected ? (
@@ -214,7 +239,11 @@ export function OnchainScorePanel() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs text-slate-500">Address</p>
-                  <p className="break-all font-mono text-sm font-bold text-cyan-100">{data.address}</p>
+                  <OsAddressDisplay
+                    address={data.address}
+                    showChecksum
+                    monoClassName="break-all font-mono text-sm font-bold text-cyan-100"
+                  />
                   <p className="mt-2 text-sm text-slate-400">
                     {data.isContract ? "Smart contract" : "EOA wallet"} ·{" "}
                     {Number(balanceEth).toFixed(6)} ETH on Base

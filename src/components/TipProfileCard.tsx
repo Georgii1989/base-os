@@ -13,6 +13,7 @@ type TipEntry = {
   blockNumber: bigint;
 };
 
+import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import { OsMetricTile } from "@/components/os/OsChrome";
 import { resolveTipJarAddress } from "@/lib/tipContracts";
 /** Narrower window keeps public RPCs from failing on huge eth_getLogs ranges. Override with NEXT_PUBLIC_TIP_PROFILE_FROM_BLOCK. */
@@ -281,7 +282,9 @@ export function TipProfileCard({ address }: { address: `0x${string}` }) {
         </div>
       </div>
 
-      <p className="mt-3 break-all font-mono text-sm text-slate-400">{address}</p>
+      <div className="mt-3">
+        <OsAddressDisplay address={address} showChecksum monoClassName="break-all font-mono text-sm text-slate-400" />
+      </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <OsMetricTile label="Total tipped" value={`${totalEth} ETH`} accent="gold" />

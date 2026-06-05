@@ -8,9 +8,9 @@ import {
   useAccount,
   usePublicClient,
   useSwitchChain,
-  useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
+import { useFlashblocksReceipt } from "@/hooks/useFlashblocksReceipt";
 import { TOKEN_FACTORY_ABI, TOKEN_LAUNCHED_EVENT } from "@/lib/tokenFactoryAbi";
 import {
   canAdvanceFromStep,
@@ -81,9 +81,7 @@ export function TokenLauncherPanel() {
     reset: resetLaunch,
   } = useWriteContract();
 
-  const { isLoading: isConfirming, isSuccess: txConfirmed } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
+  const { isLoading: isConfirming, isSuccess: txConfirmed } = useFlashblocksReceipt(txHash);
 
   useEffect(() => {
     if (!txConfirmed || !txHash || !publicClient || !factoryAddress) return;

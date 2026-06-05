@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { formatUnits, getAddress, isAddress } from "viem";
-import { base } from "wagmi/chains";
-import { useAccount, useChainId, useConnect, useReadContract, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useChainId, useConnect, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
+import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
+import { BASE_CHAIN_ID } from "@/lib/baseChain";
+import { useFlashblocksReceipt } from "@/hooks/useFlashblocksReceipt";
 import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
 
 const REVOKE_CASH_BASE = "https://revoke.cash/chain/8453";
@@ -67,14 +69,14 @@ export function GuardPanel() {
     reset: resetRevoke,
   } = useWriteContract();
   const { isLoading: isRevokeConfirming, isSuccess: revokeConfirmed } =
-    useWaitForTransactionReceipt({ hash: revokeHash });
+    useFlashblocksReceipt(revokeHash);
   const [tokenInput, setTokenInput] = useState<string>(PRESET_USDC);
   const [spenderInput, setSpenderInput] = useState("");
 
   const checksumToken = useMemo(() => normalizeAddress(tokenInput), [tokenInput]);
   const checksumSpender = useMemo(() => normalizeAddress(spenderInput), [spenderInput]);
 
-  const isBase = chainId === base.id;
+  const isBase = chainId === BASE_CHAIN_ID;
   const validInputs =
     Boolean(isConnected && isBase && address && checksumToken && checksumSpender);
 
@@ -82,7 +84,7 @@ export function GuardPanel() {
     address: checksumToken ?? undefined,
     abi: ERC20_ABI,
     functionName: "decimals",
-    chainId: base.id,
+    chainId: BASE_CHAIN_ID,
     query: {
       enabled: Boolean(checksumToken && isConnected && isBase),
     },
@@ -92,7 +94,7 @@ export function GuardPanel() {
     address: checksumToken ?? undefined,
     abi: ERC20_ABI,
     functionName: "symbol",
-    chainId: base.id,
+    chainId: BASE_CHAIN_ID,
     query: {
       enabled: Boolean(checksumToken && isConnected && isBase),
     },
@@ -103,7 +105,7 @@ export function GuardPanel() {
     abi: ERC20_ABI,
     functionName: "allowance",
     args: address && checksumSpender ? [address, checksumSpender] : undefined,
-    chainId: base.id,
+    chainId: BASE_CHAIN_ID,
     query: {
       enabled: validInputs,
     },
@@ -154,7 +156,7 @@ export function GuardPanel() {
               disabled={isConnecting || !preferredConnector}
               onClick={() =>
                 preferredConnector &&
-                connect({ connector: preferredConnector, chainId: base.id })
+                connect({ connector: preferredConnector, chainId: BASE_CHAIN_ID })
               }
               className="mt-3 rounded-xl border border-amber-200/40 bg-amber-500/20 px-4 py-2 text-sm font-bold text-amber-100 disabled:opacity-40"
             >
@@ -167,7 +169,7 @@ export function GuardPanel() {
             <button
               type="button"
               disabled={isSwitching}
-              onClick={() => void switchChainAsync({ chainId: base.id })}
+              onClick={() => void switchChainAsync({ chainId: BASE_CHAIN_ID })}
               className="mt-3 rounded-xl border border-fuchsia-200/40 bg-fuchsia-500/20 px-4 py-2 text-sm font-bold text-fuchsia-100"
             >
               Switch to Base
@@ -175,6 +177,12 @@ export function GuardPanel() {
           </div>
         ) : (
           <div className="mt-6 grid gap-4">
+            {address ? (
+              <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Your wallet</p>
+                <OsAddressDisplay address={address} className="mt-1" />
+              </div>
+            ) : null}
             <label className="block">
               <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Token</span>
               <input
@@ -231,7 +239,7 @@ export function GuardPanel() {
                       abi: ERC20_ABI,
                       functionName: "approve",
                       args: [checksumSpender!, BigInt(0)],
-                      chainId: base.id,
+                      chainId: BASE_CHAIN_ID,
                     });
                   }}
                   className="mt-3 w-full rounded-xl border border-rose-400/40 bg-rose-500/15 py-2.5 text-sm font-black text-rose-100 disabled:opacity-40"

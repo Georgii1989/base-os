@@ -207,7 +207,12 @@ export function Grid646GamePanel() {
       } as Parameters<typeof writeContractAsync>[0]);
       setLastTxHash(hash);
       setTxNote("Confirming…");
-      await waitForTransactionReceipt(wagmiConfig, { hash, chainId: base.id });
+      await waitForTransactionReceipt(wagmiConfig, {
+        hash,
+        chainId: base.id,
+        pollingInterval: 250,
+        confirmations: 1,
+      });
       await refetchGame();
       await refetchRooms();
       await after?.();
