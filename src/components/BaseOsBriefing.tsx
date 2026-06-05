@@ -202,7 +202,7 @@ function BriefingCard({
           <p className="mt-1 text-xs leading-relaxed text-slate-400">{item.description}</p>
         </div>
       </div>
-      <span className="mt-3 text-xs font-black uppercase tracking-wide text-cyan-300/90">
+      <span className="mt-3 text-xs font-bold uppercase tracking-wide text-amber-200/80">
         {item.cta} →
       </span>
     </button>
