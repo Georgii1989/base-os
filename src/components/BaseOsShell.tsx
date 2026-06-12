@@ -17,6 +17,7 @@ import { HomeHubPanel } from "@/components/HomeHubPanel";
 import { OnchainScorePanel } from "@/components/OnchainScorePanel";
 import { SwapBridgePanel } from "@/components/SwapBridgePanel";
 import { TokenLauncherPanel } from "@/components/TokenLauncherPanel";
+import { VerifyDropPanel } from "@/components/VerifyDropPanel";
 import { WalletConnectControl } from "@/components/WalletConnectControl";
 import { WalletPortfolioPanel } from "@/components/WalletPortfolioPanel";
 import { Grid646GamePanel } from "@/components/Grid646GamePanel";
@@ -199,6 +200,7 @@ function BaseOsShellInner() {
             </div>
           </div>
         ) : null}
+        {activeTab === "drop" ? <VerifyDropPanel /> : null}
         {activeTab === "analytics" ? <BaseAnalyticsPanel /> : null}
         {activeTab === "radar" ? <RadarPanel /> : null}
         {activeTab === "watch" ? <WatchlistPanel /> : null}

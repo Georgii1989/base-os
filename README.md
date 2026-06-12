@@ -177,6 +177,21 @@ NEXT_PUBLIC_TOKEN_FACTORY_ADDRESS=0x...
 
 Until that env var is set, the Launch tab shows deploy instructions instead of the form.
 
+## Drop — Base Verify-style claim demo
+
+The **Drop** tab replicates the flow of [base/base-verify-demo](https://github.com/base/base-verify-demo): an airdrop claim protected by social account verification with deterministic anti-sybil tokens.
+
+Flow: connect wallet → pick provider (X / Coinbase / Instagram / TikTok) → link account → sign a SIWE message carrying `urn:verify:provider/...` trait requirements → claim. The backend re-validates trait requirements (frontend tampering protection), verifies the signature (EOA + smart wallets via ERC-6492), and enforces token uniqueness: the same provider account always maps to the same token, so a second wallet with the same account gets `409`.
+
+By default it runs a **sandbox verifier** — account stats and tokens are derived deterministically from the linked handle (real Base Verify API access is gated by an interest form). To switch to the live API, set server-only env vars:
+
+```env
+BASE_VERIFY_API_URL=...
+BASE_VERIFY_SECRET_KEY=...
+```
+
+Demo claims are stored in-memory (reset on server restart). Code is isolated in `src/lib/verifyDrop/`, `src/app/api/verify-drop/`, and `src/components/VerifyDropPanel.tsx`; tab registration touches only `osTabs.ts`, `osTabGroups.ts`, `BaseOsShell.tsx`. To remove the feature, revert the single `feat(drop)` commit.
+
 ## Swap (0x on Base)
 
 The **Swap** tab routes trades through the [0x aggregator](https://docs.0x.org) (Uniswap, Aerodrome, etc. on Base).
