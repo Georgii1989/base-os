@@ -5,6 +5,7 @@ export type OsTabId =
   | "swap"
   | "game"
   | "battleship"
+  | "drop"
   | "analytics"
   | "radar"
   | "guard"
@@ -28,6 +29,7 @@ export const OS_TAB_META: readonly OsTabMeta[] = [
   { id: "battleship", label: "Battleship", eyebrow: "10×10 naval" },
   { id: "launch", label: "Launch", eyebrow: "Token" },
   { id: "tip", label: "Tips", eyebrow: "Support" },
+  { id: "drop", label: "Drop", eyebrow: "Verify claim" },
   { id: "score", label: "Score", eyebrow: "Identity" },
   { id: "portfolio", label: "Portfolio", eyebrow: "Balances" },
   { id: "guard", label: "Guard", eyebrow: "Revoke" },
