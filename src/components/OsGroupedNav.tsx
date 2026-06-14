@@ -1,7 +1,7 @@
 "use client";
 
 import type { KeyboardEvent as ReactKeyboardEvent, MutableRefObject } from "react";
-import { OS_TAB_GROUPS, tabMeta, type OsTabGroupId } from "@/lib/osTabGroups";
+import { OS_TAB_GROUPS, tabMeta, type OsTabGroup, type OsTabGroupId } from "@/lib/osTabGroups";
 import type { OsTabId } from "@/lib/osTabs";
 
 const ACCENT_ACTIVE: Record<string, string> = {
@@ -31,26 +31,36 @@ type Props = {
   onSelect: (tab: OsTabId) => void;
   onKeyDown: (e: ReactKeyboardEvent<HTMLElement>) => void;
   tabButtonRefs: MutableRefObject<(HTMLButtonElement | null)[]>;
+  /** Compact group list for Base App embed; defaults to full nav. */
+  tabGroups?: readonly OsTabGroup[];
+  compact?: boolean;
 };
 
-export function OsGroupedNav({ activeTab, onSelect, onKeyDown, tabButtonRefs }: Props) {
+export function OsGroupedNav({
+  activeTab,
+  onSelect,
+  onKeyDown,
+  tabButtonRefs,
+  tabGroups = OS_TAB_GROUPS,
+  compact = false,
+}: Props) {
   let flatIndex = 0;
 
   return (
     <nav
       role="tablist"
       aria-label="Base OS modules"
-      className="space-y-2"
+      className={compact ? "space-y-1.5" : "space-y-2"}
       onKeyDown={onKeyDown}
     >
-      {OS_TAB_GROUPS.map((group) => (
+      {tabGroups.map((group) => (
         <div key={group.id} className="os-nav-group">
           <span
             className={`os-display inline-flex min-w-[4.75rem] shrink-0 items-center justify-center rounded-lg border px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] ${GROUP_LABEL[group.id]}`}
           >
             {group.label}
           </span>
-          <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+          <div className={`flex min-w-0 flex-1 flex-wrap ${compact ? "gap-1" : "gap-1.5"}`}>
             {group.tabIds.map((tabId) => {
               const tab = tabMeta(tabId);
               const idx = flatIndex++;
@@ -68,7 +78,9 @@ export function OsGroupedNav({ activeTab, onSelect, onKeyDown, tabButtonRefs }: 
                   aria-controls={`base-os-panel-${tabId}`}
                   tabIndex={isActive ? 0 : -1}
                   onClick={() => onSelect(tabId)}
-                  className={`cursor-pointer rounded-xl border px-3 py-2 text-left transition-colors duration-200 ${
+                  className={`cursor-pointer rounded-xl border text-left transition-colors duration-200 ${
+                    compact ? "px-2.5 py-1.5" : "px-3 py-2"
+                  } ${
                     isActive
                       ? ACCENT_ACTIVE[group.id]
                       : "border-white/[0.08] bg-black/25 text-slate-400 hover:border-violet-400/25 hover:bg-violet-500/5 hover:text-slate-100"

@@ -1,0 +1,204 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Base OS Agent API",
+    "version": "1.0.0",
+    "description": "Read-only HTTP API for Base OS — onchain score, portfolio, radar, and analytics on Base (chain 8453). See /.well-known/SKILL.md for agent usage patterns.",
+    "contact": {
+      "url": "https://app-base-os.vercel.app"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://app-base-os.vercel.app",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/api/onchain-score": {
+      "get": {
+        "operationId": "getOnchainScore",
+        "summary": "Heuristic onchain activity score for a Base address",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^0x[a-fA-F0-9]{40}$" },
+            "description": "Checksummed or lowercase 0x address on Base"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Score payload",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OnchainScorePayload" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "502": { "$ref": "#/components/responses/UpstreamError" }
+        }
+      }
+    },
+    "/api/portfolio/{address}": {
+      "get": {
+        "operationId": "getPortfolio",
+        "summary": "ETH and ERC-20 portfolio on Base",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^0x[a-fA-F0-9]{40}$" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Portfolio wrapper",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PortfolioResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "502": { "$ref": "#/components/responses/UpstreamError" }
+        }
+      }
+    },
+    "/api/radar": {
+      "get": {
+        "operationId": "getRadar",
+        "summary": "Curated Base ecosystem projects with optional market data",
+        "responses": {
+          "200": {
+            "description": "Radar feed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updatedAt": { "type": "string", "format": "date-time" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/RadarMarketItem" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analytics/base": {
+      "get": {
+        "operationId": "getBaseAnalytics",
+        "summary": "Aggregated Base chain metrics (TVL, fees, DEX volume)",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["defillama", "auto"] },
+            "description": "Data source preference"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Analytics payload" }
+        }
+      }
+    },
+    "/api/verify-drop/claims": {
+      "get": {
+        "operationId": "getVerifyDropClaims",
+        "summary": "Verify drop config and claim feed (demo)",
+        "responses": {
+          "200": {
+            "description": "Drop state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mode": { "type": "string", "enum": ["sandbox", "live"] },
+                    "action": { "type": "string" },
+                    "providers": { "type": "array", "items": { "type": "object" } },
+                    "claims": { "type": "array", "items": { "type": "object" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OnchainScorePayload": {
+        "type": "object",
+        "required": ["address", "score", "source"],
+        "properties": {
+          "address": { "type": "string" },
+          "isContract": { "type": "boolean" },
+          "balanceWei": { "type": "string" },
+          "rpcTxCount": { "type": "integer" },
+          "source": { "type": "string", "enum": ["blockscout", "etherscan", "rpc_only"] },
+          "score": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+              "grade": { "type": "string" },
+              "metrics": { "type": "object" }
+            }
+          }
+        }
+      },
+      "PortfolioResponse": {
+        "type": "object",
+        "required": ["ok"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "portfolio": { "type": "object" },
+          "error": { "type": "string" }
+        }
+      },
+      "RadarMarketItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "symbol": { "type": "string" },
+          "priceUsd": { "type": "number", "nullable": true },
+          "change24h": { "type": "number", "nullable": true }
+        }
+      },
+      "ErrorBody": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid parameters",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorBody" }
+          }
+        }
+      },
+      "UpstreamError": {
+        "description": "Upstream data source failed",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorBody" }
+          }
+        }
+      }
+    }
+  }
+}

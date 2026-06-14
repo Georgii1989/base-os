@@ -7,6 +7,7 @@ import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import { BASE_CHAIN_ID } from "@/lib/baseChain";
 import { useFlashblocksReceipt } from "@/hooks/useFlashblocksReceipt";
 import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
+import { parseAddressSearchParam } from "@/lib/osUrlParams";
 
 const REVOKE_CASH_BASE = "https://revoke.cash/chain/8453";
 
@@ -55,7 +56,7 @@ const ERC20_ABI = [
 /** Treat huge allowances as practically unlimited approvals. */
 const HUGE_ALLOWANCE = BigInt(10) ** BigInt(40);
 
-export function GuardPanel() {
+export function GuardPanel({ initialAddress = null }: { initialAddress?: string | null }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnecting } = useConnect();
@@ -72,6 +73,12 @@ export function GuardPanel() {
     useFlashblocksReceipt(revokeHash);
   const [tokenInput, setTokenInput] = useState<string>(PRESET_USDC);
   const [spenderInput, setSpenderInput] = useState("");
+
+  const targetChecksum = useMemo(() => {
+    const raw = initialAddress?.trim();
+    if (!raw) return null;
+    return parseAddressSearchParam(raw);
+  }, [initialAddress]);
 
   const checksumToken = useMemo(() => normalizeAddress(tokenInput), [tokenInput]);
   const checksumSpender = useMemo(() => normalizeAddress(spenderInput), [spenderInput]);
@@ -147,6 +154,33 @@ export function GuardPanel() {
           See how much a contract can spend — and <span className="text-emerald-200">revoke</span> access
           in one click. Stay safe on Base without leaving Base OS.
         </p>
+
+        {targetChecksum ? (
+          <div className="mt-4 rounded-2xl border border-cyan-300/25 bg-cyan-500/10 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-cyan-200/90">Deep link wallet</p>
+            <OsAddressDisplay
+              address={targetChecksum}
+              monoClassName="mt-1 break-all font-mono text-sm font-bold text-white"
+            />
+            {isConnected && address?.toLowerCase() !== targetChecksum.toLowerCase() ? (
+              <p className="mt-2 text-sm text-amber-100">
+                Connected wallet differs — connect the target wallet to revoke here, or use revoke.cash.
+              </p>
+            ) : !isConnected ? (
+              <p className="mt-2 text-sm text-cyan-100/90">
+                Connect the wallet above to revoke approvals in Base OS.
+              </p>
+            ) : null}
+            <a
+              href={`https://revoke.cash/address/${targetChecksum}?chainId=8453`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex rounded-xl border border-cyan-200/40 bg-cyan-500/20 px-4 py-2 text-sm font-bold text-cyan-50"
+            >
+              Bulk review on revoke.cash ↗
+            </a>
+          </div>
+        ) : null}
 
         {!isConnected ? (
           <div className="mt-6 rounded-2xl border border-amber-300/25 bg-amber-500/10 p-4">

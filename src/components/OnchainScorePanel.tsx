@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { formatEther, isAddress } from "viem";
+import { formatEther, getAddress, isAddress } from "viem";
 import { useAccount } from "wagmi";
 import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import { ScoreBreakdown } from "@/components/ScoreBreakdown";
@@ -83,12 +83,42 @@ function MetricTile({
   );
 }
 
-export function OnchainScorePanel() {
+export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: string | null }) {
   const { address: connected } = useAccount();
   const [input, setInput] = useState("");
   const [queryAddress, setQueryAddress] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(false);
+  const prefilledRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const raw = initialAddress?.trim();
+    if (!raw || prefilledRef.current === raw) return;
+    prefilledRef.current = raw;
+    setInput(raw);
+    setResolveError(null);
+    setIsResolving(true);
+    void (async () => {
+      try {
+        const resolved = await resolveAddressInput(raw);
+        if (resolved) {
+          setQueryAddress(resolved);
+          return;
+        }
+        if (isAddress(raw)) {
+          setQueryAddress(getAddress(raw));
+          return;
+        }
+        setResolveError(
+          isBasenameLike(raw)
+            ? "Could not resolve that Base name from the link. Try again."
+            : "Invalid address in link."
+        );
+      } finally {
+        setIsResolving(false);
+      }
+    })();
+  }, [initialAddress]);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["onchain-score", queryAddress],

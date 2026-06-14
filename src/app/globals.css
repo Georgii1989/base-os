@@ -64,6 +64,23 @@ body {
     }
   }
 
+  /* Base App mini-app embed — compact chrome */
+  .os-shell--embed {
+    max-width: 100%;
+    border-radius: 1.25rem;
+    padding: 0.75rem;
+  }
+
+  @media (min-width: 768px) {
+    .os-shell--embed {
+      padding: 1rem;
+    }
+  }
+
+  .os-shell--embed .os-nav-group {
+    gap: 0.35rem;
+  }
+
   .os-shell::before {
     content: "";
     position: absolute;

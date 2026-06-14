@@ -259,4 +259,6 @@ node scripts/local/run-battleship10-games.js --skip-fund --matches 0
 
 - This project is migrated away from Farcaster mini-app SDK flow.
 - For Base App readiness, keep metadata and builder settings updated in Base.dev.
+- Agent discovery: `/.well-known/SKILL.md` documents read APIs and deep links (`/?tab=score&address=0x…`).
+- Base App embed mode auto-compacts nav when opened inside the mini-app shell (`isBaseAppEmbed`).
 - Builder Code is applied in code via wagmi `dataSuffix` inside `src/lib/wagmiConfig.ts` and read from `NEXT_PUBLIC_BASE_BUILDER_CODE`.

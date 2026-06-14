@@ -1,4 +1,17 @@
+import type { Metadata } from "next";
 import { BaseOsShell } from "@/components/BaseOsShell";
+import { buildOsDeepLinkMetadata } from "@/lib/osDeepLinkMetadata";
+
+export const dynamic = "force-dynamic";
+
+type PageProps = {
+  searchParams: Promise<{ tab?: string; address?: string }>;
+};
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const sp = await searchParams;
+  return buildOsDeepLinkMetadata(sp.tab, sp.address);
+}
 
 export default function Home() {
   return (

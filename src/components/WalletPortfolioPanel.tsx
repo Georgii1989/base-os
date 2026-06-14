@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { formatEther, isAddress } from "viem";
+import { formatEther, getAddress, isAddress } from "viem";
 import { base } from "wagmi/chains";
 import { useAccount, useBalance, useConnect, useSwitchChain } from "wagmi";
 import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
@@ -15,6 +15,7 @@ import {
   buildPortfolioSwapSellHref,
   buildSwapTabHref,
 } from "@/lib/swapPrefill";
+import { parseAddressSearchParam } from "@/lib/osUrlParams";
 
 function formatUsd(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return "—";
@@ -80,16 +81,25 @@ function TokenRow({ token }: { token: PortfolioToken }) {
   );
 }
 
-export function WalletPortfolioPanel() {
+export function WalletPortfolioPanel({ initialAddress = null }: { initialAddress?: string | null }) {
   const { address, isConnected, chainId } = useAccount();
   const { connect, connectors, isPending: isConnecting } = useConnect();
   const preferredConnector = useMemo(() => pickPreferredConnector(connectors), [connectors]);
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
   const [lookupInput, setLookupInput] = useState("");
+  const prefilledRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const raw = initialAddress?.trim();
+    if (!raw || prefilledRef.current === raw) return;
+    prefilledRef.current = raw;
+    const parsed = parseAddressSearchParam(raw);
+    setLookupInput(parsed ?? raw);
+  }, [initialAddress]);
 
   const lookupAddress = useMemo(() => {
     const trimmed = lookupInput.trim();
-    if (trimmed && isAddress(trimmed)) return trimmed as `0x${string}`;
+    if (trimmed && isAddress(trimmed)) return getAddress(trimmed) as `0x${string}`;
     return address;
   }, [lookupInput, address]);
 

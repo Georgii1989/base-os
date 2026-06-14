@@ -26,7 +26,10 @@ import { WatchlistPanel } from "@/components/WatchlistPanel";
 import { BaseOsNavPulse } from "@/components/BaseOsNavPulse";
 import { OsGroupedNav } from "@/components/OsGroupedNav";
 import { OS_PRIMARY_TAB_IDS } from "@/lib/osTabGroups";
+import { OS_EMBED_PRIMARY_TAB_IDS, OS_EMBED_TAB_GROUPS } from "@/lib/baseAppEmbedNav";
 import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
+import { parseAddressSearchParam, tabSupportsAddressParam } from "@/lib/osUrlParams";
+import { useBaseAppEmbed } from "@/hooks/useBaseAppEmbed";
 import { radarProjects, type RadarProject } from "@/lib/radarProjects";
 
 type RadarMarketData = {
@@ -71,8 +74,12 @@ function BaseOsShellInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { open: openCommandPalette } = useCommandPalette();
+  const isEmbed = useBaseAppEmbed();
 
   const activeTab = tabFromSearchParam(searchParams.get("tab"));
+  const deepLinkAddress = parseAddressSearchParam(searchParams.get("address"));
+  const deepLinkAddressRaw = searchParams.get("address");
+  const primaryTabIds = isEmbed ? OS_EMBED_PRIMARY_TAB_IDS : OS_PRIMARY_TAB_IDS;
   const { address } = useAccount();
   const activeMeta = useMemo(
     () => OS_TAB_META.find((tab) => tab.id === activeTab),
@@ -81,19 +88,26 @@ function BaseOsShellInner() {
   const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   function setActiveTab(tab: OsTabId) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    if (!tabSupportsAddressParam(tab)) {
+      params.delete("address");
+    }
+    const query = params.toString();
+    const href = query ? `/?${query}` : "/";
     if (pathname === "/") {
-      router.replace(`/?tab=${tab}`, { scroll: false });
+      router.replace(href, { scroll: false });
     } else {
-      router.push(`/?tab=${tab}`);
+      router.push(href);
     }
   }
 
-  const activeIndex = OS_PRIMARY_TAB_IDS.indexOf(activeTab);
+  const activeIndex = primaryTabIds.indexOf(activeTab);
 
   function focusTabAt(rawIndex: number) {
-    const len = OS_PRIMARY_TAB_IDS.length;
+    const len = primaryTabIds.length;
     const next = ((rawIndex % len) + len) % len;
-    const id = OS_PRIMARY_TAB_IDS[next];
+    const id = primaryTabIds[next];
     setActiveTab(id);
     requestAnimationFrame(() => {
       tabButtonRefs.current[next]?.focus();
@@ -115,41 +129,61 @@ function BaseOsShellInner() {
     }
     if (event.key === "End") {
       event.preventDefault();
-      focusTabAt(OS_PRIMARY_TAB_IDS.length - 1);
+      focusTabAt(primaryTabIds.length - 1);
     }
   }
 
   return (
-    <section className="os-shell">
+    <section className={isEmbed ? "os-shell os-shell--embed" : "os-shell"}>
       <div className="os-shell-topline" aria-hidden />
-      <header className="relative flex flex-col gap-4 border-b border-white/[0.07] pb-5 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-6">
+      <header
+        className={`relative flex flex-col gap-4 border-b border-white/[0.07] pb-5 ${
+          isEmbed
+            ? "md:flex-row md:items-center md:justify-between"
+            : "md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-6"
+        }`}
+      >
         <div className="md:justify-self-start">
-          <p className="os-eyebrow">Onchain command center</p>
-          <h1 className="os-display mt-2 text-3xl font-bold tracking-wide text-white md:text-5xl">
+          <p className="os-eyebrow">{isEmbed ? "Base App" : "Onchain command center"}</p>
+          <h1
+            className={`os-display mt-2 font-bold tracking-wide text-white ${
+              isEmbed ? "text-2xl md:text-3xl" : "text-3xl md:text-5xl"
+            }`}
+          >
             <span className="bg-gradient-to-r from-amber-200 via-amber-100 to-violet-200 bg-clip-text text-transparent">
               Base OS
             </span>
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300/90">
-            Briefing, trade, build, and protect — one interface for everything on Base.
+          <p
+            className={`mt-3 max-w-2xl text-sm leading-relaxed text-slate-300/90 ${
+              isEmbed ? "hidden sm:block" : ""
+            }`}
+          >
+            {isEmbed
+              ? "Score, swap, play, and tip — optimized for Base App."
+              : "Briefing, trade, build, and protect — one interface for everything on Base."}
           </p>
         </div>
 
-        <BaseOsHeroVisual className="h-28 w-48 sm:h-32 sm:w-56 lg:h-36 lg:w-64" />
+        {!isEmbed ? (
+          <BaseOsHeroVisual className="h-28 w-48 sm:h-32 sm:w-56 lg:h-36 lg:w-64" />
+        ) : null}
 
         <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:min-w-[12rem] sm:items-end md:justify-self-end">
           <WalletConnectControl />
-          <button
-            type="button"
-            title="⌘ K or Ctrl K"
-            onClick={() => openCommandPalette()}
-            className="os-cta-ghost flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-xs font-black uppercase tracking-[0.28em] sm:w-auto sm:justify-center"
-          >
-            <span>Quick menu</span>
-            <kbd className="hidden rounded-lg border border-violet-400/25 bg-black/50 px-2 py-1 font-mono text-[11px] font-bold text-amber-100/90 sm:inline">
-              ⌘K
-            </kbd>
-          </button>
+          {!isEmbed ? (
+            <button
+              type="button"
+              title="⌘ K or Ctrl K"
+              onClick={() => openCommandPalette()}
+              className="os-cta-ghost flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-xs font-black uppercase tracking-[0.28em] sm:w-auto sm:justify-center"
+            >
+              <span>Quick menu</span>
+              <kbd className="hidden rounded-lg border border-violet-400/25 bg-black/50 px-2 py-1 font-mono text-[11px] font-bold text-amber-100/90 sm:inline">
+                ⌘K
+              </kbd>
+            </button>
+          ) : null}
           <div className="os-panel w-full px-4 py-3 text-right sm:w-auto">
             <p className="os-eyebrow text-[0.6rem]">Active module</p>
             <p className="os-display mt-1 text-lg font-semibold text-violet-100">{activeMeta?.label}</p>
@@ -157,14 +191,20 @@ function BaseOsShellInner() {
         </div>
       </header>
 
-      <div className="relative mt-5 grid gap-4 border-b border-violet-500/15 pb-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start">
+      <div
+        className={`relative mt-5 grid gap-4 border-b border-violet-500/15 pb-5 ${
+          isEmbed ? "" : "lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start"
+        }`}
+      >
         <OsGroupedNav
           activeTab={activeTab}
           onSelect={setActiveTab}
           onKeyDown={handleTabKeyDown}
           tabButtonRefs={tabButtonRefs}
+          tabGroups={isEmbed ? OS_EMBED_TAB_GROUPS : undefined}
+          compact={isEmbed}
         />
-        <BaseOsNavPulse activeTab={activeTab} onSelect={setActiveTab} />
+        {!isEmbed ? <BaseOsNavPulse activeTab={activeTab} onSelect={setActiveTab} /> : null}
       </div>
 
       <div
@@ -205,9 +245,15 @@ function BaseOsShellInner() {
         {activeTab === "radar" ? <RadarPanel /> : null}
         {activeTab === "watch" ? <WatchlistPanel /> : null}
         {activeTab === "lens" ? <TxLensPanel /> : null}
-        {activeTab === "guard" ? <GuardPanel /> : null}
-        {activeTab === "score" ? <OnchainScorePanel /> : null}
-        {activeTab === "portfolio" ? <WalletPortfolioPanel /> : null}
+        {activeTab === "guard" ? (
+          <GuardPanel initialAddress={deepLinkAddress ?? deepLinkAddressRaw} />
+        ) : null}
+        {activeTab === "score" ? (
+          <OnchainScorePanel initialAddress={deepLinkAddress ?? deepLinkAddressRaw} />
+        ) : null}
+        {activeTab === "portfolio" ? (
+          <WalletPortfolioPanel initialAddress={deepLinkAddress ?? deepLinkAddressRaw} />
+        ) : null}
       </div>
     </section>
   );

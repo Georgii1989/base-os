@@ -36,10 +36,10 @@ Your Base command center
 ### Description (max 180 characters)
 
 ```
-Base OS: tips, onchain score, analytics, ERC-20 launch, Grid 6×6 game, swap, identity cards, app radar & token guard — one toolkit on Base.
+Base OS: score, portfolio, verify drop, games, swap, launch & guard — agent-ready APIs + Base App embed.
 ```
 
-(143 chars)
+(118 chars)
 
 **Alternative (179):**  
 `All-in-one Base toolkit: tip creators, score any wallet, DeFi charts, onchain Grid 6×6, Launch Token, public /card pages, app radar, watchlist & approvals.`
@@ -56,9 +56,9 @@ Capture from **production** (portrait phone or cropped desktop, clear UI):
 | # | URL | What to show |
 |---|-----|----------------|
 | 1 | `/?tab=home` | Home hub — Base pulse + module grid |
-| 2 | `/?tab=score` | Onchain score + breakdown after Analyze |
-| 3 | `/?tab=game` | Grid 6×6 — lobby, casual/ranked toggle, room list |
-| 4 | `/?tab=launch` | Launch Token form or success with contract address |
+| 2 | `/?tab=score&address=0x…` | Score deep link — auto-analyze + OG card |
+| 3 | `/?tab=drop` | Verify-style claim demo (sandbox) |
+| 4 | `/?tab=game` | Grid 6×6 — lobby, casual/ranked toggle |
 
 **Tips:** hide browser bookmarks bar; use dark theme as in app; optional 5th: `/?tab=analytics` charts.
 
@@ -82,8 +82,23 @@ Typical size: **1290×2796** (iPhone) or **1080×1920** — check current Base d
 
 - **App URL / domain:** `https://app-base-os.vercel.app`
 - **Allowed origins:** same URL (and localhost for dev if needed)
-- **Mini app / embed:** enabled if you publish inside Base App
+- **Mini app / embed:** **enabled** — compact nav + Base Account auto-connect in Base App shell
 - **Category:** Developer Tools / Analytics / Social (pick closest; “Utilities” also fine)
+
+---
+
+## Agent & Base App integration
+
+| Asset | URL |
+|-------|-----|
+| Agent skill | `https://app-base-os.vercel.app/.well-known/SKILL.md` |
+| OpenAPI 3.1 | `https://app-base-os.vercel.app/.well-known/openapi.json` |
+| Score deep link | `https://app-base-os.vercel.app/?tab=score&address=0x…` |
+| Portfolio deep link | `https://app-base-os.vercel.app/?tab=portfolio&address=0x…` |
+
+**Share in Base App chat:** score links unfurl with grade + OG image from `/card/{address}/opengraph-image`.
+
+**Embed UX:** inside Base App, nav shows Home · Score · Portfolio · Swap · Games · Tips only.
 
 ---
 
