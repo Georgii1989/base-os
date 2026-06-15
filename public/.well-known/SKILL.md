@@ -71,7 +71,21 @@ Aggregated Base chain metrics.
 
 **GET** `/api/verify-drop/claims`
 
-Drop config, providers, and in-memory claim feed (`mode`: `sandbox` or `live`).
+Drop config, providers, and claim feed (`storage`: `memory` or `kv` when Redis env is set).
+
+## API — Transaction trays (agents / Base App chat)
+
+**GET** `/api/transaction-trays`  
+**GET** `/api/transaction-trays?game=grid646&room=12` — tailored join tray
+
+Returns Base App-style transaction tray definitions (`to`, `data`, `valueWei`, `deepLink`) for tip, Grid 6×6, and Battleship.
+
+## API — Paymaster proxy
+
+**GET** `/api/paymaster` — `{ enabled, url }` when `CDP_API_KEY` is configured  
+**POST** `/api/paymaster` — ERC-7677 proxy (server-side only)
+
+Base App embed attempts gasless `wallet_sendCalls` for tips and casual game rooms when paymaster is enabled.
 
 ## Deep links
 
@@ -85,8 +99,8 @@ Open modules directly. Pass `tab` and optional params:
 | `/?tab=guard&address=0x…` | Token guard deep link + revoke.cash for target wallet |
 | `/?tab=portfolio` | Connected wallet portfolio |
 | `/?tab=swap` | Swap & bridge |
-| `/?tab=game&room=12` | Grid 6×6 — join room 12 |
-| `/?tab=battleship&room=7` | Battleship 10×10 — join room 7 |
+| `/?tab=game&room=12` | Grid 6×6 — join room 12 (OG: `/og/game?tab=game&room=12`) |
+| `/?tab=battleship&room=7` | Battleship 10×10 — join room 7 (OG preview) |
 | `/?tab=drop` | Verify-style claim demo |
 | `/?tab=analytics` | Base TVL charts |
 | `/?tab=radar` | Project radar |
@@ -102,6 +116,7 @@ Open modules directly. Pass `tab` and optional params:
 ## Machine-readable spec
 
 **OpenAPI 3.1:** `/.well-known/openapi.json`  
+**Transaction trays:** `/api/transaction-trays`  
 **Skill file:** `/.well-known/SKILL.md` (this document)
 
 ## Base App embed
@@ -114,7 +129,7 @@ When opened inside Base App, Base OS auto-detects the embed context and prefers 
 |-------------------|-------------|
 | GET APIs above | None — read only |
 | UI: tip, swap, games | Onchain tx — user must approve in wallet |
-| POST `/api/verify-drop/claim` | Records demo claim (in-memory) |
+| POST `/api/verify-drop/claim` | Records demo claim (`memory` or `kv`) |
 
 ## Errors
 
@@ -122,4 +137,4 @@ Return descriptive JSON: `{ "error": "code", "message": "human readable" }`. Age
 
 ## Version
 
-Skill spec: 1.1 — Base OS `0.1.0`
+Skill spec: 1.2 — Base OS `0.1.0`

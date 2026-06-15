@@ -28,7 +28,7 @@ import { OsGroupedNav } from "@/components/OsGroupedNav";
 import { OS_PRIMARY_TAB_IDS } from "@/lib/osTabGroups";
 import { OS_EMBED_PRIMARY_TAB_IDS, OS_EMBED_TAB_GROUPS } from "@/lib/baseAppEmbedNav";
 import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
-import { parseAddressSearchParam, tabSupportsAddressParam } from "@/lib/osUrlParams";
+import { parseAddressSearchParam, tabSupportsAddressParam, tabSupportsRoomParam } from "@/lib/osUrlParams";
 import { useBaseAppEmbed } from "@/hooks/useBaseAppEmbed";
 import { radarProjects, type RadarProject } from "@/lib/radarProjects";
 
@@ -92,6 +92,9 @@ function BaseOsShellInner() {
     params.set("tab", tab);
     if (!tabSupportsAddressParam(tab)) {
       params.delete("address");
+    }
+    if (!tabSupportsRoomParam(tab)) {
+      params.delete("room");
     }
     const query = params.toString();
     const href = query ? `/?${query}` : "/";

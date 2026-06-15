@@ -192,7 +192,7 @@ export async function POST(request: Request) {
   }
 
   // Anti-sybil core: one deterministic token = one claim, whatever the wallet.
-  const existingByToken = findClaimByToken(token);
+  const existingByToken = await findClaimByToken(token);
   if (existingByToken) {
     return claimError(409, {
       error: "token_already_used",
@@ -200,7 +200,7 @@ export async function POST(request: Request) {
       claimedBy: existingByToken.address,
     });
   }
-  const existingByAddress = findClaimByAddress(siwe.address);
+  const existingByAddress = await findClaimByAddress(siwe.address);
   if (existingByAddress) {
     return claimError(409, {
       error: "address_already_claimed",
@@ -215,7 +215,7 @@ export async function POST(request: Request) {
     handle: claimedHandle,
     claimedAt: Date.now(),
   };
-  saveClaim(claim);
+  await saveClaim(claim);
 
   return NextResponse.json({ success: true, claim });
 }
@@ -249,7 +249,7 @@ export async function DELETE(request: Request) {
     return claimError(401, { error: "invalid_signature", message: "Signature verification failed" });
   }
 
-  const removed = deleteClaimByAddress(address);
+  const removed = await deleteClaimByAddress(address);
   if (!removed) {
     return claimError(404, { error: "bad_request", message: "No claim found for this wallet" });
   }

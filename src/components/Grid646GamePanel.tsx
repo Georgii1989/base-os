@@ -19,6 +19,7 @@ import { Grid646Board } from "@/components/Grid646Board";
 import { Grid646GameEndPanel } from "@/components/Grid646GameEndPanel";
 import { Grid646WinOverlay } from "@/components/Grid646WinOverlay";
 import { useGrid646Rooms } from "@/hooks/useGrid646Rooms";
+import { useGaslessWrite } from "@/hooks/useGaslessWrite";
 import {
   buildBoard,
   formatGameStake,
@@ -164,6 +165,7 @@ export function Grid646GamePanel() {
   }
 
   const { writeContractAsync, error: writeError } = useWriteContract();
+  const { canSponsor, sendGasless } = useGaslessWrite();
 
   const myRole = useMemo(() => {
     if (!game || !address) return null;
@@ -199,6 +201,29 @@ export function Grid646GamePanel() {
     setTxNote(note);
     setLastTxHash(null);
     try {
+      const value = "value" in request ? request.value : BigInt(0);
+      const args = "args" in request ? request.args : undefined;
+      const canTryGasless =
+        canSponsor && value === BigInt(0) && request.functionName !== "play";
+
+      if (canTryGasless) {
+        const sponsored = await sendGasless({
+          address: contract,
+          abi: GRID646_ABI,
+          functionName: request.functionName,
+          args,
+          value,
+        });
+        if (sponsored) {
+          setTxNote("Gas sponsored — confirm in wallet…");
+          await refetchGame();
+          await refetchRooms();
+          await after?.();
+          setTxNote("Sponsored transaction sent");
+          return;
+        }
+      }
+
       const hash = await writeContractAsync({
         address: contract,
         abi: GRID646_ABI,

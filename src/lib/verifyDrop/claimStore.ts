@@ -1,38 +1,48 @@
 import type { DropClaim } from "@/lib/verifyDrop/types";
+import {
+  memoryDeleteClaimByAddress,
+  memoryFindClaimByAddress,
+  memoryFindClaimByToken,
+  memoryListClaims,
+  memorySaveClaim,
+} from "@/lib/verifyDrop/claimStoreMemory";
+import {
+  isKvClaimStoreEnabled,
+  kvDeleteClaimByAddress,
+  kvFindClaimByAddress,
+  kvFindClaimByToken,
+  kvListClaims,
+  kvSaveClaim,
+} from "@/lib/verifyDrop/claimStoreKv";
 
-/**
- * In-memory claim store — same demo pattern as the grid646/battleship rematch
- * routes in this repo. Production would use a database with unique constraints
- * on both `address` and `token` (see base/base-verify-demo Prisma schema).
- */
-const claimsByToken = new Map<string, DropClaim>();
-const claimsByAddress = new Map<string, DropClaim>();
-
-function addressKey(address: string): string {
-  return address.toLowerCase();
+export function claimStoreMode(): "kv" | "memory" {
+  return isKvClaimStoreEnabled() ? "kv" : "memory";
 }
 
-export function findClaimByToken(token: string): DropClaim | undefined {
-  return claimsByToken.get(token);
+export async function findClaimByToken(token: string): Promise<DropClaim | undefined> {
+  if (isKvClaimStoreEnabled()) return kvFindClaimByToken(token);
+  return memoryFindClaimByToken(token);
 }
 
-export function findClaimByAddress(address: string): DropClaim | undefined {
-  return claimsByAddress.get(addressKey(address));
+export async function findClaimByAddress(address: string): Promise<DropClaim | undefined> {
+  if (isKvClaimStoreEnabled()) return kvFindClaimByAddress(address);
+  return memoryFindClaimByAddress(address);
 }
 
-export function saveClaim(claim: DropClaim): void {
-  claimsByToken.set(claim.token, claim);
-  claimsByAddress.set(addressKey(claim.address), claim);
+export async function saveClaim(claim: DropClaim): Promise<void> {
+  if (isKvClaimStoreEnabled()) {
+    await kvSaveClaim(claim);
+    return;
+  }
+  memorySaveClaim(claim);
 }
 
-export function deleteClaimByAddress(address: string): DropClaim | undefined {
-  const claim = claimsByAddress.get(addressKey(address));
-  if (!claim) return undefined;
-  claimsByAddress.delete(addressKey(address));
-  claimsByToken.delete(claim.token);
-  return claim;
+export async function deleteClaimByAddress(address: string): Promise<DropClaim | undefined> {
+  if (isKvClaimStoreEnabled()) return kvDeleteClaimByAddress(address);
+  return memoryDeleteClaimByAddress(address);
 }
 
-export function listClaims(): DropClaim[] {
-  return Array.from(claimsByToken.values()).sort((a, b) => b.claimedAt - a.claimedAt);
+export async function listClaims(): Promise<DropClaim[]> {
+  if (isKvClaimStoreEnabled()) return kvListClaims();
+  return memoryListClaims();
 }

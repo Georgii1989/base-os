@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { getAddress, isAddress } from "viem";
 import { fetchOnchainScore } from "@/lib/onchainScoreFetch";
 import { tabFromSearchParam } from "@/lib/osTabs";
-import { buildOsTabUrl, parseAddressSearchParam } from "@/lib/osUrlParams";
+import { buildOsTabUrl, parseAddressSearchParam, parseRoomSearchParam } from "@/lib/osUrlParams";
+import { gameInviteLabel, parseGameInviteTab } from "@/lib/gameInviteOgImage";
 
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://app-base-os.vercel.app";
 
@@ -29,13 +30,42 @@ function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-/** Dynamic OG/title for `/?tab=…&address=…` share links. */
+/** Dynamic OG/title for `/?tab=…&address=…&room=…` share links. */
 export async function buildOsDeepLinkMetadata(
   tabRaw: string | null | undefined,
-  addressRaw: string | null | undefined
+  addressRaw: string | null | undefined,
+  roomRaw?: string | null | undefined
 ): Promise<Metadata> {
   const tab = tabFromSearchParam(tabRaw ?? null);
   const address = parseAddressSearchParam(addressRaw);
+  const room = parseRoomSearchParam(roomRaw);
+  const gameKind = parseGameInviteTab(tab);
+
+  if (gameKind && room) {
+    const label = gameInviteLabel(gameKind);
+    const title = `${label} · Room #${room}`;
+    const description = `Join the onchain 1v1 match on Base — tap to connect wallet and play.`;
+    const tabUrl = buildOsTabUrl(tab, { room, origin: APP_ORIGIN });
+    const ogImage = `${APP_ORIGIN}/og/game?tab=${tab}&room=${room}`;
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: "website",
+        url: tabUrl,
+        images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [ogImage],
+      },
+    };
+  }
+
   if (!address) return DEFAULT_METADATA;
 
   const short = shortAddress(address);

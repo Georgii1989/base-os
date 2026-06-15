@@ -93,12 +93,17 @@ Typical size: **1290×2796** (iPhone) or **1080×1920** — check current Base d
 |-------|-----|
 | Agent skill | `https://app-base-os.vercel.app/.well-known/SKILL.md` |
 | OpenAPI 3.1 | `https://app-base-os.vercel.app/.well-known/openapi.json` |
+| Transaction trays | `https://app-base-os.vercel.app/api/transaction-trays` |
+| Paymaster status | `https://app-base-os.vercel.app/api/paymaster` |
 | Score deep link | `https://app-base-os.vercel.app/?tab=score&address=0x…` |
 | Portfolio deep link | `https://app-base-os.vercel.app/?tab=portfolio&address=0x…` |
+| Game invite | `https://app-base-os.vercel.app/?tab=game&room=12` (OG: `/og/game?tab=game&room=12`) |
 
-**Share in Base App chat:** score links unfurl with grade + OG image from `/card/{address}/opengraph-image`.
+**Share in Base App chat:** score links unfurl with grade + OG image from `/card/{address}/opengraph-image`. Game room links unfurl via `/og/game`.
 
-**Embed UX:** inside Base App, nav shows Home · Score · Portfolio · Swap · Games · Tips only.
+**Embed UX:** inside Base App, nav shows Home · Score · Portfolio · Swap · Games · Tips only. Gasless tips + casual Grid 6×6 when `CDP_API_KEY` is set on Vercel.
+
+**Verify Drop persistence:** set `KV_REST_API_URL` + `KV_REST_API_TOKEN` (Vercel KV) so claims survive cold starts.
 
 ---
 

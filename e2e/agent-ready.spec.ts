@@ -49,4 +49,34 @@ test.describe("Deep links", () => {
     await page.goto(`/?tab=score&address=${SAMPLE_ADDRESS}`);
     await expect(page).toHaveTitle(/Onchain score/i);
   });
+
+  test("game room invite sets OG title", async ({ page }) => {
+    await page.goto("/?tab=game&room=42");
+    await expect(page).toHaveTitle(/Room #42/i);
+  });
+});
+
+test.describe("Sprint 4 APIs", () => {
+  test("transaction trays returns tip and game actions", async ({ request }) => {
+    const res = await request.get("/api/transaction-trays");
+    expect(res.ok()).toBeTruthy();
+    const body = (await res.json()) as { trays: Array<{ id: string }> };
+    const ids = body.trays.map((t) => t.id);
+    expect(ids).toContain("tip_support");
+    expect(ids.some((id) => id.includes("grid646") || id.includes("battleship"))).toBeTruthy();
+  });
+
+  test("paymaster status endpoint responds", async ({ request }) => {
+    const res = await request.get("/api/paymaster");
+    expect(res.ok()).toBeTruthy();
+    const body = (await res.json()) as { enabled: boolean; url: string | null };
+    expect(typeof body.enabled).toBe("boolean");
+  });
+
+  test("verify-drop claims includes storage field", async ({ request }) => {
+    const res = await request.get("/api/verify-drop/claims");
+    expect(res.ok()).toBeTruthy();
+    const body = (await res.json()) as { storage?: string };
+    expect(["memory", "kv"]).toContain(body.storage);
+  });
 });

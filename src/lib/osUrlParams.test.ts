@@ -39,6 +39,13 @@ describe("buildOsTabUrl", () => {
     expect(buildOsTabUrl("guard", { address: ADDR })).toBe(`/?tab=guard&address=${ADDR}`);
   });
 
+  it("builds game room invite links", () => {
+    expect(buildOsTabUrl("game", { room: "42" })).toBe("/?tab=game&room=42");
+    expect(buildOsTabUrl("battleship", { room: "7", origin: "https://app-base-os.vercel.app" })).toBe(
+      "https://app-base-os.vercel.app/?tab=battleship&room=7"
+    );
+  });
+
   it("omits address for non-address tabs", () => {
     expect(buildOsTabUrl("swap", { address: ADDR })).toBe("/?tab=swap");
   });

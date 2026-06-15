@@ -31,6 +31,12 @@ describe("buildOsDeepLinkMetadata", () => {
     expect(String(meta.title)).toContain("portfolio");
   });
 
+  it("returns game invite metadata for room deep link", async () => {
+    const meta = await buildOsDeepLinkMetadata("game", null, "42");
+    expect(String(meta.title)).toContain("Room #42");
+    expect(meta.openGraph?.images).toBeDefined();
+  });
+
   it("returns default metadata without address", async () => {
     const meta = await buildOsDeepLinkMetadata("score", null);
     expect(String(meta.title)).toContain("Base OS");

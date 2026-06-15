@@ -35,6 +35,7 @@ export type DropConfigPayload = {
 
 export type ClaimsPayload = DropConfigPayload & {
   claims: DropClaim[];
+  storage?: "kv" | "memory";
 };
 
 export type ClaimErrorCode =

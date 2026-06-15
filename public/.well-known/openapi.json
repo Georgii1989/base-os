@@ -125,12 +125,64 @@
                     "mode": { "type": "string", "enum": ["sandbox", "live"] },
                     "action": { "type": "string" },
                     "providers": { "type": "array", "items": { "type": "object" } },
-                    "claims": { "type": "array", "items": { "type": "object" } }
+                    "claims": { "type": "array", "items": { "type": "object" } },
+                    "storage": { "type": "string", "enum": ["memory", "kv"] }
                   }
                 }
               }
             }
           }
+        }
+      }
+    },
+    "/api/transaction-trays": {
+      "get": {
+        "operationId": "getTransactionTrays",
+        "summary": "Agent transaction tray definitions for tip and onchain games",
+        "parameters": [
+          {
+            "name": "game",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["grid646", "battleship"] }
+          },
+          {
+            "name": "room",
+            "in": "query",
+            "schema": { "type": "string", "pattern": "^\\d+$" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Tray bundle with calldata actions" }
+        }
+      }
+    },
+    "/api/paymaster": {
+      "get": {
+        "operationId": "getPaymasterStatus",
+        "summary": "Whether CDP paymaster proxy is configured",
+        "responses": {
+          "200": {
+            "description": "Paymaster availability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": { "type": "boolean" },
+                    "url": { "type": "string", "nullable": true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "proxyPaymasterRpc",
+        "summary": "Proxy ERC-7677 paymaster RPC (server-side CDP key)",
+        "responses": {
+          "200": { "description": "Paymaster RPC response" },
+          "501": { "description": "Paymaster not configured" }
         }
       }
     }

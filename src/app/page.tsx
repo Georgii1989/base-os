@@ -5,12 +5,12 @@ import { buildOsDeepLinkMetadata } from "@/lib/osDeepLinkMetadata";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  searchParams: Promise<{ tab?: string; address?: string }>;
+  searchParams: Promise<{ tab?: string; address?: string; room?: string }>;
 };
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const sp = await searchParams;
-  return buildOsDeepLinkMetadata(sp.tab, sp.address);
+  return buildOsDeepLinkMetadata(sp.tab, sp.address, sp.room);
 }
 
 export default function Home() {

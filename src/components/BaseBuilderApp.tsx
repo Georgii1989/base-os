@@ -16,6 +16,7 @@ import {
   useWriteContract,
 } from "wagmi";
 import { useFlashblocksReceipt } from "@/hooks/useFlashblocksReceipt";
+import { useGaslessWrite } from "@/hooks/useGaslessWrite";
 import { SoulboundHoldersList } from "@/components/SoulboundHoldersList";
 import { OSSupporterMintCard } from "@/components/OSSupporterMintCard";
 import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
@@ -78,6 +79,7 @@ export function BaseBuilderApp() {
   const { signMessageAsync } = useSignMessage();
   const { data: txHash, isPending: isSending, writeContract } = useWriteContract();
   const { isSuccess: txConfirmed } = useFlashblocksReceipt(txHash);
+  const { canSponsor, sendGasless } = useGaslessWrite();
 
   const tipJarAddress = process.env.NEXT_PUBLIC_TIPJAR_ADDRESS || DEFAULT_TIPJAR;
   const sbtAddress = process.env.NEXT_PUBLIC_SBT_ADDRESS;
@@ -301,7 +303,7 @@ export function BaseBuilderApp() {
     }
   }
 
-  function handleTip() {
+  async function handleTip() {
     setTipStatus(null);
     try {
       if (!isOnBase) {
@@ -319,6 +321,20 @@ export function BaseBuilderApp() {
         message: normalizedMessage,
         submittedAt: Date.now(),
       });
+
+      if (canSponsor) {
+        const sponsored = await sendGasless({
+          address: tipJarAddress as `0x${string}`,
+          abi: TIPJAR_ABI,
+          functionName: "tip",
+          args: [normalizedMessage],
+          value,
+        });
+        if (sponsored) {
+          setTipStatus("Gas sponsored — confirm in wallet…");
+          return;
+        }
+      }
 
       writeContract({
         address: tipJarAddress as `0x${string}`,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listClaims } from "@/lib/verifyDrop/claimStore";
+import { claimStoreMode, listClaims } from "@/lib/verifyDrop/claimStore";
 import { DROP_ACTION, DROP_AMOUNT_LABEL, DROP_PROVIDERS } from "@/lib/verifyDrop/dropConfig";
 import type { ClaimsPayload } from "@/lib/verifyDrop/types";
 
@@ -19,7 +19,8 @@ export async function GET() {
       accountNoun: p.accountNoun,
       requirements: p.requirements,
     })),
-    claims: listClaims(),
+    claims: await listClaims(),
+    storage: claimStoreMode(),
   };
 
   return NextResponse.json(payload);
