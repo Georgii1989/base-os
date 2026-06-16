@@ -30,6 +30,7 @@ import { OS_EMBED_PRIMARY_TAB_IDS, OS_EMBED_TAB_GROUPS } from "@/lib/baseAppEmbe
 import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
 import { parseAddressSearchParam, tabSupportsAddressParam, tabSupportsRoomParam } from "@/lib/osUrlParams";
 import { useBaseAppEmbed } from "@/hooks/useBaseAppEmbed";
+import { useRadarFavorites } from "@/hooks/useRadarFavorites";
 import { radarProjects, type RadarProject } from "@/lib/radarProjects";
 
 type RadarMarketData = {
@@ -296,6 +297,8 @@ function RadarPanel() {
   const [stageFilter, setStageFilter] = useState("All");
   const [riskFilter, setRiskFilter] = useState("All");
   const [categoriesOpen, setCategoriesOpen] = useState(true);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const favorites = useRadarFavorites();
 
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -383,7 +386,27 @@ function RadarPanel() {
     setCategoryFilter("All");
     setStageFilter("All");
     setRiskFilter("All");
+    setFavoritesOnly(false);
   }
+
+  const favoriteProjects = useMemo(
+    () =>
+      favorites.favoriteIds
+        .map((id) => radarProjects.find((project) => project.id === id))
+        .filter((project): project is RadarProject => Boolean(project)),
+    [favorites.favoriteIds]
+  );
+
+  const sortedFilteredProjects = useMemo(() => {
+    const matched = filteredProjects.filter((project) => !favoritesOnly || favorites.favoriteSet.has(project.id));
+    if (favoritesOnly) return matched;
+    return [...matched].sort((a, b) => {
+      const aFav = favorites.favoriteSet.has(a.id) ? 0 : 1;
+      const bFav = favorites.favoriteSet.has(b.id) ? 0 : 1;
+      if (aFav !== bFav) return aFav - bFav;
+      return a.name.localeCompare(b.name);
+    });
+  }, [filteredProjects, favorites.favoriteSet, favoritesOnly]);
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
@@ -419,6 +442,48 @@ function RadarPanel() {
           onChange={setStageFilter}
         />
         <FilterList title="Risk" items={riskOptions} value={resolvedRisk} onChange={setRiskFilter} />
+        <div className="mt-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Collection</p>
+          <ul className="mt-1.5 divide-y divide-white/[0.06] rounded-md border border-white/[0.07] bg-black/30">
+            <li>
+              <button
+                type="button"
+                onClick={() => setFavoritesOnly(false)}
+                className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 text-left text-sm transition first:rounded-t-md ${
+                  !favoritesOnly
+                    ? "border-l-2 border-amber-400/70 bg-violet-500/15 text-amber-50"
+                    : "text-slate-300 hover:bg-white/[0.04]"
+                }`}
+              >
+                <span>All apps</span>
+                {!favoritesOnly ? (
+                  <span className="shrink-0 text-xs text-cyan-300/90" aria-hidden>
+                    ●
+                  </span>
+                ) : null}
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => setFavoritesOnly(true)}
+                className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 text-left text-sm transition last:rounded-b-md ${
+                  favoritesOnly
+                    ? "border-l-2 border-amber-400/70 bg-violet-500/15 text-amber-50"
+                    : "text-slate-300 hover:bg-white/[0.04]"
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <span className="text-amber-300" aria-hidden>
+                    ★
+                  </span>
+                  Favorites
+                </span>
+                <span className="shrink-0 tabular-nums text-xs text-slate-500">{favoriteProjects.length}</span>
+              </button>
+            </li>
+          </ul>
+        </div>
       </aside>
 
       <main className="grid content-start gap-4 self-start">
@@ -427,7 +492,10 @@ function RadarPanel() {
           <h2 className="os-display mt-2 text-3xl font-semibold text-white md:text-4xl">Project Radar</h2>
           <p className="mt-1 text-sm text-slate-200/80">Projects we like, with links and prices when available.</p>
           <p className="mt-2 text-sm font-bold text-cyan-200">
-            {filteredProjects.length} / {radarProjects.length} projects
+            {sortedFilteredProjects.length} / {radarProjects.length} projects
+            {favoriteProjects.length > 0 ? (
+              <span className="ml-2 font-medium text-amber-200/90">· {favoriteProjects.length} starred</span>
+            ) : null}
           </p>
           {!marketError && updatedLabel ? (
             <p className="mt-2 text-xs text-slate-400">
@@ -441,29 +509,35 @@ function RadarPanel() {
           <Metric label="Projects" value={String(radarProjects.length)} />
           <Metric label="With price" value={isLoading ? "…" : String(projectsWithPrice.length)} />
           <Metric label="Avg risk" value={avgRisk} />
-          <Metric label="On screen" value={String(filteredProjects.length)} />
+          <Metric label="On screen" value={String(sortedFilteredProjects.length)} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} market={marketData[project.id]} />
+          {sortedFilteredProjects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              market={marketData[project.id]}
+              isFavorite={favorites.isFavorite(project.id)}
+              onToggleFavorite={() => favorites.toggle(project.id)}
+            />
           ))}
         </div>
-        {filteredProjects.length === 0 ? (
+        {sortedFilteredProjects.length === 0 ? (
           <div className="rounded-3xl border border-amber-300/25 bg-amber-500/10 p-5 text-sm text-amber-100">
-            Nothing matches — try Reset or a shorter search.
+            {favoritesOnly
+              ? "No favorites yet — tap ★ on any app card to pin it here."
+              : "Nothing matches — try Reset or a shorter search."}
           </div>
         ) : null}
       </main>
 
       <aside className="grid content-start gap-4">
-        <SidePanel
-          title="Bridge & swap"
-          items={["Base Bridge", "Superbridge", "Relay", "Uniswap"]}
-        />
-        <SidePanel
-          title="Lending"
-          items={["Aave", "Moonwell", "Morpho", "Seamless Protocol"]}
+        <RadarFavoritesPanel
+          projects={favoriteProjects}
+          marketData={marketData}
+          onShowAll={() => setFavoritesOnly(true)}
+          onToggleFavorite={favorites.toggle}
         />
       </aside>
     </div>
@@ -560,7 +634,17 @@ function formatChange(value: number | null | undefined) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
-function ProjectCard({ project, market }: { project: RadarProject; market?: RadarMarketData }) {
+function ProjectCard({
+  project,
+  market,
+  isFavorite,
+  onToggleFavorite,
+}: {
+  project: RadarProject;
+  market?: RadarMarketData;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+}) {
   const change24h = market?.change24h ?? null;
   const positive = (change24h ?? 0) >= 0;
   const hasLiveMarket = typeof market?.priceUsd === "number";
@@ -599,17 +683,33 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
               </a>
               <p className="text-xs font-bold text-cyan-200">{project.symbol}</p>
             </div>
-            <span
-              className={`shrink-0 border-l-2 px-2 py-0.5 text-xs font-semibold ${
-                project.risk === "Low"
-                  ? "border-emerald-400/70 text-emerald-200"
-                  : project.risk === "Medium"
-                    ? "border-amber-400/70 text-amber-200"
-                    : "border-rose-400/70 text-rose-200"
-              }`}
-            >
-              {project.risk}
-            </span>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span
+                className={`border-l-2 px-2 py-0.5 text-xs font-semibold ${
+                  project.risk === "Low"
+                    ? "border-emerald-400/70 text-emerald-200"
+                    : project.risk === "Medium"
+                      ? "border-amber-400/70 text-amber-200"
+                      : "border-rose-400/70 text-rose-200"
+                }`}
+              >
+                {project.risk}
+              </span>
+              <button
+                type="button"
+                onClick={onToggleFavorite}
+                aria-label={isFavorite ? `Remove ${project.name} from favorites` : `Add ${project.name} to favorites`}
+                aria-pressed={isFavorite}
+                title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                className={`grid h-8 w-8 place-items-center rounded-lg border text-base leading-none transition ${
+                  isFavorite
+                    ? "border-amber-400/50 bg-amber-500/15 text-amber-200 hover:border-amber-300 hover:bg-amber-500/25"
+                    : "border-white/10 bg-black/20 text-slate-500 hover:border-amber-400/40 hover:text-amber-200"
+                }`}
+              >
+                {isFavorite ? "★" : "☆"}
+              </button>
+            </div>
           </div>
           <p className="mt-2 line-clamp-2 text-sm leading-snug text-slate-300/90">{project.description}</p>
           <p className="mt-2 text-xs text-slate-500">{project.categories.join(" · ")}</p>
@@ -694,48 +794,77 @@ function ProjectCard({ project, market }: { project: RadarProject; market?: Rada
   );
 }
 
-function SidePanel({ title, items }: { title: string; items: string[] }) {
+function RadarFavoritesPanel({
+  projects,
+  marketData,
+  onShowAll,
+  onToggleFavorite,
+}: {
+  projects: RadarProject[];
+  marketData: Record<string, RadarMarketData>;
+  onShowAll: () => void;
+  onToggleFavorite: (id: string) => boolean;
+}) {
   return (
     <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4">
       <div className="flex items-center justify-between gap-2 border-b border-white/[0.07] pb-3">
-        <h2 className="text-base font-bold text-white">{title}</h2>
-        <a
-          href="https://www.base.org/ecosystem"
-          target="_blank"
-          rel="noreferrer"
-          className="shrink-0 text-xs font-semibold text-cyan-300/90 underline decoration-cyan-500/35"
-        >
-          View all
-        </a>
+        <h2 className="text-base font-bold text-white">Favorites</h2>
+        {projects.length > 0 ? (
+          <button
+            type="button"
+            onClick={onShowAll}
+            className="shrink-0 text-xs font-semibold text-cyan-300/90 underline decoration-cyan-500/35"
+          >
+            Filter
+          </button>
+        ) : null}
       </div>
-      <ul className="mt-2 divide-y divide-white/[0.06]">
-        {items.map((item, index) => {
-          const project = radarProjects.find((p) => p.name === item);
-          const row = (
-            <>
-              <span className="text-sm font-medium text-slate-100">{item}</span>
-              <span className="tabular-nums text-xs text-slate-500">{String(index + 1).padStart(2, "0")}</span>
-            </>
-          );
-
-          return (
-            <li key={item}>
-              {project ? (
+      {projects.length === 0 ? (
+        <p className="mt-3 text-sm leading-relaxed text-slate-400">
+          Tap <span className="text-amber-200">☆</span> on any app to pin it here for quick access.
+        </p>
+      ) : (
+        <ul className="mt-2 divide-y divide-white/[0.06]">
+          {projects.map((project, index) => {
+            const price = marketData[project.id]?.priceUsd;
+            return (
+              <li key={project.id} className="flex items-center gap-2 py-2.5">
                 <a
                   href={project.website}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-between gap-2 py-2.5 transition hover:text-cyan-100"
+                  className="flex min-w-0 flex-1 items-center gap-2 transition hover:text-cyan-100"
                 >
-                  {row}
+                  <Image
+                    src={project.iconUrl}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="h-5 w-5 shrink-0 rounded"
+                    referrerPolicy="no-referrer"
+                    unoptimized
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-slate-100">{project.name}</span>
+                    <span className="block truncate text-[11px] text-slate-500">
+                      {typeof price === "number" ? formatUsd(price) : project.symbol}
+                    </span>
+                  </span>
+                  <span className="tabular-nums text-xs text-slate-500">{String(index + 1).padStart(2, "0")}</span>
                 </a>
-              ) : (
-                <div className="flex items-center justify-between gap-2 py-2.5">{row}</div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                <button
+                  type="button"
+                  onClick={() => onToggleFavorite(project.id)}
+                  aria-label={`Remove ${project.name} from favorites`}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-amber-400/40 bg-amber-500/10 text-sm text-amber-200 transition hover:bg-amber-500/20"
+                >
+                  ★
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
