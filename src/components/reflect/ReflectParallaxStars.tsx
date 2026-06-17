@@ -43,30 +43,32 @@ export function ReflectParallaxStars({ scrollY, reducedMotion = false }: Props) 
   motionRef.current = reducedMotion;
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const el = canvasRef.current;
+    if (!el) return;
+    const context = el.getContext("2d");
+    if (!context) return;
+    const drawCtx: CanvasRenderingContext2D = context;
 
     let raf = 0;
 
     function resize() {
+      const node = canvasRef.current;
+      if (!node) return;
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.floor(window.innerWidth * dpr);
-      canvas.height = Math.floor(window.innerHeight * dpr);
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      node.width = Math.floor(window.innerWidth * dpr);
+      node.height = Math.floor(window.innerHeight * dpr);
+      node.style.width = `${window.innerWidth}px`;
+      node.style.height = `${window.innerHeight}px`;
+      drawCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     function draw() {
-      if (!ctx || !canvas) return;
       const w = window.innerWidth;
       const h = window.innerHeight;
       const scroll = scrollRef.current;
       const reduced = motionRef.current;
 
-      ctx.clearRect(0, 0, w, h);
+      drawCtx.clearRect(0, 0, w, h);
 
       for (const star of stars) {
         const speed = LAYER_SPEED[star.layer];
@@ -76,10 +78,10 @@ export function ReflectParallaxStars({ scrollY, reducedMotion = false }: Props) 
         const x = star.x * w + xShift;
         const y = ((star.y * h * 1.4 - h * 0.2 + yShift) % (h * 1.4)) - h * 0.2;
 
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255,255,255,${star.a})`;
-        ctx.arc(x, y, star.r, 0, Math.PI * 2);
-        ctx.fill();
+        drawCtx.beginPath();
+        drawCtx.fillStyle = `rgba(255,255,255,${star.a})`;
+        drawCtx.arc(x, y, star.r, 0, Math.PI * 2);
+        drawCtx.fill();
       }
     }
 
