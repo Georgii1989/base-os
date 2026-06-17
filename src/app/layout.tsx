@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Exo_2, Orbitron } from "next/font/google";
+import { DM_Sans, Inter } from "next/font/google";
 import "./globals.css";
 import { Web3Providers } from "@/components/Web3Providers";
 
-const orbitron = Orbitron({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-orbitron",
-  weight: ["400", "500", "600", "700"],
+  variable: "--font-dm-sans",
+  weight: ["500"],
 });
 
-const exo2 = Exo_2({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-exo",
-  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-inter",
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -33,8 +33,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${orbitron.variable} ${exo2.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-[family-name:var(--font-exo)]">
+    <html lang="en" className={`${dmSans.variable} ${inter.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col font-[family-name:var(--font-inter)] text-[var(--color-ash)]">
         <Web3Providers>{children}</Web3Providers>
       </body>
     </html>

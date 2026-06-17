@@ -1,13 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { RadarProjectCard } from "@/components/RadarProjectCard";
+import { RadarProjectIcon } from "@/components/RadarProjectIcon";
 import { Suspense, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
-import { BaseOsHeroVisual } from "@/components/BaseOsHeroVisual";
 import { BaseAnalyticsPanel } from "@/components/BaseAnalyticsPanel";
 import { BaseBuilderApp } from "@/components/BaseBuilderApp";
 import { useCommandPalette } from "@/components/CommandPalette";
@@ -18,15 +18,18 @@ import { OnchainScorePanel } from "@/components/OnchainScorePanel";
 import { SwapBridgePanel } from "@/components/SwapBridgePanel";
 import { TokenLauncherPanel } from "@/components/TokenLauncherPanel";
 import { VerifyDropPanel } from "@/components/VerifyDropPanel";
-import { WalletConnectControl } from "@/components/WalletConnectControl";
 import { WalletPortfolioPanel } from "@/components/WalletPortfolioPanel";
 import { Grid646GamePanel } from "@/components/Grid646GamePanel";
 import { Battleship10GamePanel } from "@/components/Battleship10GamePanel";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
-import { BaseOsNavPulse } from "@/components/BaseOsNavPulse";
-import { OsGroupedNav } from "@/components/OsGroupedNav";
-import { OS_PRIMARY_TAB_IDS } from "@/lib/osTabGroups";
-import { OS_EMBED_PRIMARY_TAB_IDS, OS_EMBED_TAB_GROUPS } from "@/lib/baseAppEmbedNav";
+import { ReflectVoidBackdrop } from "@/components/reflect/ReflectVoidBackdrop";
+import { ReflectHero } from "@/components/reflect/ReflectHero";
+import { ReflectLandingPage } from "@/components/reflect/ReflectLandingPage";
+import { ReflectNavPill } from "@/components/reflect/ReflectNavPill";
+import { ReflectProductFrame } from "@/components/reflect/ReflectProductFrame";
+import { OS_EMBED_TAB_GROUPS } from "@/lib/baseAppEmbedNav";
+import { OS_TAB_GROUPS } from "@/lib/osTabGroups";
+import { reflectNavTabIds } from "@/lib/reflectModules";
 import { OS_TAB_META, tabFromSearchParam, type OsTabId } from "@/lib/osTabs";
 import { parseAddressSearchParam, tabSupportsAddressParam, tabSupportsRoomParam } from "@/lib/osUrlParams";
 import { useBaseAppEmbed } from "@/hooks/useBaseAppEmbed";
@@ -56,17 +59,13 @@ export function BaseOsShell() {
 
 function OsShellFallback() {
   return (
-    <section className="os-shell p-8">
-      <div className="animate-pulse space-y-6">
-        <div className="h-28 rounded-3xl bg-white/5" />
-        <div className="flex flex-wrap gap-2">
-          <div className="h-12 w-32 rounded-2xl bg-white/10" />
-          <div className="h-12 w-36 rounded-2xl bg-white/10" />
-          <div className="h-12 w-36 rounded-2xl bg-white/10" />
-        </div>
-        <div className="h-72 rounded-3xl bg-white/5" />
+    <div className="relative z-10 min-h-screen px-4 py-8">
+      <div className="mx-auto max-w-[920px] animate-pulse space-y-6">
+        <div className="mx-auto h-12 w-full max-w-xl rounded-full bg-white/5" />
+        <div className="mx-auto h-32 max-w-lg rounded-2xl bg-white/5" />
+        <div className="h-72 rounded-2xl bg-white/5" />
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -80,7 +79,7 @@ function BaseOsShellInner() {
   const activeTab = tabFromSearchParam(searchParams.get("tab"));
   const deepLinkAddress = parseAddressSearchParam(searchParams.get("address"));
   const deepLinkAddressRaw = searchParams.get("address");
-  const primaryTabIds = isEmbed ? OS_EMBED_PRIMARY_TAB_IDS : OS_PRIMARY_TAB_IDS;
+  const navTabIds = reflectNavTabIds(isEmbed ? OS_EMBED_TAB_GROUPS : OS_TAB_GROUPS);
   const { address } = useAccount();
   const activeMeta = useMemo(
     () => OS_TAB_META.find((tab) => tab.id === activeTab),
@@ -106,12 +105,12 @@ function BaseOsShellInner() {
     }
   }
 
-  const activeIndex = primaryTabIds.indexOf(activeTab);
+  const activeIndex = navTabIds.indexOf(activeTab);
 
   function focusTabAt(rawIndex: number) {
-    const len = primaryTabIds.length;
+    const len = navTabIds.length;
     const next = ((rawIndex % len) + len) % len;
-    const id = primaryTabIds[next];
+    const id = navTabIds[next];
     setActiveTab(id);
     requestAnimationFrame(() => {
       tabButtonRefs.current[next]?.focus();
@@ -121,11 +120,11 @@ function BaseOsShellInner() {
   function handleTabKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
       event.preventDefault();
-      focusTabAt(activeIndex + 1);
+      focusTabAt(activeIndex >= 0 ? activeIndex + 1 : 0);
     }
     if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
       event.preventDefault();
-      focusTabAt(activeIndex - 1);
+      focusTabAt(activeIndex >= 0 ? activeIndex - 1 : 0);
     }
     if (event.key === "Home") {
       event.preventDefault();
@@ -133,133 +132,100 @@ function BaseOsShellInner() {
     }
     if (event.key === "End") {
       event.preventDefault();
-      focusTabAt(primaryTabIds.length - 1);
+      focusTabAt(navTabIds.length - 1);
     }
   }
 
   return (
-    <section className={isEmbed ? "os-shell os-shell--embed" : "os-shell"}>
-      <div className="os-shell-topline" aria-hidden />
-      <header
-        className={`relative flex flex-col gap-4 border-b border-white/[0.07] pb-5 ${
-          isEmbed
-            ? "md:flex-row md:items-center md:justify-between"
-            : "md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-6"
-        }`}
-      >
-        <div className="md:justify-self-start">
-          <p className="os-eyebrow">{isEmbed ? "Base App" : "Onchain command center"}</p>
-          <h1
-            className={`os-display mt-2 font-bold tracking-wide text-white ${
-              isEmbed ? "text-2xl md:text-3xl" : "text-3xl md:text-5xl"
-            }`}
-          >
-            <span className="bg-gradient-to-r from-amber-200 via-amber-100 to-violet-200 bg-clip-text text-transparent">
-              Base OS
-            </span>
-          </h1>
-          <p
-            className={`mt-3 max-w-2xl text-sm leading-relaxed text-slate-300/90 ${
-              isEmbed ? "hidden sm:block" : ""
-            }`}
-          >
-            {isEmbed
-              ? "Score, swap, play, and tip — optimized for Base App."
-              : "Briefing, trade, build, and protect — one interface for everything on Base."}
-          </p>
-        </div>
-
-        {!isEmbed ? (
-          <BaseOsHeroVisual className="h-28 w-48 sm:h-32 sm:w-56 lg:h-36 lg:w-64" />
-        ) : null}
-
-        <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:min-w-[12rem] sm:items-end md:justify-self-end">
-          <WalletConnectControl />
-          {!isEmbed ? (
-            <button
-              type="button"
-              title="⌘ K or Ctrl K"
-              onClick={() => openCommandPalette()}
-              className="os-cta-ghost flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-xs font-black uppercase tracking-[0.28em] sm:w-auto sm:justify-center"
-            >
-              <span>Quick menu</span>
-              <kbd className="hidden rounded-lg border border-violet-400/25 bg-black/50 px-2 py-1 font-mono text-[11px] font-bold text-amber-100/90 sm:inline">
-                ⌘K
-              </kbd>
-            </button>
-          ) : null}
-          <div className="os-panel w-full px-4 py-3 text-right sm:w-auto">
-            <p className="os-eyebrow text-[0.6rem]">Active module</p>
-            <p className="os-display mt-1 text-lg font-semibold text-violet-100">{activeMeta?.label}</p>
-          </div>
-        </div>
-      </header>
-
-      <div
-        className={`relative mt-5 grid gap-4 border-b border-violet-500/15 pb-5 ${
-          isEmbed ? "" : "lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start"
-        }`}
-      >
-        <OsGroupedNav
+    <>
+      <ReflectVoidBackdrop staticMode={isEmbed} />
+      <main className={`relative z-10 min-h-screen ${isEmbed ? "pb-6" : "pb-4"}`}>
+        <ReflectNavPill
           activeTab={activeTab}
           onSelect={setActiveTab}
           onKeyDown={handleTabKeyDown}
           tabButtonRefs={tabButtonRefs}
-          tabGroups={isEmbed ? OS_EMBED_TAB_GROUPS : undefined}
-          compact={isEmbed}
+          onOpenCommandPalette={openCommandPalette}
+          isEmbed={isEmbed}
+          tabGroups={isEmbed ? OS_EMBED_TAB_GROUPS : OS_TAB_GROUPS}
         />
-        {!isEmbed ? <BaseOsNavPulse activeTab={activeTab} onSelect={setActiveTab} /> : null}
-      </div>
 
-      <div
-        id={`base-os-panel-${activeTab}`}
-        role="tabpanel"
-        aria-labelledby={`base-os-tab-${activeTab}`}
-        tabIndex={0}
-        className="mt-5 outline-none"
-      >
-        {activeTab === "home" ? (
-          <HomeHubPanel
-            connectedAddress={address}
-            setActiveTab={setActiveTab}
-            onOpenCommandPalette={openCommandPalette}
-          />
-        ) : null}
-        {activeTab === "launch" ? <TokenLauncherPanel /> : null}
-        {activeTab === "swap" ? <SwapBridgePanel /> : null}
-        {activeTab === "game" ? <Grid646GamePanel /> : null}
-        {activeTab === "battleship" ? <Battleship10GamePanel /> : null}
-        {activeTab === "tip" ? (
-          <div className="flex flex-col items-center gap-4">
-            {address ? (
-              <Link
-                href={`/${address}`}
-                className="text-sm font-bold text-fuchsia-200 underline decoration-fuchsia-500/40 underline-offset-4 hover:text-fuchsia-100"
-              >
-                Open your tip page
-              </Link>
+        <ReflectHero
+          activeTab={activeTab}
+          activeLabel={activeMeta?.label ?? "Base OS"}
+          isEmbed={isEmbed}
+        />
+
+        <div className="mx-auto mt-8 max-w-[min(100%,1100px)] px-4">
+          <ReflectProductFrame
+            id={`base-os-panel-${activeTab}`}
+            variant={activeTab === "home" ? "hero" : "default"}
+            role="tabpanel"
+            aria-labelledby={`base-os-tab-${activeTab}`}
+            tabIndex={0}
+          >
+            {activeTab === "home" ? (
+              <HomeHubPanel
+                connectedAddress={address}
+                setActiveTab={setActiveTab}
+                onOpenCommandPalette={openCommandPalette}
+              />
             ) : null}
-            <div className="flex justify-center">
-              <BaseBuilderApp />
-            </div>
+            {activeTab === "launch" ? <TokenLauncherPanel /> : null}
+            {activeTab === "swap" ? <SwapBridgePanel /> : null}
+            {activeTab === "game" ? <Grid646GamePanel /> : null}
+            {activeTab === "battleship" ? <Battleship10GamePanel /> : null}
+            {activeTab === "tip" ? (
+              <div className="flex flex-col items-center gap-4">
+                {address ? (
+                  <Link
+                    href={`/${address}`}
+                    className="text-sm font-medium text-[var(--color-lavender-accent)] underline decoration-[rgba(147,130,255,0.35)] underline-offset-4 hover:text-[var(--color-lilac-white)]"
+                  >
+                    Open your tip page
+                  </Link>
+                ) : null}
+                <div className="flex justify-center">
+                  <BaseBuilderApp />
+                </div>
+              </div>
+            ) : null}
+            {activeTab === "drop" ? <VerifyDropPanel /> : null}
+            {activeTab === "analytics" ? <BaseAnalyticsPanel /> : null}
+            {activeTab === "radar" ? <RadarPanel /> : null}
+            {activeTab === "watch" ? <WatchlistPanel /> : null}
+            {activeTab === "lens" ? <TxLensPanel /> : null}
+            {activeTab === "guard" ? (
+              <GuardPanel initialAddress={deepLinkAddress ?? deepLinkAddressRaw} />
+            ) : null}
+            {activeTab === "score" ? (
+              <OnchainScorePanel initialAddress={deepLinkAddress ?? deepLinkAddressRaw} />
+            ) : null}
+            {activeTab === "portfolio" ? (
+              <WalletPortfolioPanel initialAddress={deepLinkAddress ?? deepLinkAddressRaw} />
+            ) : null}
+          </ReflectProductFrame>
+        </div>
+
+        {activeTab === "home" && !isEmbed ? (
+          <ReflectLandingPage setActiveTab={setActiveTab} onOpenCommandPalette={openCommandPalette} />
+        ) : !isEmbed ? (
+          <div className="mx-auto max-w-[min(100%,720px)] px-4 pb-8 pt-4 text-center">
+            <p className="text-[14px] text-[var(--color-fog)]">
+              Full Reflect landing with module grid is on{" "}
+              <button
+                type="button"
+                onClick={() => setActiveTab("home")}
+                className="font-medium text-[var(--color-lavender-accent)] hover:underline"
+              >
+                Home
+              </button>
+              . Scroll sections appear below the product frame there.
+            </p>
           </div>
         ) : null}
-        {activeTab === "drop" ? <VerifyDropPanel /> : null}
-        {activeTab === "analytics" ? <BaseAnalyticsPanel /> : null}
-        {activeTab === "radar" ? <RadarPanel /> : null}
-        {activeTab === "watch" ? <WatchlistPanel /> : null}
-        {activeTab === "lens" ? <TxLensPanel /> : null}
-        {activeTab === "guard" ? (
-          <GuardPanel initialAddress={deepLinkAddress ?? deepLinkAddressRaw} />
-        ) : null}
-        {activeTab === "score" ? (
-          <OnchainScorePanel initialAddress={deepLinkAddress ?? deepLinkAddressRaw} />
-        ) : null}
-        {activeTab === "portfolio" ? (
-          <WalletPortfolioPanel initialAddress={deepLinkAddress ?? deepLinkAddressRaw} />
-        ) : null}
-      </div>
-    </section>
+      </main>
+    </>
   );
 }
 
@@ -409,8 +375,8 @@ function RadarPanel() {
   }, [filteredProjects, favorites.favoriteSet, favoritesOnly]);
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
-      <aside className="os-panel p-4">
+    <div className="grid gap-4 lg:grid-cols-[minmax(190px,210px)_minmax(0,1fr)]">
+      <aside className="os-panel p-4 lg:sticky lg:top-24 lg:self-start">
         <div className="flex items-center justify-between">
           <h2 className="os-display text-base font-semibold text-amber-100">Filters</h2>
           <button type="button" onClick={resetFilters} className="text-xs font-semibold text-slate-500 hover:text-cyan-200">
@@ -488,10 +454,10 @@ function RadarPanel() {
 
       <main className="grid content-start gap-4 self-start">
         <div>
-          <p className="os-eyebrow">Explore</p>
-          <h2 className="os-display mt-2 text-3xl font-semibold text-white md:text-4xl">Project Radar</h2>
-          <p className="mt-1 text-sm text-slate-200/80">Projects we like, with links and prices when available.</p>
-          <p className="mt-2 text-sm font-bold text-cyan-200">
+          <p className="os-eyebrow text-[var(--color-fog)]">Explore</p>
+          <h2 className="os-display mt-2 text-2xl text-[var(--color-lilac-white)] md:text-3xl">Project Radar</h2>
+          <p className="mt-1 text-[13px] text-[var(--color-ash)]">Projects we like, with links and prices when available.</p>
+          <p className="mt-2 text-[13px] font-medium text-[var(--color-lavender-accent)]">
             {sortedFilteredProjects.length} / {radarProjects.length} projects
             {favoriteProjects.length > 0 ? (
               <span className="ml-2 font-medium text-amber-200/90">· {favoriteProjects.length} starred</span>
@@ -512,9 +478,9 @@ function RadarPanel() {
           <Metric label="On screen" value={String(sortedFilteredProjects.length)} />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))]">
           {sortedFilteredProjects.map((project) => (
-            <ProjectCard
+            <RadarProjectCard
               key={project.id}
               project={project}
               market={marketData[project.id]}
@@ -524,22 +490,20 @@ function RadarPanel() {
           ))}
         </div>
         {sortedFilteredProjects.length === 0 ? (
-          <div className="rounded-3xl border border-amber-300/25 bg-amber-500/10 p-5 text-sm text-amber-100">
+          <div className="rounded-2xl border border-[rgba(147,130,255,0.2)] bg-[rgba(16,9,58,0.4)] p-5 text-sm text-[var(--color-ash)]">
             {favoritesOnly
-              ? "No favorites yet — tap ★ on any app card to pin it here."
+              ? "No favorites yet — tap ★ on any app to pin it here."
               : "Nothing matches — try Reset or a shorter search."}
           </div>
         ) : null}
-      </main>
 
-      <aside className="grid content-start gap-4">
         <RadarFavoritesPanel
           projects={favoriteProjects}
           marketData={marketData}
           onShowAll={() => setFavoritesOnly(true)}
           onToggleFavorite={favorites.toggle}
         />
-      </aside>
+      </main>
     </div>
   );
 }
@@ -614,8 +578,8 @@ function FilterList({
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="os-metric-tile px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className="mt-1 text-base font-bold tabular-nums tracking-tight text-white">{value}</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-fog)]">{label}</p>
+      <p className="mt-1 text-base font-medium tabular-nums text-[var(--color-lilac-white)]">{value}</p>
     </div>
   );
 }
@@ -627,171 +591,6 @@ function formatUsd(value: number | null | undefined) {
   if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`;
   if (value >= 1) return `$${value.toFixed(2)}`;
   return `$${value.toPrecision(3)}`;
-}
-
-function formatChange(value: number | null | undefined) {
-  if (value === null || value === undefined) return "—";
-  return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
-}
-
-function ProjectCard({
-  project,
-  market,
-  isFavorite,
-  onToggleFavorite,
-}: {
-  project: RadarProject;
-  market?: RadarMarketData;
-  isFavorite: boolean;
-  onToggleFavorite: () => void;
-}) {
-  const change24h = market?.change24h ?? null;
-  const positive = (change24h ?? 0) >= 0;
-  const hasLiveMarket = typeof market?.priceUsd === "number";
-
-  return (
-    <article className="os-panel-bento p-4">
-      <div className="flex items-start gap-3">
-        <a
-          href={project.website}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`${project.name} website`}
-          className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${project.accent} transition hover:scale-105`}
-        >
-          <Image
-            src={project.iconUrl}
-            alt=""
-            role="presentation"
-            width={28}
-            height={28}
-            className="h-7 w-7 rounded-lg"
-            referrerPolicy="no-referrer"
-            unoptimized
-          />
-        </a>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <a
-                href={project.website}
-                target="_blank"
-                rel="noreferrer"
-                className="font-black text-white underline-offset-4 hover:text-cyan-200 hover:underline"
-              >
-                {project.name}
-              </a>
-              <p className="text-xs font-bold text-cyan-200">{project.symbol}</p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <span
-                className={`border-l-2 px-2 py-0.5 text-xs font-semibold ${
-                  project.risk === "Low"
-                    ? "border-emerald-400/70 text-emerald-200"
-                    : project.risk === "Medium"
-                      ? "border-amber-400/70 text-amber-200"
-                      : "border-rose-400/70 text-rose-200"
-                }`}
-              >
-                {project.risk}
-              </span>
-              <button
-                type="button"
-                onClick={onToggleFavorite}
-                aria-label={isFavorite ? `Remove ${project.name} from favorites` : `Add ${project.name} to favorites`}
-                aria-pressed={isFavorite}
-                title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-                className={`grid h-8 w-8 place-items-center rounded-lg border text-base leading-none transition ${
-                  isFavorite
-                    ? "border-amber-400/50 bg-amber-500/15 text-amber-200 hover:border-amber-300 hover:bg-amber-500/25"
-                    : "border-white/10 bg-black/20 text-slate-500 hover:border-amber-400/40 hover:text-amber-200"
-                }`}
-              >
-                {isFavorite ? "★" : "☆"}
-              </button>
-            </div>
-          </div>
-          <p className="mt-2 line-clamp-2 text-sm leading-snug text-slate-300/90">{project.description}</p>
-          <p className="mt-2 text-xs text-slate-500">{project.categories.join(" · ")}</p>
-        </div>
-      </div>
-      {hasLiveMarket ? (
-        <>
-          <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-md bg-white/[0.06] text-xs">
-            <div className="bg-black/30 p-2.5 col-span-2">
-              <p className="text-slate-500">24h change</p>
-              <p className={`text-lg font-black ${positive ? "text-emerald-300" : "text-rose-300"}`}>
-                {formatChange(change24h)}
-              </p>
-            </div>
-            <div className="bg-black/30 p-2.5">
-              <p className="text-slate-500">Price</p>
-              <p className="font-bold text-white">{formatUsd(market?.priceUsd)}</p>
-            </div>
-            <div className="bg-black/30 p-2.5">
-              <p className="text-slate-500">Liquidity</p>
-              <p className="font-bold text-white">{formatUsd(market?.liquidityUsd)}</p>
-            </div>
-            <div className="bg-black/30 p-2.5 col-span-2">
-              <p className="text-slate-500">24h volume</p>
-              <p className="font-bold text-white">{formatUsd(market?.volume24h)}</p>
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="mt-4 border border-white/[0.07] bg-black/25 p-3 text-xs text-slate-400">
-          <p className="font-semibold text-slate-200">
-            {project.tokenAddress ? "No price data" : "No token price"}
-          </p>
-          <p className="mt-1 leading-relaxed">
-            {project.tokenAddress
-              ? "No active price feed for this token on Base yet."
-              : "App listing — links only, no chart."}
-          </p>
-        </div>
-      )}
-      <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 border-t border-white/[0.06] pt-3">
-        <a
-          href={project.website}
-          target="_blank"
-          rel="noreferrer"
-          className="text-xs font-semibold text-cyan-200/90 underline decoration-cyan-500/35 underline-offset-4 hover:text-cyan-100"
-        >
-          Website
-        </a>
-        {project.tokenAddress || project.baseScanUrl ? (
-          <a
-            href={project.tokenAddress ? `https://basescan.org/token/${project.tokenAddress}` : project.baseScanUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-semibold text-cyan-200/90 underline decoration-cyan-500/35 underline-offset-4 hover:text-cyan-100"
-          >
-            BaseScan
-          </a>
-        ) : null}
-        {project.x ? (
-          <a
-            href={project.x}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-semibold text-cyan-200/90 underline decoration-cyan-500/35 underline-offset-4 hover:text-cyan-100"
-          >
-            X
-          </a>
-        ) : null}
-        {market?.pairUrl ? (
-          <a
-            href={market.pairUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-semibold text-cyan-200/90 underline decoration-cyan-500/35 underline-offset-4 hover:text-cyan-100"
-          >
-            Chart
-          </a>
-        ) : null}
-      </div>
-    </article>
-  );
 }
 
 function RadarFavoritesPanel({
@@ -806,57 +605,51 @@ function RadarFavoritesPanel({
   onToggleFavorite: (id: string) => boolean;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4">
-      <div className="flex items-center justify-between gap-2 border-b border-white/[0.07] pb-3">
-        <h2 className="text-base font-bold text-white">Favorites</h2>
+    <div className="reflect-feature-card p-4">
+      <div className="flex items-center justify-between gap-2 border-b border-[rgba(145,142,160,0.1)] pb-3">
+        <h2 className="os-display text-[15px] text-[var(--color-lilac-white)]">Favorites</h2>
         {projects.length > 0 ? (
           <button
             type="button"
             onClick={onShowAll}
-            className="shrink-0 text-xs font-semibold text-cyan-300/90 underline decoration-cyan-500/35"
+            className="shrink-0 text-[11px] font-medium text-[var(--color-lavender-accent)] underline decoration-[rgba(147,130,255,0.35)]"
           >
-            Filter
+            Show in grid
           </button>
         ) : null}
       </div>
       {projects.length === 0 ? (
-        <p className="mt-3 text-sm leading-relaxed text-slate-400">
-          Tap <span className="text-amber-200">☆</span> on any app to pin it here for quick access.
+        <p className="mt-3 text-[13px] leading-relaxed text-[var(--color-fog)]">
+          Tap <span className="text-[var(--color-lavender-accent)]">☆</span> on any app to pin it here.
         </p>
       ) : (
-        <ul className="mt-2 divide-y divide-white/[0.06]">
-          {projects.map((project, index) => {
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {projects.map((project) => {
             const price = marketData[project.id]?.priceUsd;
             return (
-              <li key={project.id} className="flex items-center gap-2 py-2.5">
+              <li
+                key={project.id}
+                className="flex items-center gap-2 rounded-[5px] border border-[rgba(145,142,160,0.1)] bg-[rgba(3,0,20,0.35)] p-2"
+              >
                 <a
                   href={project.website}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex min-w-0 flex-1 items-center gap-2 transition hover:text-cyan-100"
+                  className="flex min-w-0 flex-1 items-center gap-2 transition hover:opacity-90"
                 >
-                  <Image
-                    src={project.iconUrl}
-                    alt=""
-                    width={20}
-                    height={20}
-                    className="h-5 w-5 shrink-0 rounded"
-                    referrerPolicy="no-referrer"
-                    unoptimized
-                  />
+                  <RadarProjectIcon iconUrl={project.iconUrl} accent={project.accent} size="list" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-slate-100">{project.name}</span>
-                    <span className="block truncate text-[11px] text-slate-500">
+                    <span className="block text-[13px] font-medium text-[var(--color-lilac-white)]">{project.name}</span>
+                    <span className="block text-[11px] text-[var(--color-fog)]">
                       {typeof price === "number" ? formatUsd(price) : project.symbol}
                     </span>
                   </span>
-                  <span className="tabular-nums text-xs text-slate-500">{String(index + 1).padStart(2, "0")}</span>
                 </a>
                 <button
                   type="button"
                   onClick={() => onToggleFavorite(project.id)}
                   aria-label={`Remove ${project.name} from favorites`}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-amber-400/40 bg-amber-500/10 text-sm text-amber-200 transition hover:bg-amber-500/20"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-[5px] border border-[rgba(147,130,255,0.35)] text-sm text-[var(--color-lavender-accent)]"
                 >
                   ★
                 </button>

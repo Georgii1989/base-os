@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SafetyLanding } from "@/components/SafetyLanding";
-import { OsStandaloneBackdrop } from "@/components/os/OsChrome";
+import { OsStandaloneBackdrop } from "@/components/os/OsStandaloneBackdrop";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

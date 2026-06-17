@@ -5,7 +5,7 @@ import { getAddress, isAddress } from "viem";
 import { getBasePublicClient } from "@/lib/baseRpcPublic";
 import type { PublicSafetyPayload } from "@/components/PublicAddressReport";
 import { PublicAddressReport } from "@/components/PublicAddressReport";
-import { OsStandaloneBackdrop } from "@/components/os/OsChrome";
+import { OsStandaloneBackdrop } from "@/components/os/OsStandaloneBackdrop";
 
 type PageProps = { params: Promise<{ address: string }> };
 

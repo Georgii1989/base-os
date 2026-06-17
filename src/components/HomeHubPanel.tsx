@@ -16,93 +16,7 @@ type Props = {
   onOpenCommandPalette: () => void;
 };
 
-const MODULES: {
-  tab: OsTabId;
-  title: string;
-  text: string;
-  cta: string;
-  accent: string;
-}[] = [
-  {
-    tab: "score",
-    title: "Onchain score",
-    text: "Paste any address — txs, contracts, bridges, grade.",
-    cta: "Check score",
-    accent: "from-cyan-500/20 to-fuchsia-500/10",
-  },
-  {
-    tab: "analytics",
-    title: "Base analytics",
-    text: "TVL, fees, stables, DEX — live charts.",
-    cta: "Open analytics",
-    accent: "from-emerald-500/15 to-cyan-500/10",
-  },
-  {
-    tab: "radar",
-    title: "Project radar",
-    text: "Curated Base apps with prices.",
-    cta: "Browse apps",
-    accent: "from-violet-500/15 to-fuchsia-500/10",
-  },
-  {
-    tab: "watch",
-    title: "Tracked wallets",
-    text: "Pin addresses — balance & activity in-browser.",
-    cta: "Open tracker",
-    accent: "from-emerald-500/10 to-teal-500/10",
-  },
-  {
-    tab: "portfolio",
-    title: "Portfolio",
-    text: "ETH + ERC-20 on Base — valued via Blockscout.",
-    cta: "View holdings",
-    accent: "from-cyan-500/15 to-indigo-500/10",
-  },
-  {
-    tab: "launch",
-    title: "Launch Token",
-    text: "Deploy your ERC-20 on Base — you pay gas.",
-    cta: "Create token",
-    accent: "from-emerald-500/20 to-cyan-500/10",
-  },
-  {
-    tab: "swap",
-    title: "Swap and Bridge",
-    text: "Swap on Base via 0x, or bridge ETH/USDC with Relay and official routes.",
-    cta: "Open swap & bridge",
-    accent: "from-violet-500/20 to-indigo-500/10",
-  },
-  {
-    tab: "game",
-    title: "Grid 6×6",
-    text: "1v1 four-in-a-row onchain — stake ETH, each move is a tx.",
-    cta: "Play",
-    accent: "from-emerald-500/20 to-teal-500/10",
-  },
-  {
-    tab: "tip",
-    title: "Tips & badge",
-    text: "Send tips, mint supporter badge.",
-    cta: "Open tips",
-    accent: "from-fuchsia-500/20 to-rose-500/10",
-  },
-  {
-    tab: "guard",
-    title: "Token guard",
-    text: "Review and revoke token approvals.",
-    cta: "Open guard",
-    accent: "from-amber-500/15 to-orange-500/10",
-  },
-  {
-    tab: "lens",
-    title: "Txn preview",
-    text: "Simulate a call — no wallet send.",
-    cta: "Open preview",
-    accent: "from-slate-500/20 to-cyan-500/10",
-  },
-];
-
-export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPalette }: Props) {
+export function HomeHubPanel({ setActiveTab, connectedAddress }: Props) {
   const { data: analytics, isLoading: analyticsLoading } = useQuery({
     queryKey: ["home-analytics"],
     queryFn: async (): Promise<BaseAnalyticsPayload> => {
@@ -212,24 +126,6 @@ export function HomeHubPanel({ setActiveTab, connectedAddress, onOpenCommandPale
         </section>
       )}
 
-      <section className="os-animate-fade-up [animation-delay:220ms]">
-        <p className="os-eyebrow mb-3 text-slate-400">Modules</p>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {MODULES.map((card, i) => (
-            <button
-              key={card.tab}
-              type="button"
-              onClick={() => setActiveTab(card.tab)}
-              className={`os-animate-fade-up os-panel-bento bg-gradient-to-br ${card.accent}`}
-              style={{ animationDelay: `${260 + i * 55}ms` }}
-            >
-              <h3 className="os-display text-lg font-semibold text-white">{card.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-300/90">{card.text}</p>
-              <p className="mt-4 text-sm font-bold text-amber-200/90">{card.cta} →</p>
-            </button>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

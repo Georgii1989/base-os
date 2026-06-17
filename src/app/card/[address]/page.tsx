@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAddress, isAddress } from "viem";
 import { IdentityCard } from "@/components/IdentityCard";
-import { OsStandaloneBackdrop } from "@/components/os/OsChrome";
+import { OsStandaloneBackdrop } from "@/components/os/OsStandaloneBackdrop";
 import { fetchOnchainScore } from "@/lib/onchainScoreFetch";
 
 type PageProps = { params: Promise<{ address: string }> };

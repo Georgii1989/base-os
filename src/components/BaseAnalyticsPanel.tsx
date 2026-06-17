@@ -28,35 +28,17 @@ function MetricCard({
   label,
   value,
   hint,
-  accent = "cyan",
 }: {
   label: string;
   value: string;
   hint?: string;
   accent?: "cyan" | "emerald" | "amber" | "fuchsia";
 }) {
-  const border =
-    accent === "emerald"
-      ? "border-emerald-300/30"
-      : accent === "amber"
-        ? "border-amber-300/30"
-        : accent === "fuchsia"
-          ? "border-fuchsia-300/30"
-          : "border-cyan-300/30";
-  const text =
-    accent === "emerald"
-      ? "text-emerald-200"
-      : accent === "amber"
-        ? "text-amber-200"
-        : accent === "fuchsia"
-          ? "text-fuchsia-200"
-          : "text-cyan-200";
-
   return (
-    <div className={`os-metric-tile border ${border}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className={`mt-1 text-2xl font-bold tabular-nums ${text}`}>{value}</p>
-      {hint ? <p className="mt-1 text-xs text-slate-400">{hint}</p> : null}
+    <div className="os-metric-tile">
+      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--color-fog)]">{label}</p>
+      <p className="mt-1 text-2xl font-medium tabular-nums text-[var(--color-lilac-white)]">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-[var(--color-ash)]">{hint}</p> : null}
     </div>
   );
 }
@@ -362,41 +344,33 @@ export function BaseAnalyticsPanel() {
 
   return (
     <div className="grid gap-5">
-      <header className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="os-eyebrow">Base chain</p>
-            <h2 className="os-display mt-2 text-3xl font-semibold text-white md:text-4xl">Analytics</h2>
-            <p className="mt-1 max-w-2xl text-sm text-slate-300/90">
-              {activeMeta.description}. Source:{" "}
-              <a
-                href={activeMeta.href}
-                target="_blank"
-                rel="noreferrer"
-                className="font-bold text-cyan-300 underline underline-offset-2"
-              >
-                {activeMeta.label}
-              </a>
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+      <header className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[13px] text-[var(--color-ash)]">
+            Source:{" "}
+            <a
+              href={activeMeta.href}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-[var(--color-lavender-accent)] underline decoration-[rgba(147,130,255,0.35)] underline-offset-2"
+            >
+              {activeMeta.label}
+            </a>
+          </p>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-fog)]">
             {updatedLabel ? <span>Updated {updatedLabel}</span> : null}
             <button
               type="button"
               onClick={() => refetch()}
               disabled={isFetching}
-              className="rounded-lg border border-white/15 px-3 py-1.5 font-semibold text-slate-300 hover:border-cyan-400/50 hover:text-cyan-200 disabled:opacity-50"
+              className="reflect-ghost-btn border border-[rgba(145,142,160,0.15)] px-3 py-1.5 disabled:opacity-50"
             >
               {isFetching ? "Refreshing…" : "Refresh"}
             </button>
           </div>
         </div>
 
-        <div
-          className="flex flex-wrap gap-2"
-          role="tablist"
-          aria-label="Analytics data source"
-        >
+        <div className="os-subtabs flex flex-wrap gap-1 rounded-[5px] p-1" role="tablist" aria-label="Analytics data source">
           {ANALYTICS_SOURCES.map((item) => (
             <button
               key={item.id}
@@ -404,14 +378,14 @@ export function BaseAnalyticsPanel() {
               role="tab"
               aria-selected={source === item.id}
               onClick={() => selectSource(item.id)}
-              className={`cursor-pointer rounded-xl border px-3 py-2 text-left transition-colors duration-200 ${
+              className={`cursor-pointer rounded-[5px] px-3 py-2 text-left transition-colors duration-200 ${
                 source === item.id
-                  ? "os-subtab-active border-transparent"
-                  : "border-white/12 bg-black/25 text-slate-400 hover:border-violet-400/25 hover:text-slate-200"
+                  ? "os-subtab-active bg-[var(--color-deep-indigo)] text-[var(--color-lavender-accent)]"
+                  : "text-[var(--color-fog)] hover:bg-[rgba(16,9,58,0.5)] hover:text-[var(--color-lilac-white)]"
               }`}
             >
-              <span className="block text-sm font-black">{item.label}</span>
-              <span className="mt-0.5 block text-[10px] font-medium text-slate-500">{item.description}</span>
+              <span className="block text-sm font-medium">{item.label}</span>
+              <span className="mt-0.5 block text-[10px] text-[var(--color-fog)]">{item.description}</span>
             </button>
           ))}
         </div>

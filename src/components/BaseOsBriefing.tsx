@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatUnits } from "viem";
 import { base, mainnet } from "wagmi/chains";
-import { useAccount, useBalance, useReadContract } from "wagmi";
+import { useAccount, useBalance, useConnect, useReadContract } from "wagmi";
 import type { BaseAnalyticsPayload } from "@/lib/baseAnalyticsTypes";
 import type { OnchainScorePayload } from "@/lib/onchainScoreFetch";
 import {
@@ -14,7 +14,9 @@ import {
   type BriefingItem,
 } from "@/lib/baseOsBriefing";
 import type { OsTabId } from "@/lib/osTabs";
+import { BASE_CHAIN_ID } from "@/lib/baseChain";
 import { resolveTipJarAddress } from "@/lib/tipContracts";
+import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
 
 const SBT_ABI = [
   {
@@ -42,6 +44,9 @@ export function BaseOsBriefing({
   setActiveTab: (tab: OsTabId) => void;
 }) {
   const { address, isConnected } = useAccount();
+  const { connect, connectors, isPending: isConnecting } = useConnect();
+  const connector = useMemo(() => pickPreferredConnector(connectors), [connectors]);
+  const connectLabel = connectorButtonLabel(connector, isConnecting);
   const sbtAddress = process.env.NEXT_PUBLIC_SBT_ADDRESS?.trim() as `0x${string}` | undefined;
 
   const { data: ethBase } = useBalance({
@@ -163,9 +168,17 @@ export function BaseOsBriefing({
             item={item}
             delayMs={80 + i * 50}
             onAction={() => {
+              if (item.id === "connect") {
+                if (connector && !isConnecting) {
+                  connect({ connector, chainId: BASE_CHAIN_ID });
+                }
+                return;
+              }
               if (item.tab) setActiveTab(item.tab);
               else if (item.href) window.open(item.href, "_blank", "noopener,noreferrer");
             }}
+            connectDisabled={item.id === "connect" && (!connector || isConnecting)}
+            connectLabel={item.id === "connect" ? connectLabel : undefined}
           />
         ))}
       </div>
@@ -181,17 +194,25 @@ function BriefingCard({
   item,
   onAction,
   delayMs,
+  connectDisabled = false,
+  connectLabel,
 }: {
   item: BriefingItem;
   onAction: () => void;
   delayMs: number;
+  connectDisabled?: boolean;
+  connectLabel?: string;
 }) {
+  const isConnect = item.id === "connect";
   return (
     <button
       type="button"
       onClick={onAction}
+      disabled={isConnect && connectDisabled}
       style={{ animationDelay: `${delayMs}ms` }}
-      className={`os-animate-fade-up os-panel-bento group flex flex-col p-4 ${ACCENT_BORDER[item.accent]}`}
+      className={`os-animate-fade-up os-panel-bento group flex flex-col p-4 text-left ${ACCENT_BORDER[item.accent]} ${
+        isConnect && connectDisabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+      }`}
     >
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-lg">
@@ -202,8 +223,12 @@ function BriefingCard({
           <p className="mt-1 text-xs leading-relaxed text-slate-400">{item.description}</p>
         </div>
       </div>
-      <span className="mt-3 text-xs font-bold uppercase tracking-wide text-amber-200/80">
-        {item.cta} →
+      <span
+        className={`mt-3 text-xs font-bold uppercase tracking-wide ${
+          isConnect ? "text-[var(--color-lavender-accent)]" : "text-amber-200/80"
+        }`}
+      >
+        {connectLabel ?? item.cta} →
       </span>
     </button>
   );

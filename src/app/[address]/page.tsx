@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { isAddress } from "viem";
 import { TipProfileCard } from "@/components/TipProfileCard";
-import { OsStandaloneBackdrop } from "@/components/os/OsChrome";
+import { OsStandaloneBackdrop } from "@/components/os/OsStandaloneBackdrop";
 
 type ProfilePageProps = {
   params: Promise<{ address: string }>;
