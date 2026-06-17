@@ -34,7 +34,7 @@ export function buildBriefingItems(input: BriefingInput): BriefingItem[] {
       icon: "◎",
       title: "Connect your wallet",
       description: "Unlock your personal Base briefing — score, balances, and actions.",
-      cta: "Connect above",
+      cta: "Connect wallet",
       priority: 100,
       accent: "cyan",
     });

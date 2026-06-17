@@ -30,8 +30,7 @@ export function ReflectHero({ activeTab, activeLabel, isEmbed = false }: Props) 
         </>
       ) : (
         <>
-          <p className="text-gold-muted mt-4 text-sm font-medium">{activeLabel}</p>
-          <h1 className="os-display mt-2 text-[clamp(1.75rem,4vw,3rem)] leading-[1.17]">
+          <h1 className="os-display mt-8 text-[clamp(1.75rem,4vw,3rem)] leading-[1.17]">
             <span className="text-cosmic-gradient">{activeLabel}</span>
           </h1>
           {!isEmbed ? (
