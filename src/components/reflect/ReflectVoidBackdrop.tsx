@@ -56,6 +56,7 @@ export function ReflectVoidBackdrop({ staticMode = false }: Props) {
         className="reflect-void-backdrop__video-shell"
         style={{ transform: `translate3d(-50%, calc(-50% + ${videoParallax}px), 0)` }}
       >
+        <div className="reflect-void-backdrop__halo" aria-hidden />
         <video
           ref={videoRef}
           className="reflect-void-backdrop__video"
