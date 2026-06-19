@@ -11,12 +11,12 @@ import {
 describe("buildVerifyResources", () => {
   it("builds provider, trait, and action URNs", () => {
     expect(
-      buildVerifyResources("x", { verified: "true", followers: "gte:1000" }, "claim_base_os_drop")
+      buildVerifyResources("x", { verified: "true", followers: "gte:1000" }, "claim_base_os_verify")
     ).toEqual([
       "urn:verify:provider:x",
       "urn:verify:provider:x:verified:eq:true",
       "urn:verify:provider:x:followers:gte:1000",
-      "urn:verify:action:claim_base_os_drop",
+      "urn:verify:action:claim_base_os_verify",
     ]);
   });
 });
@@ -26,12 +26,12 @@ describe("parseVerifyResources", () => {
     const resources = buildVerifyResources(
       "tiktok",
       { follower_count: "gte:1000" },
-      "claim_base_os_drop"
+      "claim_base_os_verify"
     );
     expect(parseVerifyResources(resources)).toEqual({
       provider: "tiktok",
       traits: { follower_count: "gte:1000" },
-      action: "claim_base_os_drop",
+      action: "claim_base_os_verify",
     });
   });
 

@@ -1,15 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("Verify Drop tab", () => {
-  test("drop tab renders the claim panel and feed", async ({ page }) => {
+test.describe("Base Verify tab", () => {
+  test("tab renders the claim panel and feed", async ({ page }) => {
     await page.goto("/?tab=drop");
     await expect(page.getByRole("heading", { name: /Sybil-resistant claim/i })).toBeVisible();
     await expect(page.getByText(/Sandbox verifier/i).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: /Claim feed/i })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Drop/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Base Verify/i })).toBeVisible();
   });
 
-  test("claims API responds with drop config", async ({ request }) => {
+  test("claims API responds with verify config", async ({ request }) => {
     const res = await request.get("/api/verify-drop/claims");
     expect(res.ok()).toBeTruthy();
     const body = (await res.json()) as {
@@ -18,7 +18,7 @@ test.describe("Verify Drop tab", () => {
       providers: Array<{ id: string }>;
     };
     expect(["sandbox", "live"]).toContain(body.mode);
-    expect(body.action).toBe("claim_base_os_drop");
+    expect(body.action).toBe("claim_base_os_verify");
     expect(body.providers.map((p) => p.id)).toEqual(["x", "coinbase", "instagram", "tiktok"]);
   });
 

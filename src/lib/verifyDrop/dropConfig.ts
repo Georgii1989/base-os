@@ -5,9 +5,9 @@ import type { TraitRequirements, VerifyProviderId } from "@/lib/verifyDrop/types
  * Modeled after base/base-verify-demo: trait requirements live on the backend
  * and the SIWE message from the client must match them exactly.
  */
-export const DROP_ACTION = "claim_base_os_drop";
+export const DROP_ACTION = "claim_base_os_verify";
 
-export const DROP_STATEMENT = "Claim the Base OS demo drop";
+export const DROP_STATEMENT = "Claim via Base Verify";
 
 export const DROP_AMOUNT_LABEL = "1,000 OS points";
 
@@ -50,7 +50,7 @@ export const DROP_PROVIDERS: readonly DropProviderConfig[] = [
 
 /** Plain message signed to delete one's own claim. */
 export function deleteClaimMessage(address: string): string {
-  return `Delete Base OS drop claim for ${address}`;
+  return `Delete Base Verify claim for ${address}`;
 }
 
 export function dropProviderConfig(id: string): DropProviderConfig | undefined {

@@ -91,7 +91,7 @@ export const TAB_HERO_SUBTITLES: Partial<Record<OsTabId, string>> = {
   battleship: "10×10 naval combat on Base — place ships and fire onchain.",
   tip: "Send tips and mint a supporter badge on Base.",
   launch: "Deploy your ERC-20 token on Base in one flow.",
-  drop: "Verify and claim drops with persistent claim feed.",
+  drop: "Prove a social account via Base Verify — one identity, one claim.",
   analytics: "TVL, fees, stables, and DEX volume on Base.",
   portfolio: "ETH and ERC-20 balances on Base via Blockscout.",
   guard: "Review allowances and revoke risky approvals.",
