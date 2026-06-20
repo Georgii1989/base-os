@@ -512,6 +512,90 @@ body {
     transform: translateY(-1px);
   }
 
+  .reflect-module-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(8, 5, 28, 0.55);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 10px 28px rgba(0, 0, 0, 0.35);
+    transition:
+      transform 0.22s ease,
+      box-shadow 0.22s ease;
+  }
+
+  .group:hover .reflect-module-icon {
+    transform: translateY(-2px) scale(1.04);
+  }
+
+  .reflect-module-icon__svg {
+    width: 2rem;
+    height: 2rem;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+  }
+
+  .reflect-module-icon--score {
+    border-color: rgba(232, 121, 249, 0.35);
+    box-shadow:
+      inset 0 1px 0 rgba(240, 171, 252, 0.2),
+      0 0 32px rgba(168, 85, 247, 0.22);
+  }
+
+  .reflect-module-icon--chart {
+    border-color: rgba(34, 211, 238, 0.32);
+    box-shadow:
+      inset 0 1px 0 rgba(103, 232, 249, 0.18),
+      0 0 32px rgba(34, 211, 238, 0.18);
+  }
+
+  .reflect-module-icon--radar {
+    border-color: rgba(52, 211, 153, 0.32);
+    box-shadow:
+      inset 0 1px 0 rgba(110, 231, 183, 0.18),
+      0 0 32px rgba(16, 185, 129, 0.18);
+  }
+
+  .reflect-module-icon--wallet {
+    border-color: rgba(251, 191, 36, 0.34);
+    box-shadow:
+      inset 0 1px 0 rgba(253, 230, 138, 0.18),
+      0 0 32px rgba(245, 158, 11, 0.18);
+  }
+
+  .reflect-module-icon--swap {
+    border-color: rgba(167, 139, 250, 0.34);
+    box-shadow:
+      inset 0 1px 0 rgba(196, 181, 253, 0.18),
+      0 0 32px rgba(124, 58, 237, 0.2);
+  }
+
+  .reflect-module-icon--launch {
+    border-color: rgba(240, 223, 160, 0.38);
+    box-shadow:
+      inset 0 1px 0 rgba(254, 243, 199, 0.2),
+      0 0 32px rgba(212, 175, 95, 0.22);
+  }
+
+  .reflect-module-icon--game {
+    border-color: rgba(244, 114, 182, 0.34);
+    box-shadow:
+      inset 0 1px 0 rgba(251, 207, 232, 0.18),
+      0 0 32px rgba(236, 72, 153, 0.18);
+  }
+
+  .reflect-module-icon--shield {
+    border-color: rgba(251, 146, 60, 0.34);
+    box-shadow:
+      inset 0 1px 0 rgba(252, 211, 77, 0.18),
+      0 0 32px rgba(249, 115, 22, 0.18);
+  }
+
   .os-icon-shell {
     display: inline-flex;
     align-items: center;

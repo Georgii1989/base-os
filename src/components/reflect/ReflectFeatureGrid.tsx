@@ -2,7 +2,7 @@
 
 import type { OsTabId } from "@/lib/osTabs";
 import { REFLECT_FEATURE_MODULES } from "@/lib/reflectModules";
-import { OsIcon, OsIconShell } from "@/components/icons/OsIcon";
+import { ReflectModuleIcon } from "@/components/reflect/ReflectModuleIcon";
 
 type Props = {
   onSelect: (tab: OsTabId) => void;
@@ -18,9 +18,7 @@ export function ReflectFeatureGrid({ onSelect }: Props) {
           onClick={() => onSelect(mod.tab)}
           className="group reflect-feature-card reflect-feature-card--interactive"
         >
-          <OsIconShell>
-            <OsIcon name={mod.icon} size="lg" />
-          </OsIconShell>
+          <ReflectModuleIcon icon={mod.icon} />
           <h3 className="reflect-feature-card__title mt-4">{mod.title}</h3>
           <p className="reflect-feature-card__desc mt-2">{mod.description}</p>
           <span className="reflect-feature-card__link">Open →</span>
