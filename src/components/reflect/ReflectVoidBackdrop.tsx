@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { ReflectParallaxStars } from "@/components/reflect/ReflectParallaxStars";
-import { useScrollOffset } from "@/hooks/useScrollOffset";
+import { useLiteBackdrop } from "@/hooks/useLiteBackdrop";
+import { useParallaxScroll } from "@/hooks/useParallaxScroll";
 
 const VOID_VIDEO_SRC = "/media/grok-void.mp4";
 
@@ -11,21 +12,22 @@ type Props = {
 };
 
 export function ReflectVoidBackdrop({ staticMode = false }: Props) {
-  const scrollY = useScrollOffset();
+  const lite = useLiteBackdrop();
+  const motionOff = staticMode || lite;
+
+  const nebulaRef = useRef<HTMLDivElement>(null);
+  const videoShellRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
 
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
-    const onChange = () => setReducedMotion(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
+  const parallaxLayers = useMemo(
+    () => [
+      { ref: nebulaRef, factor: 0.04 },
+      { ref: videoShellRef, factor: 0.07, centerX: true },
+    ],
+    []
+  );
 
-  const motionOff = staticMode || reducedMotion;
-  const videoParallax = motionOff ? 0 : scrollY * 0.07;
-  const nebulaParallax = motionOff ? 0 : scrollY * 0.04;
+  useParallaxScroll(parallaxLayers, !motionOff);
 
   useEffect(() => {
     if (motionOff) return;
@@ -44,28 +46,27 @@ export function ReflectVoidBackdrop({ staticMode = false }: Props) {
   }, [motionOff]);
 
   return (
-    <div className="reflect-void-backdrop" aria-hidden>
-      <ReflectParallaxStars scrollY={scrollY} reducedMotion={motionOff} />
+    <div
+      className={`reflect-void-backdrop${motionOff ? " reflect-void-backdrop--lite" : ""}`}
+      aria-hidden
+    >
+      <ReflectParallaxStars reducedMotion={motionOff} />
 
-      <div
-        className="reflect-void-backdrop__nebula"
-        style={{ transform: `translate3d(0, ${-nebulaParallax}px, 0)` }}
-      />
+      <div ref={nebulaRef} className="reflect-void-backdrop__nebula" />
 
-      <div
-        className="reflect-void-backdrop__video-shell"
-        style={{ transform: `translate3d(-50%, calc(-50% + ${videoParallax}px), 0)` }}
-      >
-        <video
-          ref={videoRef}
-          className="reflect-void-backdrop__video"
-          src={VOID_VIDEO_SRC}
-          loop
-          muted
-          playsInline
-          preload="auto"
-        />
-      </div>
+      {!motionOff ? (
+        <div ref={videoShellRef} className="reflect-void-backdrop__video-shell">
+          <video
+            ref={videoRef}
+            className="reflect-void-backdrop__video"
+            src={VOID_VIDEO_SRC}
+            loop
+            muted
+            playsInline
+            preload="auto"
+          />
+        </div>
+      ) : null}
 
       <div className="reflect-void-backdrop__glow" />
       <div className="reflect-void-backdrop__vignette" />

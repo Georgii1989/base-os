@@ -140,10 +140,20 @@ body {
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
+    contain: strict;
     background:
       radial-gradient(ellipse 120% 80% at 50% -10%, rgba(80, 70, 228, 0.14) 0%, transparent 55%),
       radial-gradient(circle at 50% 120%, rgba(3, 0, 20, 0.95) 0%, var(--color-void-canvas) 70%),
       var(--color-void-canvas);
+  }
+
+  .reflect-void-backdrop--lite .reflect-starfield__canvas,
+  .reflect-void-backdrop--lite .reflect-void-backdrop__glow {
+    display: none;
+  }
+
+  .reflect-void-backdrop--lite .reflect-void-backdrop__nebula {
+    will-change: auto;
   }
 
   .reflect-starfield {
@@ -179,6 +189,7 @@ body {
     position: absolute;
     inset: -15% -10%;
     will-change: transform;
+    transform: translate3d(0, 0, 0);
     background:
       radial-gradient(ellipse 55% 40% at 18% 28%, rgba(133, 98, 255, 0.12) 0%, transparent 70%),
       radial-gradient(ellipse 45% 35% at 82% 22%, rgba(229, 156, 255, 0.08) 0%, transparent 72%),
@@ -192,6 +203,7 @@ body {
     width: min(920px, 118vw);
     height: min(520px, 62vh);
     will-change: transform;
+    transform: translate3d(-50%, -50%, 0);
   }
 
   .reflect-void-backdrop__video {
@@ -237,6 +249,21 @@ body {
     bottom: 0;
     height: 42vh;
     background: linear-gradient(180deg, transparent 0%, rgba(3, 0, 20, 0.82) 55%, var(--color-void-canvas) 100%);
+  }
+
+  @media (max-width: 1024px) {
+    .reflect-void-backdrop__video {
+      mix-blend-mode: normal;
+    }
+
+    .reflect-void-backdrop__glow {
+      filter: none;
+      opacity: 0.45;
+    }
+
+    .reflect-feature-card {
+      backdrop-filter: none;
+    }
   }
 
   @keyframes reflect-star-twinkle {
