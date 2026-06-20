@@ -1,8 +1,9 @@
 import type { OsTabId } from "@/lib/osTabs";
+import type { OsIconName } from "@/components/icons/OsIcon";
 
 export type BriefingItem = {
   id: string;
-  icon: string;
+  icon: OsIconName;
   title: string;
   description: string;
   cta: string;
@@ -31,7 +32,7 @@ export function buildBriefingItems(input: BriefingInput): BriefingItem[] {
   if (!input.isConnected) {
     items.push({
       id: "connect",
-      icon: "◎",
+      icon: "connect",
       title: "Connect your wallet",
       description: "Unlock your personal Base briefing — score, balances, and actions.",
       cta: "Connect wallet",
@@ -44,7 +45,7 @@ export function buildBriefingItems(input: BriefingInput): BriefingItem[] {
   if (input.ethOnMainnet != null && input.ethOnMainnet >= 0.005) {
     items.push({
       id: "bridge-eth",
-      icon: "↗",
+      icon: "bridge",
       title: `${input.ethOnMainnet.toFixed(4)} ETH on Ethereum`,
       description: "Move to Base via Relay — fast cross-chain route.",
       cta: "Bridge to Base",
@@ -61,7 +62,7 @@ export function buildBriefingItems(input: BriefingInput): BriefingItem[] {
         : "";
     items.push({
       id: "score",
-      icon: "◇",
+      icon: "score",
       title: `Onchain score ${input.score}${input.grade ? ` · ${input.grade}` : ""}`,
       description: `Your Base activity grade${delta}. Share your identity card.`,
       cta: "View score",
@@ -74,7 +75,7 @@ export function buildBriefingItems(input: BriefingInput): BriefingItem[] {
   if (input.ethOnBase != null) {
     items.push({
       id: "base-balance",
-      icon: "⬡",
+      icon: "wallet",
       title: `${input.ethOnBase.toFixed(4)} ETH on Base`,
       description: "Swap tokens, launch a project, or send a tip on Base.",
       cta: input.ethOnBase >= 0.001 ? "Open swap" : "Explore modules",
@@ -87,7 +88,7 @@ export function buildBriefingItems(input: BriefingInput): BriefingItem[] {
   if (input.hasTipBadge === false) {
     items.push({
       id: "tip-badge",
-      icon: "✦",
+      icon: "tip",
       title: "Mint your supporter badge",
       description: "Send a tip on Base to unlock your soulbound supporter NFT.",
       cta: "Open tips",
@@ -100,7 +101,7 @@ export function buildBriefingItems(input: BriefingInput): BriefingItem[] {
   if (input.gasGwei != null && input.gasGwei < 0.05) {
     items.push({
       id: "low-gas",
-      icon: "⚡",
+      icon: "gas",
       title: `Gas ${input.gasGwei.toFixed(3)} gwei — cheap`,
       description: "Good time to deploy a token or batch transactions.",
       cta: "Launch token",
@@ -114,7 +115,7 @@ export function buildBriefingItems(input: BriefingInput): BriefingItem[] {
     const up = input.radarTopMover.change24h >= 0;
     items.push({
       id: "radar-mover",
-      icon: up ? "📈" : "📉",
+      icon: up ? "trend-up" : "trend-down",
       title: `${input.radarTopMover.name} ${up ? "+" : ""}${input.radarTopMover.change24h.toFixed(1)}%`,
       description: "Top mover on Base OS Radar in the last 24h.",
       cta: "Open radar",
@@ -127,7 +128,7 @@ export function buildBriefingItems(input: BriefingInput): BriefingItem[] {
   if (input.tvlChange30dPct != null) {
     items.push({
       id: "network-pulse",
-      icon: "◉",
+      icon: "chart",
       title: `Base TVL ${input.tvlChange30dPct >= 0 ? "+" : ""}${input.tvlChange30dPct.toFixed(2)}% · 30d`,
       description: "Network pulse from DeFi Llama — explore full analytics.",
       cta: "Analytics",
@@ -139,7 +140,7 @@ export function buildBriefingItems(input: BriefingInput): BriefingItem[] {
 
   items.push({
     id: "guard",
-    icon: "⎊",
+    icon: "shield",
     title: "Wallet guard",
     description: "Review token approvals and revoke risky access in-app.",
     cta: "Open guard",

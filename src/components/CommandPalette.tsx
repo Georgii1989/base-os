@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { getAddress, isAddress } from "viem";
+import { OsIcon, OsIconShell, osTabIcon, type OsIconName } from "@/components/icons/OsIcon";
 import { OS_TAB_META, type OsTabId } from "@/lib/osTabs";
 import { radarProjects } from "@/lib/radarProjects";
 
@@ -29,7 +30,7 @@ type CommandItem = {
   id: string;
   title: string;
   subtitle?: string;
-  icon: string;
+  icon: OsIconName;
   keywords?: string;
   run: () => void;
 };
@@ -44,34 +45,8 @@ function matchesQuery(q: string, cmd: CommandItem) {
   return hay.includes(q);
 }
 
-function tabCommandIcon(tabId: OsTabId): string {
-  switch (tabId) {
-    case "home":
-      return "◆";
-    case "radar":
-      return "◎";
-    case "watch":
-      return "⌁";
-    case "lens":
-      return "⎔";
-    case "guard":
-      return "⎊";
-    case "score":
-      return "◇";
-    case "portfolio":
-      return "◈";
-    case "launch":
-      return "⬡";
-    case "swap":
-      return "⇄";
-    case "game":
-      return "▦";
-    case "battleship":
-      return "⚓";
-    case "tip":
-    default:
-      return "✦";
-  }
+function tabCommandIcon(tabId: OsTabId): OsIconName {
+  return osTabIcon(tabId);
 }
 
 function tabNavKeywords(tab: { id: OsTabId; label: string; eyebrow: string }): string {
@@ -133,7 +108,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
       id: `radar-${project.id}`,
       title: project.name,
       subtitle: `${project.symbol} · ${project.risk} risk · Radar`,
-      icon: "◉",
+      icon: "radar",
       keywords: `${project.name} ${project.symbol} ${project.categories.join(" ")} discover`,
       run: () => {
         router.push(`/?tab=radar`);
@@ -146,7 +121,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
         id: "portal-safety",
         title: "Address lookup",
         subtitle: "Wallet not needed",
-        icon: "⬡",
+        icon: "lens",
         keywords: "analyze check contract wallet lookup profile public",
         run: () => {
           router.push("/safety");
@@ -157,7 +132,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
         id: "ext-basescan",
         title: "BaseScan",
         subtitle: "Explorer for Base",
-        icon: "⎋",
+        icon: "external",
         keywords: "chain scan trace",
         run: () => {
           window.open("https://basescan.org", "_blank", "noopener,noreferrer");
@@ -167,7 +142,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
         id: "ext-revoke",
         title: "revoke.cash",
         subtitle: "Review token permissions",
-        icon: "⎚",
+        icon: "shield",
         keywords: "guard allowance revoke usdc spender",
         run: () => {
           window.open("https://revoke.cash/chain/8453", "_blank", "noopener,noreferrer");
@@ -177,7 +152,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
         id: "ext-bridge",
         title: "Base Bridge",
         subtitle: "Official bridge",
-        icon: "⇄",
+        icon: "bridge",
         keywords: "deposit withdraw official",
         run: () => {
           window.open("https://bridge.base.org", "_blank", "noopener,noreferrer");
@@ -199,7 +174,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
         id: `inspect-${checksum}`,
         title: `Open address page`,
         subtitle: checksum,
-        icon: "◇",
+        icon: "lens",
         keywords: "",
         run: () => {
           router.push(`/safety/${checksum}`);
@@ -216,7 +191,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
           id: "hint-address",
           title: "Keep typing…",
           subtitle: "Full address is 42 characters (0x + 40).",
-          icon: "→",
+          icon: "search",
           run: () => {},
         },
         ...list,
@@ -335,7 +310,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
               </div>
               <div className="relative mt-3">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cyan-300/75">
-                  ⌕
+                  <OsIcon name="search" size="sm" />
                 </span>
                 <input
                   ref={inputRef}
@@ -374,12 +349,9 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
                         onMouseEnter={() => setSelectedIndex(index)}
                         className={`mb-2 flex w-full cursor-pointer items-start gap-3 rounded-2xl border px-3 py-3 text-left transition-colors duration-200 md:gap-4 md:px-4 md:py-3.5 ${active ? "border-amber-400/40 bg-gradient-to-br from-amber-500/10 via-violet-500/15 to-slate-950/50 shadow-[0_0_24px_rgba(139,92,246,0.12)]" : "border-transparent bg-white/[0.04] hover:border-violet-400/20 hover:bg-white/[0.07]"}`}
                       >
-                        <span
-                          aria-hidden
-                          className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base ${active ? "bg-cyan-400/25 text-cyan-50" : "bg-white/[0.08] text-slate-300"}`}
-                        >
-                          {cmd.icon}
-                        </span>
+                        <OsIconShell variant="palette" active={active}>
+                          <OsIcon name={cmd.icon} size="md" />
+                        </OsIconShell>
                         <span className="min-w-0 flex-1">
                           <span className="block font-bold text-[15px] leading-snug text-white">
                             {cmd.title}

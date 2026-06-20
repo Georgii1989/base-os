@@ -17,6 +17,7 @@ import type { OsTabId } from "@/lib/osTabs";
 import { BASE_CHAIN_ID } from "@/lib/baseChain";
 import { resolveTipJarAddress } from "@/lib/tipContracts";
 import { connectorButtonLabel, pickPreferredConnector } from "@/lib/walletConnectors";
+import { OsIcon, OsIconShell } from "@/components/icons/OsIcon";
 
 const SBT_ABI = [
   {
@@ -215,9 +216,9 @@ function BriefingCard({
       }`}
     >
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-lg">
-          {item.icon}
-        </span>
+        <OsIconShell variant="briefing">
+          <OsIcon name={item.icon} size="md" />
+        </OsIconShell>
         <div className="min-w-0 flex-1">
           <p className="font-bold text-white group-hover:text-amber-100">{item.title}</p>
           <p className="mt-1 text-xs leading-relaxed text-slate-400">{item.description}</p>
