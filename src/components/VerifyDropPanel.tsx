@@ -247,7 +247,7 @@ export function VerifyDropPanel() {
               disabled={isConnecting || !preferredConnector}
               onClick={() =>
                 preferredConnector &&
-                connect({ connector: preferredConnector, chainId: BASE_CHAIN_ID })
+                connect({ connector: preferredConnector })
               }
               className="mt-3 rounded-xl border border-amber-200/40 bg-amber-500/20 px-4 py-2 text-sm font-bold text-amber-100 disabled:opacity-40"
             >

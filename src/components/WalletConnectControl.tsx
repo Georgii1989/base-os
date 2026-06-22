@@ -11,36 +11,49 @@ import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import { BASE_CHAIN_ID } from "@/lib/baseChain";
 import {
   connectorButtonLabel,
+  formatConnectError,
   pickPreferredConnector,
 } from "@/lib/walletConnectors";
 
 export function WalletConnectControl() {
   const { address, isConnected, chainId } = useAccount();
-  const { connect, connectors, isPending: isConnecting } = useConnect();
+  const { connect, connectors, isPending: isConnecting, error: connectError, reset } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
 
   const isOnBase = chainId === BASE_CHAIN_ID;
   const connector = useMemo(() => pickPreferredConnector(connectors), [connectors]);
   const connectLabel = connectorButtonLabel(connector, isConnecting);
+  const connectErrorMessage = formatConnectError(connectError);
+
+  function handleConnect() {
+    if (!connector || isConnecting) return;
+    reset();
+    connect({ connector });
+  }
 
   if (!isConnected) {
     return (
-      <button
-        type="button"
-        disabled={isConnecting || !connector}
-        title={connector ? undefined : "Install the Rabby browser extension"}
-        onClick={() =>
-          connector &&
-          connect({
-            connector,
-            chainId: BASE_CHAIN_ID,
-          })
-        }
-        className="os-cta os-display w-full px-4 py-3 text-sm sm:w-auto"
-      >
-        {connectLabel}
-      </button>
+      <div className="flex w-full flex-col items-end gap-1 sm:w-auto">
+        <button
+          type="button"
+          disabled={isConnecting || !connector}
+          title={
+            connector
+              ? `Connect via ${connector.name}`
+              : "Install Rabby or MetaMask, or enable an EIP-1193 wallet"
+          }
+          onClick={handleConnect}
+          className="os-cta os-display w-full px-4 py-3 text-sm sm:w-auto"
+        >
+          {connectLabel}
+        </button>
+        {connectErrorMessage ? (
+          <p className="max-w-[220px] text-right text-[11px] leading-snug text-rose-300">
+            {connectErrorMessage}
+          </p>
+        ) : null}
+      </div>
     );
   }
 

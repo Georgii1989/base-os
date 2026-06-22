@@ -421,7 +421,7 @@ export function BaseBuilderApp() {
             disabled={isConnecting || !preferredConnector}
             onClick={() =>
               preferredConnector &&
-              connect({ connector: preferredConnector, chainId: base.id })
+              connect({ connector: preferredConnector })
             }
             className="os-cta os-display px-4 py-2 text-sm disabled:opacity-50"
           >

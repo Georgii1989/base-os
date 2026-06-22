@@ -171,7 +171,7 @@ export function BaseOsBriefing({
             onAction={() => {
               if (item.id === "connect") {
                 if (connector && !isConnecting) {
-                  connect({ connector, chainId: BASE_CHAIN_ID });
+                  connect({ connector });
                 }
                 return;
               }
