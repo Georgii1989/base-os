@@ -46,20 +46,12 @@ export function encodeBatchMint(recipients: `0x${string}`[], amounts: bigint[]):
   });
 }
 
-export function buildAssetInitCalls(input: {
+/** Bootstrap init calls for createB20 — mint is a separate tx (batchMint in initCalls reverts on Sepolia). */
+export function buildCreateInitCalls(input: {
   admin: `0x${string}`;
   supplyCap: bigint;
-  mintTo: `0x${string}`;
-  mintAmount: bigint;
 }): Hex[] {
-  const calls: Hex[] = [
-    encodeGrantRole(B20_MINT_ROLE, input.admin),
-    encodeUpdateSupplyCap(input.supplyCap),
-  ];
-  if (input.mintAmount > BigInt(0)) {
-    calls.push(encodeBatchMint([input.mintTo], [input.mintAmount]));
-  }
-  return calls;
+  return [encodeGrantRole(B20_MINT_ROLE, input.admin), encodeUpdateSupplyCap(input.supplyCap)];
 }
 
 export function randomB20Salt(): `0x${string}` {

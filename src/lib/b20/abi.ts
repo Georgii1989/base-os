@@ -56,6 +56,16 @@ export const B20_TOKEN_ABI = [
   },
   {
     type: "function",
+    name: "mint",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
     name: "batchMint",
     stateMutability: "nonpayable",
     inputs: [

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { decodeEventLog, parseUnits } from "viem";
 import {
   useAccount,
@@ -9,10 +9,10 @@ import {
   useWriteContract,
 } from "wagmi";
 import { useFlashblocksReceipt } from "@/hooks/useFlashblocksReceipt";
-import { B20_FACTORY_ABI } from "@/lib/b20/abi";
+import { B20_FACTORY_ABI, B20_TOKEN_ABI } from "@/lib/b20/abi";
 import { B20_FACTORY_ADDRESS, B20_VARIANT_ASSET } from "@/lib/b20/constants";
 import {
-  buildAssetInitCalls,
+  buildCreateInitCalls,
   encodeAssetCreateParams,
   randomB20Salt,
 } from "@/lib/b20/encode";
@@ -88,6 +88,10 @@ export function B20LauncherPanel() {
     supplyFormatted: string;
     decimals: number;
   } | null>(null);
+  const [phase, setPhase] = useState<"idle" | "creating" | "minting" | "done">("idle");
+  const pendingMintRef = useRef<{ token: `0x${string}`; amount: bigint; recipient: `0x${string}` } | null>(
+    null
+  );
 
   const form = useMemo<B20LaunchForm>(
     () => ({ name, symbol, supplyWhole, decimals, capWhole }),
@@ -97,27 +101,48 @@ export function B20LauncherPanel() {
   const isOnSepolia = chainId === BASE_SEPOLIA_CHAIN_ID;
 
   const {
-    data: txHash,
+    data: createTxHash,
     isPending: isLaunching,
     error: launchError,
-    writeContract,
+    writeContract: writeCreate,
     reset: resetLaunch,
   } = useWriteContract();
 
-  const { isLoading: isConfirming, isSuccess: txConfirmed } = useFlashblocksReceipt(
-    txHash,
+  const {
+    data: mintTxHash,
+    isPending: isMinting,
+    error: mintError,
+    writeContract: writeMint,
+    reset: resetMint,
+  } = useWriteContract();
+
+  const { isLoading: isConfirmingCreate, isSuccess: createConfirmed } = useFlashblocksReceipt(
+    createTxHash,
+    true,
+    BASE_SEPOLIA_CHAIN_ID
+  );
+  const { isLoading: isConfirmingMint, isSuccess: mintConfirmed } = useFlashblocksReceipt(
+    mintTxHash,
     true,
     BASE_SEPOLIA_CHAIN_ID
   );
 
+  const isBusy =
+    isLaunching || isConfirmingCreate || isMinting || isConfirmingMint || phase === "creating" || phase === "minting";
+
   useEffect(() => {
-    if (!txConfirmed || !txHash || !publicClient) return;
+    if (!createConfirmed || !createTxHash || !publicClient) return;
 
     let cancelled = false;
 
     (async () => {
-      const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+      const receipt = await publicClient.getTransactionReceipt({ hash: createTxHash });
       if (cancelled) return;
+      if (receipt.status !== "success") {
+        setPhase("idle");
+        setFormError("Create transaction reverted. Try again with a new token name or symbol.");
+        return;
+      }
 
       for (const log of receipt.logs) {
         if (log.address.toLowerCase() !== B20_FACTORY_ADDRESS.toLowerCase()) continue;
@@ -127,33 +152,77 @@ export function B20LauncherPanel() {
             data: log.data,
             topics: log.topics,
           });
-          if (decoded.eventName === "B20Created") {
-            const token = decoded.args.token as `0x${string}`;
-            const tokenName = decoded.args.name as string;
-            const tokenSymbol = decoded.args.symbol as string;
-            const tokenDecimals = Number(decoded.args.decimals);
-            setLaunchedToken(token);
-            if (validation.ok) {
-              setLaunchedMeta({
-                name: tokenName,
-                symbol: tokenSymbol,
-                supplyFormatted: validation.supplyWhole,
-                decimals: tokenDecimals,
-              });
-            }
-            setStep("success");
-            return;
+          if (decoded.eventName !== "B20Created") continue;
+
+          const token = decoded.args.token as `0x${string}`;
+          const tokenName = decoded.args.name as string;
+          const tokenSymbol = decoded.args.symbol as string;
+          const tokenDecimals = Number(decoded.args.decimals);
+          setLaunchedToken(token);
+          if (validation.ok) {
+            setLaunchedMeta({
+              name: tokenName,
+              symbol: tokenSymbol,
+              supplyFormatted: validation.supplyWhole,
+              decimals: tokenDecimals,
+            });
           }
+
+          const pending = pendingMintRef.current;
+          if (pending && pending.amount > BigInt(0)) {
+            setPhase("minting");
+            writeMint({
+              chainId: BASE_SEPOLIA_CHAIN_ID,
+              address: token,
+              abi: B20_TOKEN_ABI,
+              functionName: "mint",
+              args: [pending.recipient, pending.amount],
+            });
+          } else {
+            setPhase("done");
+            setStep("success");
+          }
+          return;
         } catch {
           /* not B20Created */
         }
       }
-    })().catch(() => {});
+
+      setPhase("idle");
+      setFormError("Token was created but B20Created event was not found in the receipt.");
+    })().catch(() => {
+      if (!cancelled) setPhase("idle");
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [txConfirmed, txHash, publicClient, validation]);
+  }, [createConfirmed, createTxHash, publicClient, validation, writeMint]);
+
+  useEffect(() => {
+    if (!mintConfirmed || !mintTxHash || !publicClient) return;
+
+    let cancelled = false;
+    (async () => {
+      const receipt = await publicClient.getTransactionReceipt({ hash: mintTxHash });
+      if (cancelled) return;
+      if (receipt.status !== "success") {
+        setPhase("idle");
+        setFormError("Token was created, but mint reverted. Mint manually with MINT_ROLE.");
+        setStep("success");
+        return;
+      }
+      pendingMintRef.current = null;
+      setPhase("done");
+      setStep("success");
+    })().catch(() => {
+      if (!cancelled) setPhase("idle");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mintConfirmed, mintTxHash, publicClient]);
 
   function goNext() {
     setFormError(null);
@@ -178,17 +247,24 @@ export function B20LauncherPanel() {
     setFormError(null);
     setLaunchedToken(null);
     setLaunchedMeta(null);
+    pendingMintRef.current = null;
+    setPhase("creating");
+    resetLaunch();
+    resetMint();
 
     if (!isConnected || !address) {
+      setPhase("idle");
       setFormError("Connect a wallet first.");
       return;
     }
     if (!isOnSepolia) {
       setFormError("Switch to Base Sepolia.");
+      setPhase("idle");
       return;
     }
     if (!validation.ok) {
       setFormError(validation.error);
+      setPhase("idle");
       return;
     }
 
@@ -197,6 +273,7 @@ export function B20LauncherPanel() {
       mintAmount = parseUnits(validation.supplyWhole, validation.decimals);
     } catch {
       setFormError("Could not parse initial supply.");
+      setPhase("idle");
       return;
     }
 
@@ -205,8 +282,12 @@ export function B20LauncherPanel() {
       supplyCap = capToWei(validation.capWhole, validation.decimals);
     } catch {
       setFormError("Supply cap is too large.");
+      setPhase("idle");
       return;
     }
+
+    pendingMintRef.current =
+      mintAmount > BigInt(0) ? { token: "0x0", amount: mintAmount, recipient: address } : null;
 
     const params = encodeAssetCreateParams(
       validation.name,
@@ -214,16 +295,13 @@ export function B20LauncherPanel() {
       address,
       validation.decimals
     );
-    const initCalls = buildAssetInitCalls({
+    const initCalls = buildCreateInitCalls({
       admin: address,
       supplyCap,
-      mintTo: address,
-      mintAmount,
     });
     const salt = randomB20Salt();
 
-    resetLaunch();
-    writeContract({
+    writeCreate({
       chainId: BASE_SEPOLIA_CHAIN_ID,
       address: B20_FACTORY_ADDRESS,
       abi: B20_FACTORY_ABI,
@@ -238,8 +316,9 @@ export function B20LauncherPanel() {
         <p className="os-eyebrow">B20 Launch</p>
         <h2 className="os-display mt-2 text-3xl font-semibold text-white">Create a native B20 token</h2>
         <p className="mt-3 max-w-2xl text-sm text-slate-300">
-          Official Base B20 standard — cheaper transfers, built-in roles and supply cap. One transaction
-          on <span className="font-mono text-violet-200">Base Sepolia</span>; you pay gas from your wallet.
+          Official Base B20 standard — cheaper transfers, built-in roles and supply cap. Deploy on{" "}
+          <span className="font-mono text-violet-200">Base Sepolia</span> in two wallet confirmations
+          (create, then mint).
         </p>
         <div className="mt-5">
           <StepIndicator step={step} />
@@ -255,8 +334,8 @@ export function B20LauncherPanel() {
               no custom contract to audit
             </li>
             <li className="rounded-xl border border-white/8 bg-black/30 px-4 py-3">
-              <span className="font-bold text-emerald-200">One tx setup</span> — admin, minter role, cap, and
-              initial mint in a single <span className="font-mono">createB20</span> call
+              <span className="font-bold text-emerald-200">Two-step deploy</span> — create token, then mint
+              initial supply (matches Base CLI flow)
             </li>
             <li className="rounded-xl border border-white/8 bg-black/30 px-4 py-3">
               <span className="font-bold text-cyan-200">Testnet first</span> — deploy on Sepolia today; mainnet
@@ -436,11 +515,15 @@ export function B20LauncherPanel() {
               </button>
               <button
                 type="button"
-                disabled={!validation.ok || isLaunching || isConfirming}
+                disabled={!validation.ok || isBusy}
                 onClick={handleLaunch}
                 className="os-cta os-display px-5 py-2.5 text-sm disabled:opacity-50"
               >
-                {isLaunching || isConfirming ? "Confirm in wallet…" : "Deploy B20 on Sepolia"}
+                {isLaunching || (phase === "creating" && isConfirmingCreate)
+                  ? "Creating token…"
+                  : isMinting || phase === "minting"
+                    ? "Minting supply…"
+                    : "Deploy B20 on Sepolia"}
               </button>
             </div>
           )}
@@ -453,18 +536,39 @@ export function B20LauncherPanel() {
                 : launchError.message}
             </p>
           ) : null}
-          {txHash ? (
+          {mintError ? (
+            <p className="mt-3 text-sm text-rose-300">
+              {"shortMessage" in mintError && typeof mintError.shortMessage === "string"
+                ? mintError.shortMessage
+                : mintError.message}
+            </p>
+          ) : null}
+          {createTxHash ? (
             <p className="mt-3 text-sm text-slate-400">
-              Tx:{" "}
+              Create tx:{" "}
               <a
-                href={sepoliaExplorerTx(txHash)}
+                href={sepoliaExplorerTx(createTxHash)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-mono text-violet-300 hover:underline"
               >
-                {txHash.slice(0, 12)}…
+                {createTxHash.slice(0, 12)}…
               </a>
-              {txConfirmed ? " · confirmed" : " · confirming"}
+              {createConfirmed ? " · confirmed" : " · confirming"}
+            </p>
+          ) : null}
+          {mintTxHash ? (
+            <p className="mt-1 text-sm text-slate-400">
+              Mint tx:{" "}
+              <a
+                href={sepoliaExplorerTx(mintTxHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-violet-300 hover:underline"
+              >
+                {mintTxHash.slice(0, 12)}…
+              </a>
+              {mintConfirmed ? " · confirmed" : " · confirming"}
             </p>
           ) : null}
         </section>
@@ -502,6 +606,8 @@ export function B20LauncherPanel() {
               setCapWhole("1000000");
               setLaunchedToken(null);
               setLaunchedMeta(null);
+              pendingMintRef.current = null;
+              setPhase("idle");
               setStep("intro");
             }}
             className="mt-4 text-sm font-bold text-slate-400 underline"
