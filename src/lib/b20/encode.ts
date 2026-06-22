@@ -10,6 +10,7 @@ import {
   B20_MINT_ROLE,
 } from "@/lib/b20/constants";
 
+/** Matches Solidity `abi.encode(B20AssetCreateParams({...}))` — tuple wrapper, not a flat field list. */
 export function encodeAssetCreateParams(
   name: string,
   symbol: string,
@@ -17,8 +18,18 @@ export function encodeAssetCreateParams(
   decimals: number
 ): Hex {
   return encodeAbiParameters(
-    parseAbiParameters("uint8 version, string name, string symbol, address initialAdmin, uint8 decimals"),
-    [B20_ASSET_CREATE_PARAMS_VERSION, name, symbol, initialAdmin, decimals]
+    parseAbiParameters(
+      "(uint8 version, string name, string symbol, address initialAdmin, uint8 decimals)"
+    ),
+    [
+      {
+        version: B20_ASSET_CREATE_PARAMS_VERSION,
+        name,
+        symbol,
+        initialAdmin,
+        decimals,
+      },
+    ]
   );
 }
 
