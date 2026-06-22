@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://app-base-os.vercel.app";
-  const tabs = ["home", "swap", "game", "battleship", "launch", "tip", "score", "guard", "watch", "analytics", "radar"];
+  const tabs = ["home", "swap", "game", "battleship", "launch", "b20", "tip", "score", "guard", "watch", "analytics", "radar"];
   return [
     { url: base, lastModified: new Date(), changeFrequency: "daily", priority: 1 },
     ...tabs.map((tab) => ({

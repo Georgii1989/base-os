@@ -64,6 +64,8 @@ function tabNavKeywords(tab: { id: OsTabId; label: string; eyebrow: string }): s
       return `${base} tokens erc20 balances holdings assets wallet base`;
     case "launch":
       return `${base} token erc20 deploy create launch mint supply`;
+    case "b20":
+      return `${base} b20 native precompile sepolia testnet deploy create token mint cap`;
     case "swap":
       return `${base} trade swap bridge relay superbridge ethereum arbitrum linea zksync bnb 0x buy sell`;
     case "game":

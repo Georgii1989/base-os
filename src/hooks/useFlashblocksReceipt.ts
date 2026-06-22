@@ -5,7 +5,7 @@ import { BASE_CHAIN_ID } from "@/lib/baseChain";
 
 type Hash = `0x${string}` | undefined;
 
-type WagmiChainId = 1 | 8453 | 42161 | 56 | 59144 | 324;
+type WagmiChainId = 1 | 8453 | 84532 | 42161 | 56 | 59144 | 324;
 
 /**
  * Faster receipt polling via Flashblocks preconf RPC configured in wagmi.

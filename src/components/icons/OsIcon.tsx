@@ -309,6 +309,8 @@ export function osTabIcon(tabId: OsTabId): OsIconName {
       return "wallet";
     case "launch":
       return "launch";
+    case "b20":
+      return "launch";
     case "swap":
       return "swap";
     case "game":

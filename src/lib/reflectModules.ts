@@ -69,6 +69,12 @@ export const REFLECT_FEATURE_MODULES: ReflectModule[] = [
     icon: "launch",
   },
   {
+    tab: "b20",
+    title: "B20 launch",
+    description: "Native Base B20 token on Sepolia — one transaction.",
+    icon: "launch",
+  },
+  {
     tab: "game",
     title: "Grid 6×6",
     description: "1v1 four-in-a-row onchain — stake ETH.",
@@ -91,6 +97,7 @@ export const TAB_HERO_SUBTITLES: Partial<Record<OsTabId, string>> = {
   battleship: "10×10 naval combat on Base — place ships and fire onchain.",
   tip: "Send tips and mint a supporter badge on Base.",
   launch: "Deploy your ERC-20 token on Base in one flow.",
+  b20: "Launch a native B20 token on Base Sepolia — roles, cap, and mint in one tx.",
   drop: "Prove a social account via Base Verify — one identity, one claim.",
   analytics: "TVL, fees, stables, and DEX volume on Base.",
   portfolio: "ETH and ERC-20 balances on Base via Blockscout.",

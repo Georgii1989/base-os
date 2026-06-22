@@ -8,6 +8,6 @@ import { tabFromSearchParam } from "@/lib/osTabs";
 export function BaseChainAutoSwitch() {
   const searchParams = useSearchParams();
   const tab = tabFromSearchParam(searchParams.get("tab"));
-  useAutoSwitchToBase({ enabled: tab !== "swap" });
+  useAutoSwitchToBase({ enabled: tab !== "swap" && tab !== "b20" });
   return null;
 }

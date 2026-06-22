@@ -2,6 +2,7 @@ export type OsTabId =
   | "home"
   | "tip"
   | "launch"
+  | "b20"
   | "swap"
   | "game"
   | "battleship"
@@ -27,7 +28,8 @@ export const OS_TAB_META: readonly OsTabMeta[] = [
   { id: "swap", label: "Swap & Bridge", eyebrow: "Trade" },
   { id: "game", label: "Grid 6×6", eyebrow: "1v1 onchain" },
   { id: "battleship", label: "Battleship", eyebrow: "10×10 naval" },
-  { id: "launch", label: "Launch", eyebrow: "Token" },
+  { id: "launch", label: "Launch", eyebrow: "ERC-20" },
+  { id: "b20", label: "B20", eyebrow: "Native token" },
   { id: "tip", label: "Tips", eyebrow: "Support" },
   { id: "drop", label: "Base Verify", eyebrow: "Anti-sybil" },
   { id: "score", label: "Score", eyebrow: "Identity" },

@@ -16,6 +16,7 @@ import { TxLensPanel } from "@/components/TxLensPanel";
 import { HomeHubPanel } from "@/components/HomeHubPanel";
 import { OnchainScorePanel } from "@/components/OnchainScorePanel";
 import { SwapBridgePanel } from "@/components/SwapBridgePanel";
+import { B20LauncherPanel } from "@/components/B20LauncherPanel";
 import { TokenLauncherPanel } from "@/components/TokenLauncherPanel";
 import { VerifyDropPanel } from "@/components/VerifyDropPanel";
 import { WalletPortfolioPanel } from "@/components/WalletPortfolioPanel";
@@ -172,6 +173,7 @@ function BaseOsShellInner() {
               />
             ) : null}
             {activeTab === "launch" ? <TokenLauncherPanel /> : null}
+            {activeTab === "b20" ? <B20LauncherPanel /> : null}
             {activeTab === "swap" ? <SwapBridgePanel /> : null}
             {activeTab === "game" ? <Grid646GamePanel /> : null}
             {activeTab === "battleship" ? <Battleship10GamePanel /> : null}
