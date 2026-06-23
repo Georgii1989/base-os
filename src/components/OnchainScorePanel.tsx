@@ -189,9 +189,20 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
     setIsX402Loading(true);
     try {
       const res = await x402Fetch(`/api/x402/score?address=${queryAddress}`);
-      const json = (await res.json()) as OnchainScorePayload & { error?: string; hint?: string };
+      const raw = await res.text();
+      let json: (OnchainScorePayload & { error?: string; hint?: string }) | null = null;
+      if (raw.trim()) {
+        try {
+          json = JSON.parse(raw) as OnchainScorePayload & { error?: string; hint?: string };
+        } catch {
+          throw new Error("Server returned invalid JSON. Try again in a moment.");
+        }
+      }
       if (!res.ok) {
-        throw new Error(json.hint ?? json.error ?? "x402_payment_failed");
+        throw new Error(json?.hint ?? json?.error ?? `x402_payment_failed (${res.status})`);
+      }
+      if (!json) {
+        throw new Error("Empty response from x402 score API.");
       }
       setX402Data(json);
     } catch (err) {
@@ -216,7 +227,7 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
         <p className="mt-3 max-w-2xl text-sm text-slate-200/85">
           Paste any Base address to see activity depth: transactions, contracts touched, bridges,
           deployments, and token transfers (when indexed). Free lookup below — or pay ~$0.001 USDC
-          on Base via x402 (Builder Code attribution onchain).
+          on Base via x402 with Builder Code attribution onchain.
         </p>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">

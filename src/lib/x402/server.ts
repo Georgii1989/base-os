@@ -1,4 +1,4 @@
-import { facilitator } from "@coinbase/x402";
+import { createFacilitatorConfig, facilitator as defaultFacilitator } from "@coinbase/x402";
 import { HTTPFacilitatorClient, x402ResourceServer } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { BUILDER_CODE, declareBuilderCodeExtension } from "@x402/extensions/builder-code";
@@ -14,10 +14,17 @@ import {
 
 let resourceServer: x402ResourceServer | null = null;
 
+function resolveFacilitatorConfig() {
+  const id = process.env.CDP_API_KEY_ID?.trim();
+  const secret = process.env.CDP_API_KEY_SECRET?.trim();
+  if (id && secret) return createFacilitatorConfig(id, secret);
+  return defaultFacilitator;
+}
+
 export function getX402ResourceServer(): x402ResourceServer | null {
   if (!isX402SellerConfigured()) return null;
   if (!resourceServer) {
-    const facilitatorClient = new HTTPFacilitatorClient(facilitator);
+    const facilitatorClient = new HTTPFacilitatorClient(resolveFacilitatorConfig());
     resourceServer = new x402ResourceServer(facilitatorClient).register(
       X402_BASE_MAINNET,
       new ExactEvmScheme()
