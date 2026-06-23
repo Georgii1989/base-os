@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { formatEther, getAddress, isAddress } from "viem";
 import { useAccount, useSwitchChain } from "wagmi";
 import { useX402Fetch } from "@/hooks/useX402Fetch";
-import { formatX402PaymentError } from "@/lib/x402/clientErrors";
+import { formatX402PaymentError, formatX402ErrorMessage } from "@/lib/x402/clientErrors";
 import { BASE_CHAIN_ID } from "@/lib/baseChain";
 import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import { ScoreBreakdown } from "@/components/ScoreBreakdown";
@@ -186,6 +186,25 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
       return;
     }
 
+    if (connected) {
+      try {
+        const statusRes = await fetch("/api/x402/status");
+        const status = (await statusRes.json()) as { payTo?: string | null };
+        if (
+          status.payTo &&
+          isAddress(status.payTo) &&
+          getAddress(status.payTo) === getAddress(connected)
+        ) {
+          setX402Error(
+            "Your wallet is the x402 payout address — payments cannot go to the same wallet. Connect another wallet to pay, or use free Analyze."
+          );
+          return;
+        }
+      } catch {
+        // status check is best-effort; facilitator will still reject self-send
+      }
+    }
+
     setX402Error(null);
     setIsX402Loading(true);
     try {
@@ -217,16 +236,18 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
         setX402Error("Wallet signature was rejected.");
       } else if (/Failed to create payment payload/i.test(message)) {
         setX402Error(
-          message.replace(/^Failed to create payment payload:\s*/i, "") ||
-            "Could not sign USDC payment in wallet."
+          formatX402ErrorMessage(
+            message.replace(/^Failed to create payment payload:\s*/i, "") ||
+              "Could not sign USDC payment in wallet."
+          )
         );
       } else {
-        setX402Error(message);
+        setX402Error(formatX402ErrorMessage(message));
       }
     } finally {
       setIsX402Loading(false);
     }
-  }, [chainId, isConnected, queryAddress, switchChainAsync, x402Fetch]);
+  }, [chainId, connected, isConnected, queryAddress, switchChainAsync, x402Fetch]);
 
   const canAnalyze =
     isAddress(input.trim()) || isBasenameLike(input.trim());

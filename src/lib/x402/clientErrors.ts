@@ -42,6 +42,20 @@ export function formatX402PaymentError(response: Response, fallback?: string | n
   if (lower.includes("invalid") && lower.includes("signature")) {
     return "Wallet could not produce a valid payment signature. Try a different wallet on Base.";
   }
+  if (lower.includes("self_send_not_allowed") || lower.includes("self send")) {
+    return "You cannot pay from the same wallet that receives x402 payouts. Connect a different wallet, or use free Analyze.";
+  }
+  return raw;
+}
+
+export function formatX402ErrorMessage(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (lower.includes("self_send_not_allowed") || lower.includes("self send")) {
+    return "You cannot pay from the same wallet that receives x402 payouts. Connect a different wallet, or use free Analyze.";
+  }
+  if (lower.includes("user rejected") || lower.includes("denied")) {
+    return "Wallet signature was rejected.";
+  }
   return raw;
 }
 
