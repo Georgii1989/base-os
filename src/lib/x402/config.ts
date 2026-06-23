@@ -17,7 +17,13 @@ export function resolveX402PayTo(): `0x${string}` | null {
 }
 
 export function resolveX402ScorePrice(): string {
-  return process.env.X402_SCORE_PRICE?.trim() || "$0.001";
+  const raw = process.env.X402_SCORE_PRICE?.trim() || "$0.001";
+  if (raw.startsWith("$")) return raw;
+  if (/^\d/.test(raw) || raw.startsWith(".")) {
+    const amount = raw.startsWith(".") ? `0${raw}` : raw;
+    return `$${amount}`;
+  }
+  return raw;
 }
 
 export function hasX402CdpCredentials(): boolean {
