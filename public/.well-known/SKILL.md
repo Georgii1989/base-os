@@ -11,6 +11,7 @@ Base OS is an onchain command center for the Base network (chain ID 8453). Agent
 | Capability | Type | Description |
 |------------|------|-------------|
 | Onchain score | read | Heuristic activity score for any Base address |
+| Onchain score (x402) | paid | Same score via HTTP 402 + USDC on Base mainnet (`/api/x402/score`) |
 | Portfolio | read | ETH + ERC-20 balances on Base |
 | Project radar | read | Curated Base ecosystem apps with market data |
 | Base analytics | read | TVL, fees, stablecoin, DEX volume aggregates |
@@ -43,7 +44,17 @@ Returns JSON:
 
 Errors: `400` missing/invalid address, `502` upstream fetch failed.
 
-**Example**
+## API — Onchain score (x402, Base mainnet)
+
+**GET** `/api/x402/score?address={0xAddress}`
+
+Paid endpoint — returns `402 Payment Required` until the client signs a USDC payment on Base (`eip155:8453`). Settlement uses the CDP facilitator; Builder Code `bc_59omft8w` is declared for onchain attribution (`a` field). Agents and wallets with x402 client SDKs can pay programmatically; the Score tab UI has **Pay via x402 (USDC)** when a wallet is connected.
+
+**Status:** **GET** `/api/x402/status` — whether seller env (`CDP_API_KEY_ID`, `CDP_API_KEY_SECRET`, `X402_PAY_TO_ADDRESS`) is configured.
+
+No smart contract deploy is required — payments settle to `X402_PAY_TO_ADDRESS` via the facilitator.
+
+**Example (free endpoint unchanged)**
 
 ```bash
 curl "https://app-base-os.vercel.app/api/onchain-score?address=0x8655520b4b19187038aC9a4f560da0979Cc1E95C"

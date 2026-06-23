@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatEther, getAddress, isAddress } from "viem";
-import { useAccount } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
+import { useX402Fetch } from "@/hooks/useX402Fetch";
+import { BASE_CHAIN_ID } from "@/lib/baseChain";
 import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import { ScoreBreakdown } from "@/components/ScoreBreakdown";
 import { ScoreShareActions } from "@/components/ScoreShareActions";
@@ -84,11 +86,16 @@ function MetricTile({
 }
 
 export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: string | null }) {
-  const { address: connected } = useAccount();
+  const { address: connected, chainId, isConnected } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+  const x402Fetch = useX402Fetch();
   const [input, setInput] = useState("");
   const [queryAddress, setQueryAddress] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(false);
+  const [x402Error, setX402Error] = useState<string | null>(null);
+  const [isX402Loading, setIsX402Loading] = useState(false);
+  const [x402Data, setX402Data] = useState<OnchainScorePayload | null>(null);
   const prefilledRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -137,6 +144,8 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
     const trimmed = input.trim();
     if (!trimmed) return;
     setResolveError(null);
+    setX402Error(null);
+    setX402Data(null);
     setIsResolving(true);
     try {
       const resolved = await resolveAddressInput(trimmed);
@@ -154,11 +163,50 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
     }
   }, [input]);
 
+  const runX402Lookup = useCallback(async () => {
+    if (!queryAddress || !isAddress(queryAddress)) {
+      setX402Error("Analyze an address first, then pay via x402.");
+      return;
+    }
+    if (!isConnected) {
+      setX402Error("Connect a wallet on Base mainnet.");
+      return;
+    }
+    if (chainId !== BASE_CHAIN_ID) {
+      try {
+        await switchChainAsync({ chainId: BASE_CHAIN_ID });
+      } catch {
+        setX402Error("Switch to Base mainnet in your wallet.");
+        return;
+      }
+    }
+    if (!x402Fetch) {
+      setX402Error("Wallet signer not ready. Try reconnecting.");
+      return;
+    }
+
+    setX402Error(null);
+    setIsX402Loading(true);
+    try {
+      const res = await x402Fetch(`/api/x402/score?address=${queryAddress}`);
+      const json = (await res.json()) as OnchainScorePayload & { error?: string; hint?: string };
+      if (!res.ok) {
+        throw new Error(json.hint ?? json.error ?? "x402_payment_failed");
+      }
+      setX402Data(json);
+    } catch (err) {
+      setX402Error(err instanceof Error ? err.message : "x402_payment_failed");
+    } finally {
+      setIsX402Loading(false);
+    }
+  }, [chainId, isConnected, queryAddress, switchChainAsync, x402Fetch]);
+
   const canAnalyze =
     isAddress(input.trim()) || isBasenameLike(input.trim());
 
-  const m = data?.score.metrics;
-  const balanceEth = data ? formatEther(BigInt(data.balanceWei)) : "0";
+  const m = (x402Data ?? data)?.score.metrics;
+  const balanceEth = (x402Data ?? data) ? formatEther(BigInt((x402Data ?? data)!.balanceWei)) : "0";
+  const displayData = x402Data ?? data;
 
   return (
     <div className="grid gap-6">
@@ -167,7 +215,8 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
         <h2 className="os-display mt-2 text-3xl font-semibold text-white md:text-4xl">Onchain score</h2>
         <p className="mt-3 max-w-2xl text-sm text-slate-200/85">
           Paste any Base address to see activity depth: transactions, contracts touched, bridges,
-          deployments, and token transfers (when indexed).
+          deployments, and token transfers (when indexed). Free lookup below — or pay ~$0.001 USDC
+          on Base via x402 (Builder Code attribution onchain).
         </p>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -208,6 +257,16 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
               Use connected wallet
             </button>
           ) : null}
+          {queryAddress ? (
+            <button
+              type="button"
+              onClick={() => void runX402Lookup()}
+              disabled={isX402Loading || !x402Fetch}
+              className="rounded-xl border border-violet-300/40 bg-violet-500/15 px-3 py-1.5 text-xs font-bold text-violet-100 disabled:opacity-40"
+            >
+              {isX402Loading ? "Paying via x402…" : "Pay via x402 (USDC)"}
+            </button>
+          ) : null}
           <Link
             href="/safety"
             className="rounded-xl border border-white/12 px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white"
@@ -215,6 +274,13 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
             Public address lookup ↗
           </Link>
         </div>
+        {x402Error ? <p className="mt-2 text-sm text-rose-200/95">{x402Error}</p> : null}
+        {x402Data ? (
+          <p className="mt-2 text-xs text-emerald-200/90">
+            Paid via x402 on Base mainnet — settlement attributed with Builder Code{" "}
+            <span className="font-mono">{process.env.NEXT_PUBLIC_BASE_BUILDER_CODE ?? "bc_59omft8w"}</span>.
+          </p>
+        ) : null}
       </div>
 
       {isLoading || isFetching ? (
@@ -244,20 +310,20 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
         </div>
       ) : null}
 
-      {data && m ? (
+      {displayData && m ? (
         <>
-          {data.message ? (
+          {displayData.message ? (
             <p className="rounded-xl border border-amber-300/25 bg-amber-500/10 px-4 py-2 text-sm text-amber-100">
-              {data.message}
-              {data.source === "rpc_only" ? " Transaction index unavailable — showing RPC estimate only." : null}
+              {displayData.message}
+              {displayData.source === "rpc_only" ? " Transaction index unavailable — showing RPC estimate only." : null}
             </p>
           ) : null}
 
-          <ScoreShareActions data={data} />
+          <ScoreShareActions data={displayData} />
 
           <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
             <section className="flex flex-col items-center justify-center os-panel p-6">
-              <ScoreRing score={data.score.score} grade={data.score.grade} />
+              <ScoreRing score={displayData.score.score} grade={displayData.score.grade} />
               <p className="mt-4 text-center text-xs text-slate-400">
                 Heuristic Base activity score
                 <br />
@@ -270,18 +336,18 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
                 <div className="min-w-0">
                   <p className="text-xs text-slate-500">Address</p>
                   <OsAddressDisplay
-                    address={data.address}
+                    address={displayData.address}
                     showChecksum
                     monoClassName="break-all font-mono text-sm font-bold text-cyan-100"
                   />
                   <p className="mt-2 text-sm text-slate-400">
-                    {data.isContract ? "Smart contract" : "EOA wallet"} ·{" "}
+                    {displayData.isContract ? "Smart contract" : "EOA wallet"} ·{" "}
                     {Number(balanceEth).toFixed(6)} ETH on Base
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <a
-                    href={`https://basescan.org/address/${data.address}`}
+                    href={`https://basescan.org/address/${displayData.address}`}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded-xl border border-white/15 px-3 py-1.5 text-xs font-bold text-white"
@@ -289,13 +355,13 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
                     BaseScan ↗
                   </a>
                   <Link
-                    href={`/card/${data.address}`}
+                    href={`/card/${displayData.address}`}
                     className="rounded-xl border border-cyan-300/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-100"
                   >
                     Identity card ↗
                   </Link>
                   <Link
-                    href={`/${data.address}`}
+                    href={`/${displayData.address}`}
                     className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-500/15 px-3 py-1.5 text-xs font-bold text-fuchsia-100"
                   >
                     Tip profile
@@ -321,15 +387,15 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
           <ScoreBreakdown
             metrics={m}
             tokenTransfers={m.tokenTransfers}
-            score={data.score.score}
-            rpcTxCount={data.rpcTxCount}
+            score={displayData.score.score}
+            rpcTxCount={displayData.rpcTxCount}
           />
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MetricTile
               label="Outgoing txs"
               value={formatCompactNumber(m.outgoingTxs)}
-              hint={`RPC nonce: ${data.rpcTxCount.toLocaleString()}`}
+              hint={`RPC nonce: ${displayData.rpcTxCount.toLocaleString()}`}
             />
             <MetricTile
               label="Incoming txs"
@@ -372,9 +438,9 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
 
           <p className="text-center text-xs text-slate-500">
             Data via{" "}
-            {data.source === "blockscout"
+            {displayData.source === "blockscout"
               ? "Blockscout (Base)"
-              : data.source === "etherscan"
+              : displayData.source === "etherscan"
                 ? "Etherscan API"
                 : "RPC nonce"}{" "}
             ·{" "}
