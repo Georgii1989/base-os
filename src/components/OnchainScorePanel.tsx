@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { formatEther, getAddress, isAddress } from "viem";
 import { useAccount, useSwitchChain } from "wagmi";
 import { useX402Fetch } from "@/hooks/useX402Fetch";
+import { formatX402PaymentError } from "@/lib/x402/clientErrors";
 import { BASE_CHAIN_ID } from "@/lib/baseChain";
 import { OsAddressDisplay } from "@/components/os/OsAddressDisplay";
 import { ScoreBreakdown } from "@/components/ScoreBreakdown";
@@ -181,7 +182,7 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
       }
     }
     if (!x402Fetch) {
-      setX402Error("Wallet signer not ready. Try reconnecting.");
+      setX402Error("Connect a wallet on Base mainnet.");
       return;
     }
 
@@ -195,18 +196,33 @@ export function OnchainScorePanel({ initialAddress = null }: { initialAddress?: 
         try {
           json = JSON.parse(raw) as OnchainScorePayload & { error?: string; hint?: string };
         } catch {
+          if (!res.ok) {
+            throw new Error(formatX402PaymentError(res));
+          }
           throw new Error("Server returned invalid JSON. Try again in a moment.");
         }
       }
       if (!res.ok) {
-        throw new Error(json?.hint ?? json?.error ?? `x402_payment_failed (${res.status})`);
+        throw new Error(
+          formatX402PaymentError(res, json?.hint ?? json?.error ?? null)
+        );
       }
       if (!json) {
         throw new Error("Empty response from x402 score API.");
       }
       setX402Data(json);
     } catch (err) {
-      setX402Error(err instanceof Error ? err.message : "x402_payment_failed");
+      const message = err instanceof Error ? err.message : "x402_payment_failed";
+      if (/user rejected|denied/i.test(message)) {
+        setX402Error("Wallet signature was rejected.");
+      } else if (/Failed to create payment payload/i.test(message)) {
+        setX402Error(
+          message.replace(/^Failed to create payment payload:\s*/i, "") ||
+            "Could not sign USDC payment in wallet."
+        );
+      } else {
+        setX402Error(message);
+      }
     } finally {
       setIsX402Loading(false);
     }
